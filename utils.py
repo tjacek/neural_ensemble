@@ -27,7 +27,8 @@ def dir_fun(as_dict=False):
                 output={}
             else:
                 output=[]
-            for path_i in data.top_files(in_path):
+            paths=get_paths(in_path)
+            for path_i in paths:
                 print(path_i)
                 new_args=list(args)
                 new_args[k]=path_i
@@ -66,7 +67,7 @@ def unify_cv(dir_path='feats',show=False):
                 main_path=args[k]
             else:
                 main_path=f'{args[k]}/{dir_path}'
-            for path_i in data.top_files(main_path):
+            for path_i in get_paths(main_path):#data.top_files(main_path):
                 args=list(args)
                 args[k]=path_i
                 result_i=fun(*args,**kwargs)
@@ -82,4 +83,12 @@ def unify_cv(dir_path='feats',show=False):
 def is_object(args):
     if(type(args[0])==str):
         return 0
+    if(type(args[0])==list):
+        return 0
     return 1
+
+def get_paths(in_path):
+    if(type(in_path)==list):
+        return in_path
+    else:
+        return data.top_files(in_path)

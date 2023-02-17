@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn.metrics import classification_report,accuracy_score,f1_score
 from sklearn.linear_model import LogisticRegression
+from sklearn import ensemble
 #from sklearn.utils import class_weight
 import data
 
@@ -72,17 +73,28 @@ def voting(results):
         pairs.append((name_i,cat_i))
     return Result(pairs)
 
-def fit_lr(data_dict_i,clf_i=None,balance=False):
+def fit_clf(data_dict_i,clf_type=None,balance=False):
     data_dict_i.norm()
     train,test= data_dict_i.split()
     X_train,y_train,names=train.as_dataset()
-    if(clf_i is None):
-        if(balance):
-            clf_i=LogisticRegression(solver='liblinear',
-                class_weight='balanced')
-        else:
-            clf_i=LogisticRegression(solver='liblinear')
+
+#    if(clf_i is None):
+#        if(balance):
+#            clf_i=LogisticRegression(solver='liblinear',
+#                class_weight='balanced')
+#        else:
+#            clf_i=LogisticRegression(solver='liblinear')
+    clf_i=get_clf(clf_type)
     clf_i.fit(X_train,y_train)
     X_test,y_true,names=test.as_dataset()
     y_pred=clf_i.predict_proba(X_test)
     return make_result(names,y_pred)
+
+def get_clf(name_i):        
+    if(name_i=="RF"):
+        return ensemble.RandomForestClassifier()
+    if(name_i=='Bag'):
+        return ensemble.BaggingClassifier()
+    if(name_i=='Grad'):
+        return ensemble.GradientBoostingClassifier()
+    return LogisticRegression(solver='liblinear')

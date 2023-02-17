@@ -16,7 +16,7 @@ class Ensemble(object):
         print(len(self.full))
         results=[]
         for full_i in self.full:
-            result_i=learn.fit_lr(full_i,self.clf_type)
+            result_i=learn.fit_clf(full_i,self.clf_type)
             results.append(result_i)
         results=[result_i.split()[1] 
             for result_i in results]
@@ -33,10 +33,10 @@ class Ensemble(object):
             f.write(json_bytes)
 
 class EnsembleFactory(object):
-    def __init__(self,clf_type=None):
-        if(clf_type is None):
-            import output
-            clf_type=output.get_clf('LR')
+    def __init__(self,clf_type='LR'):
+#        if(clf_type is None):
+#            import output
+#            clf_type=output.get_clf('LR')
         self.clf_type=clf_type
 
     def __call__(self,in_path):
@@ -51,10 +51,10 @@ class EnsembleFactory(object):
 
 
 class GzipFactory(object):
-    def __init__(self,clf_type=None):
-        if(clf_type is None):
-            import output
-            clf_type=output.get_clf('LR')
+    def __init__(self,clf_type='LR'):
+#        if(clf_type is None):
+#            import output
+#            clf_type=output.get_clf('LR')
         self.clf_type=clf_type
 
     def __call__(self,in_path):
@@ -65,17 +65,16 @@ class GzipFactory(object):
             common=data.DataDict(raw_dict['common'])
             binary=[ data.DataDict(binary_i)
                 for binary_i in raw_dict['binary']]
-#            raise Exception(type(common))
             return Ensemble(common,binary,self.clf_type)
 
-class RawBinary(object):
-    def __init__(self,clf_type=None):
-        self.clf_type=clf_type
+#class RawBinary(object):
+#    def __init__(self,clf_type=None):
+#        self.clf_type=clf_type
 
-    def __call__(self,in_path):
-        binary_path=f'{in_path}/binary'
-        binary=data.read_data_group(binary_path)
-        return Ensemble(binary,binary,self.clf_type)
+#    def __call__(self,in_path):
+#        binary_path=f'{in_path}/binary'
+#        binary=data.read_data_group(binary_path)
+#        return Ensemble(binary,binary,self.clf_type)
 
 if __name__ == "__main__":
     in_path='imb/wall-following/0/feats/0'

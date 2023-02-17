@@ -1,6 +1,5 @@
 import numpy as np
-from sklearn import ensemble
-from sklearn.linear_model import LogisticRegression
+
 #import protocols,utils,ecscf,ens
 import ens,utils,data,learn
 import sys
@@ -70,24 +69,14 @@ def stats(acc):
 def get_algs(names):
     alg={}
     for name_i in names:
-        alg[name_i]=get_clf(name_i)
+        alg[name_i]=learn.get_clf(name_i)
     return alg
-
-def get_clf(name_i):
-        if(name_i=="LR"):
-            return LogisticRegression(solver='liblinear')
-        if(name_i=="RF"):
-            return ensemble.RandomForestClassifier()
-        if(name_i=='Bag'):
-            return ensemble.BaggingClassifier()
-        if(name_i=='Grad'):
-            return ensemble.GradientBoostingClassifier()
 
 def get_escf_algs(names):
     alg={}
     for name_i in names:
         raw_i=name_i.split('_')
-        clf_i=get_clf(raw_i[0])
+        clf_i=learn.get_clf(raw_i[0])
         ens_factory=ens.GzipFactory
         alg[name_i]=ESCFExp(ens_factory(clf_i))
     return alg
@@ -96,7 +85,8 @@ if __name__ == "__main__":
     if(len(sys.argv)>1):
         data_dir= sys.argv[1]
     else:
-        data_dir='../ECSCF/imb_gzip'
+#        data_dir='../positional_voting/ECSCF/imb_gzip'
+        data_dir=['../uci_gzip/wine']
     print(data_dir)
     basic_exp=BasicExp(['LR','RF'],algs=[])#'Bag','Grad',
 #                       ['LR','RF'])#,'Bag','Grad'])
