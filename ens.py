@@ -24,19 +24,8 @@ class Ensemble(object):
             return learn.Votes(results)
         return learn.voting(results)
 
-    def as_gzip(self,in_path):
-        raw_dict={'common':self.full.save(),
-            'binary':[binary_i.save() for binary_i in self.binary]}
-        with gzip.open(in_path, 'wb') as f:
-            json_str = json.dumps(raw_dict) + "\n"               # 2. string (i.e. JSON)
-            json_bytes = json_str.encode('utf-8') 
-            f.write(json_bytes)
-
 class EnsembleFactory(object):
     def __init__(self,clf_type='LR'):
-#        if(clf_type is None):
-#            import output
-#            clf_type=output.get_clf('LR')
         self.clf_type=clf_type
 
     def __call__(self,in_path):
@@ -44,17 +33,10 @@ class EnsembleFactory(object):
         binary_path=f'{in_path}/binary'
         common=data.read_data(common_path)
         binary=data.read_data_group(binary_path)
-#        full=[ common.concat(binary_i) 
-#            for binary_i in binary]
-#        full=common
         return Ensemble(common,binary,self.clf_type)
 
-
-class GzipFactory(object):
+class GzipReader(object):
     def __init__(self,clf_type='LR'):
-#        if(clf_type is None):
-#            import output
-#            clf_type=output.get_clf('LR')
         self.clf_type=clf_type
 
     def __call__(self,in_path):
@@ -66,6 +48,17 @@ class GzipFactory(object):
             binary=[ data.DataDict(binary_i)
                 for binary_i in raw_dict['binary']]
             return Ensemble(common,binary,self.clf_type)
+
+def gzip_writer(ens,in_path):
+    raw_dict={'common':ens.save(),
+        'binary':[binary_i.save() 
+            for binary_i in ens.binary]}
+    with gzip.open(in_path, 'wb') as f:
+        json_str = json.dumps(raw_dict) + "\n"               # 2. string (i.e. JSON)
+        json_bytes = json_str.encode('utf-8') 
+        f.write(json_bytes)
+
+
 
 #class RawBinary(object):
 #    def __init__(self,clf_type=None):
