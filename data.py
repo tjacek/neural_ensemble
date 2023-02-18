@@ -149,6 +149,10 @@ class NameList(list):
             stats_dict[cat_i]+=1
         return stats_dict
 
+    def save(self,out_path):
+        with open(out_path, 'w') as f:
+            json.dump(self, f)
+
 class Name(str):
     def __new__(cls, p_string):
         return str.__new__(cls, p_string)
@@ -165,7 +169,7 @@ class Name(str):
     def set_train(self,trainset:bool):
         raw=self.split('_')
         raw[1]=str(int(trainset))
-        return Name('_'.join(raw))  
+        return Name('_'.join(raw))          
 
 def read_data(in_path):
     with open(in_path, 'r') as f:

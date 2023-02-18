@@ -4,7 +4,9 @@ import utils,data,ens
 class Transform(object):
     def __init__(self,reader=None,writer=None):
         if( reader is None ):
-            reader=ens.GzipReader
+            reader=ens.GzipReader()
+        if( writer is None ):
+            writer=ens.npy_writer
         self.reader=reader
         self.writer=writer
 
@@ -13,8 +15,8 @@ class Transform(object):
         def helper(in_path,out_path):
             print(in_path)
             ens_i=self.reader(in_path)
-            print(type(ens_i))
             print(out_path)
+            self.writer(ens_i,out_path)
         helper(in_path,out_path)
 #    factory=ens.EnsembleFactory()
 #    paths=data.top_files(f'{in_path}/feats')
@@ -26,4 +28,4 @@ class Transform(object):
 #        print(out_i)
 
 transform= Transform()
-transform('../uci_gzip','test')
+transform('../positional_voting/ECSCF/imb_gzip','test')

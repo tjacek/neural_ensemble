@@ -80,6 +80,24 @@ def unify_cv(dir_path='feats',show=False):
         return decor_fun
     return helper
 
+def dir_map(depth=2):
+    def helper(fun):
+        def rec_fun(in_path,out_path,counter=0):
+            if(counter==depth):
+                fun(in_path,out_path)
+            else:
+                data.make_dir(out_path)
+                for in_i in data.top_files(in_path):
+                    name_i=in_i.split('/')[-1]
+                    out_i=f"{out_path}/{name_i}"                
+                    rec_fun(in_i,out_i,counter+1)
+        @wraps(fun)
+        def decor_fun(in_path,out_path):#*args, **kwargs):
+#            in_path,out_path=args[1],args[2]
+            rec_fun(in_path,out_path,0)
+        return decor_fun
+    return helper
+
 def is_object(args):
     if(type(args[0])==str):
         return 0

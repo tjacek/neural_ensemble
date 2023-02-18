@@ -1,4 +1,4 @@
-import learn,data
+import numpy as np
 import json,gzip
 import learn,data
 
@@ -49,16 +49,26 @@ class GzipReader(object):
                 for binary_i in raw_dict['binary']]
             return Ensemble(common,binary,self.clf_type)
 
-def gzip_writer(ens,in_path):
+def gzip_writer(ens,out_path):
     raw_dict={'common':ens.save(),
         'binary':[binary_i.save() 
             for binary_i in ens.binary]}
-    with gzip.open(in_path, 'wb') as f:
-        json_str = json.dumps(raw_dict) + "\n"               # 2. string (i.e. JSON)
+    with gzip.open(out_path, 'wb') as f:
+        json_str = json.dumps(raw_dict) + "\n"          
         json_bytes = json_str.encode('utf-8') 
         f.write(json_bytes)
 
-
+def npy_writer(ens,out_path):
+    data.make_dir(out_path)
+    names=ens.common.names()
+    feats=[ens.common]+ens.binary
+    X=[]
+    for feat_i in feats:
+        x_i=[feat_i[name_j] for name_j in names]
+        X.append(x_i)
+    X=np.array(X)
+    names.save(f'{out_path}/names')
+    np.savez_compressed(f'{out_path}/feats',X)
 
 #class RawBinary(object):
 #    def __init__(self,clf_type=None):
