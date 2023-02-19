@@ -24,16 +24,16 @@ class Ensemble(object):
             return learn.Votes(results)
         return learn.voting(results)
 
-class EnsembleFactory(object):
-    def __init__(self,clf_type='LR'):
-        self.clf_type=clf_type
+#class EnsembleFactory(object):
+#    def __init__(self,clf_type='LR'):
+#        self.clf_type=clf_type
 
-    def __call__(self,in_path):
-        common_path=f'{in_path}/common'
-        binary_path=f'{in_path}/binary'
-        common=data.read_data(common_path)
-        binary=data.read_data_group(binary_path)
-        return Ensemble(common,binary,self.clf_type)
+#    def __call__(self,in_path):
+#        common_path=f'{in_path}/common'
+#        binary_path=f'{in_path}/binary'
+#        common=data.read_data(common_path)
+#        binary=data.read_data_group(binary_path)
+#        return Ensemble(common,binary,self.clf_type)
 
 class GzipReader(object):
     def __init__(self,clf_type='LR'):
@@ -47,7 +47,7 @@ class GzipReader(object):
             common=data.DataDict(raw_dict['common'])
             binary=[ data.DataDict(binary_i)
                 for binary_i in raw_dict['binary']]
-            return Ensemble(common,binary,self.clf_type)
+            return Ensemble(common,binary,self.clf_type) 
 
 def gzip_writer(ens,out_path):
     raw_dict={'common':ens.save(),
@@ -58,17 +58,46 @@ def gzip_writer(ens,out_path):
         json_bytes = json_str.encode('utf-8') 
         f.write(json_bytes)
 
-def npy_writer(ens,out_path):
+class NPZReader(object):
+    def __init__(self,clf_type='LR'):
+        self.clf_type=clf_type
+
+    def __call__(self,in_path):
+        feat_path=f'{in_path}/feats.npz'
+        name_path=f'{in_path}/names'
+        raw_feats=np.load(feat_path)
+        common=raw_feats['common']
+        binary=[]
+        for key_i in raw_feats:
+            if(key_i!='common'):
+                binary.append(raw_feats[key_i])
+        with open(name_path, 'r') as f:
+            names= json.load(f)
+        common=np_to_dict(names,common)
+        binary=[np_to_dict(names,binary_i) 
+                for binary_i in binary]
+        return Ensemble(common,binary,self.clf_type) 
+
+#        with gzip.open(in_path, 'r') as f:
+#            raw_feats = f.read() 
+#        raise Exception(names)
+
+def npz_writer(ens,out_path):
     data.make_dir(out_path)
     names=ens.common.names()
-    feats=[ens.common]+ens.binary
-    X=[]
-    for feat_i in feats:
+    feats=[('common',ens.common)]
+    feats+=[(f'binary_{i}',binary_i) 
+         for i,binary_i in enumerate(ens.binary)]
+    arr_dict={}
+    for key_i,feat_i in feats:
         x_i=[feat_i[name_j] for name_j in names]
-        X.append(x_i)
-    X=np.array(X)
+        arr_dict[key_i]= x_i
     names.save(f'{out_path}/names')
-    np.savez_compressed(f'{out_path}/feats',X)
+    np.savez_compressed(f'{out_path}/feats',**arr_dict)
+
+def np_to_dict(names,arr):
+    raw_dict= {name_i:arr_i for name_i,arr_i in zip(names,arr)}
+    return data.DataDict(raw_dict)
 
 #class RawBinary(object):
 #    def __init__(self,clf_type=None):
