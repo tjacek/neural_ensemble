@@ -24,6 +24,9 @@ class Ensemble(object):
             return learn.Votes(results)
         return learn.voting(results)
 
+    def __str__(self):
+        return 'NCSCF'
+
 def gzip_reader(in_path):
     with gzip.open(in_path, 'r') as f:        
         json_bytes = f.read()                      
