@@ -43,6 +43,9 @@ class Result(data.DataDict):
             y_true.append(name_i.get_cat())
         return y_pred,y_true
     
+    def types(self):
+        return [type(key_i) for key_i in self]
+
     def get_acc(self):
         y_pred,y_true=self.get_pred()
         return accuracy_score(y_pred,y_true)
@@ -70,7 +73,7 @@ def voting(results):
             for result_i in results]
         count_i=np.sum(ballot_i ,axis=0)
         cat_i=np.argmax(count_i)
-        pairs.append((name_i,cat_i))
+        pairs.append((name_i,cat_i))    
     return Result(pairs)
 
 def fit_clf(data_dict_i,clf_type=None,balance=False):

@@ -35,7 +35,7 @@ def gzip_reader(in_path):
         common=data.DataDict(raw_dict['common'])
         binary=[ data.DataDict(binary_i)
             for binary_i in raw_dict['binary']]
-        return Ensemble(common,binary,self.clf_type) 
+        return common,binary #Ensemble(common,binary,self.clf_type) 
 
 def gzip_writer(ens,out_path):
     raw_dict={'common':ens.save(),
@@ -57,6 +57,8 @@ def npz_reader(in_path):
             binary.append(raw_feats[key_i])
     with open(name_path, 'r') as f:
         names= json.load(f)
+        names=[ data.Name(name_i) 
+            for name_i in names]
     common=np_to_dict(names,common)
     binary=[np_to_dict(names,binary_i) 
             for binary_i in binary]

@@ -11,18 +11,22 @@ class ESCFExp(object):
 
     @utils.dir_fun(False)
     def __call__(self,in_path):
-        lines=[]
-        for alg_i in self.ens_types:
-            for clf_j in self.clf_types:
-                @utils.dir_fun(as_dict=False)
-                @utils.unify_cv(dir_path=None)
-                def helper(path_i):
-                    common,binary=self.ensemble_reader(path_i)
+       
+        @utils.dir_fun(as_dict=False)
+        @utils.unify_cv(dir_path=None)
+        def helper(path_i):
+            common,binary=self.ensemble_reader(path_i)
+            result_dict={}
+            for alg_i in self.ens_types:
+                for clf_j in self.clf_types:
                     ens_i=alg_i(common,binary,clf_j)
                     result_i=ens_i.evaluate()
-                    return result_i
-                acc=helper(in_path)
-                print((alg_i,clf_j,acc))
+                    id_ij=",".join([str(ens_i),clf_j])
+                    result_dict[id_ij]=result_i
+            return result_dict
+        acc=helper(in_path)
+        raise Exception(acc)
+        print((alg_i,clf_j,acc))
 
 exp=ESCFExp()
 exp('test')

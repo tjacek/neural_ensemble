@@ -62,23 +62,49 @@ def unify_cv(dir_path='feats',show=False):
         @wraps(fun)
         def decor_fun(*args, **kwargs):
             results=[]
-            k=is_object(args)
-            if(dir_path is None):
-                main_path=args[k]
-            else:
-                main_path=f'{args[k]}/{dir_path}'
-            for path_i in get_paths(main_path):#data.top_files(main_path):
+            k,main_path=find_path(args,dir_path)
+            for path_i in get_paths(main_path):
                 args=list(args)
                 args[k]=path_i
                 result_i=fun(*args,**kwargs)
                 results.append(result_i)
-            full_results=learn.unify_results(results)
-            acc= full_results.get_acc()
+            if(type(results[0])==dict ):
+                acc={}
+                for key_i in results[0].keys():
+                    by_key_i=[r_j[key_i] for r_j in results]
+                    full_i=learn.unify_results(by_key_i)
+                    acc[key_i]=full_i.get_acc()
+            else:
+                full_results=learn.unify_results(results)
+                acc= full_results.get_acc()
             if(show):
                 print(acc)
             return acc  
         return decor_fun
     return helper
+
+#def unify_cv(dir_path='feats',show=False):
+#    def helper(fun):
+#        @wraps(fun)
+#        def decor_fun(*args, **kwargs):
+#            results=[]
+#            k=is_object(args)
+#            if(dir_path is None):
+#                main_path=args[k]
+#            else:
+#                main_path=f'{args[k]}/{dir_path}'
+#            for path_i in get_paths(main_path):
+#                args=list(args)
+#                args[k]=path_i
+#                result_i=fun(*args,**kwargs)
+#                results.append(result_i)
+#            full_results=learn.unify_results(results)
+#            acc= full_results.get_acc()
+#            if(show):
+#                print(acc)
+#            return acc  
+#        return decor_fun
+#    return helper
 
 def dir_map(depth=2):
     def helper(fun):
@@ -97,6 +123,13 @@ def dir_map(depth=2):
             rec_fun(in_path,out_path,0)
         return decor_fun
     return helper
+
+def find_path(args,dir_path):
+    k=is_object(args)
+    if(dir_path is None):
+        return k,args[k]
+    else:
+        return k,f'{args[k]}/{dir_path}'
 
 def is_object(args):
     if(type(args[0])==str):
