@@ -1,4 +1,5 @@
 import numpy as np
+import sys
 import ens,utils
 
 class ESCFExp(object):
@@ -22,7 +23,7 @@ class ESCFExp(object):
                     ens_i=alg_i(common,binary,clf_j)
                     result_i=ens_i.evaluate()
                     id_ij=",".join([str(ens_i),clf_j])
-                    print(id_ij)
+#                    print(id_ij)
                     result_dict[id_ij]=result_i
             return result_dict
         acc=helper(in_path)    
@@ -56,7 +57,10 @@ if __name__ == "__main__":
     if(len(sys.argv)>1):
         data_dir= sys.argv[1]
     else:
-        data_dir='test'#['test/wine']
+        data_dir='uci_npz'#['test/wine']
+    if(len(sys.argv)>2):
+        data_dir=[ f'{data_dir}/{path_i}' 
+            for path_i in sys.argv[2:]]
     exp=build_exp()
-    line_dict=exp('test')
+    line_dict=exp(data_dir)
     format(line_dict)
