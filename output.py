@@ -46,6 +46,17 @@ def format(line_dict):
             lines.append(f'{data_i},{line_j}')
     print('\n'.join(lines))
 
-exp=ESCFExp()
-line_dict=exp('test')
-format(line_dict)
+def build_exp():
+    ens_types=[ens.Ensemble,
+        ens.BinaryEnsemble,ens.NoEnsemble]
+    clf_types=['LR','RF']
+    return ESCFExp(ens_types,clf_types)
+
+if __name__ == "__main__":
+    if(len(sys.argv)>1):
+        data_dir= sys.argv[1]
+    else:
+        data_dir='test'#['test/wine']
+    exp=build_exp()
+    line_dict=exp('test')
+    format(line_dict)

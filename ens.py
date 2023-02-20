@@ -13,7 +13,7 @@ class Ensemble(object):
         if(self.full is None):
             self.full=[ self.common.concat(binary_i) 
                 for binary_i in self.binary]
-        print(len(self.full))
+#        print(len(self.full))
         results=[]
         for full_i in self.full:
             result_i=learn.fit_clf(full_i,self.clf_type)
@@ -25,7 +25,35 @@ class Ensemble(object):
         return learn.voting(results)
 
     def __str__(self):
-        return 'NCSCF'
+        return 'NECSCF'
+
+class NoEnsemble(object):        
+    def __init__(self,common,binary,clf_type='LR'):
+        self.common=common
+        self.clf_type=clf_type
+
+    def evaluate(self):
+        result_i=learn.fit_clf(self.common,self.clf_type)
+        result_i=result_i.split()[1]
+        return result_i
+ 
+    def __str__(self):
+        return 'common'
+
+class BinaryEnsemble(object):
+    def __init__(self,common,binary,clf_type=None):
+        self.binary=binary 
+        self.clf_type=clf_type
+
+    def evaluate(self):
+        results=[]
+        for binary_i in self.binary:
+            result_i=learn.fit_clf(binary_i,self.clf_type)
+            results.append(result_i.split()[1])
+        return learn.voting(results)#.get_acc()
+      
+    def __str__(self):
+        return 'binary'
 
 def gzip_reader(in_path):
     with gzip.open(in_path, 'r') as f:        
@@ -80,15 +108,6 @@ def npz_writer(ens,out_path):
 def np_to_dict(names,arr):
     raw_dict= {name_i:arr_i for name_i,arr_i in zip(names,arr)}
     return data.DataDict(raw_dict)
-
-#class RawBinary(object):
-#    def __init__(self,clf_type=None):
-#        self.clf_type=clf_type
-
-#    def __call__(self,in_path):
-#        binary_path=f'{in_path}/binary'
-#        binary=data.read_data_group(binary_path)
-#        return Ensemble(binary,binary,self.clf_type)
 
 if __name__ == "__main__":
     in_path='imb/wall-following/0/feats/0'
