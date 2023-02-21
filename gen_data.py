@@ -38,6 +38,6 @@ def find_hyperparams(train,params,ensemble_type=None,n_split=2):
     best_params= bayes_cf(*train_tuple)
     return best_params
 
-in_path='../imb_json/cleveland'
+in_path='wine.json'#'../imb_json/cleveland'
 protocol=Protocol()
 protocol(in_path)

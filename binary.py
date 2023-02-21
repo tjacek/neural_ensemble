@@ -1,7 +1,7 @@
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.linear_model import LogisticRegression
 import numpy as np
-import ens,nn
+import ens,nn,data
 
 class NECSCF(object):
     def __init__(self,clf_type='LR',ens_type=None,
@@ -14,6 +14,7 @@ class NECSCF(object):
         self.ens_type=ens_type
         self.ens_writer=ens_writer
         self.extractors=[]
+        self.train_data=None
 
     def make_extractor(self,X,targets,n_hidden=200,
             n_epochs=200,batch_size=32):
@@ -26,8 +27,10 @@ class NECSCF(object):
                 epochs=n_epochs,batch_size=batch_size)
             extractor_i= nn.get_extractor(model_i)
             self.extractors.append(extractor_i)
+        self.train_data=(X,targets)
         return self.extractors
 
+#    def 
 
 class SciktFacade(BaseEstimator, ClassifierMixin):
     def __init__(self,n_hidden=200,n_epochs=200,necscf=None):
@@ -41,17 +44,19 @@ class SciktFacade(BaseEstimator, ClassifierMixin):
     def fit(self,X,targets):
         self.necscf.make_extractor(X,targets,self.n_hidden,
             self.n_epochs,self.batch_size)
-#        self.clf_alg=LogisticRegression(solver='liblinear')
-#        self.make_extractor(X,targets)         
-#        features= self.gen_features(X)
-#        for feat_i,extractor_i in zip(features,self.extractors):
-#            clf_i=self.clf_alg.fit(feat_i,targets)
-#            facade_i=MulticlassFacade(clf_i,extractor_i)
-#            self.estimators_.append(facade_i)
         return self     
 
     def predict(self,X):
-        return self.clf_alg.predict(X)
+        X_train,y_train= self.necscf.train_data
+        tmp_data=data.from_tuple(X_train,y_train,test=False)
+        for i,x_i in enumerate(X):
+            name_i=data.Name(f'1_1_{i}')
+            tmp_data[name_i]=x_i
+        train,test= tmp_data.split()
+
+        raise Exception((len(train),len(test)))
+
+        return  #self.clf_alg.predict(X)
 #        y=[]
 #        for model_i in self.estimators_:
 #            y_i=model_i.predict_proba(X)
