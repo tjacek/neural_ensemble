@@ -16,6 +16,11 @@ class NECSCF(object):
         self.extractors=[]
         self.train_data=None
 
+    def  __call__(self,common):
+        binary=self.gen_binary(common)
+        ens_instance=self.ens_type(common,binary)
+        return ens_instance.evaluate()
+
     def make_extractor(self,X,targets,n_hidden=200,
             n_epochs=200,batch_size=32):
         n_cats=max(targets)+1
@@ -30,7 +35,15 @@ class NECSCF(object):
         self.train_data=(X,targets)
         return self.extractors
 
-#    def 
+    def gen_binary(self,common):
+        binary=[]
+        X,y,names=common.as_dataset()
+        for extractor_i in self.extractors:
+            binary_i=extractor_i.predict(X)
+            pairs_i=[ (name_j,x_ij) 
+                for name_j,x_ij in zip(names,binary_i)]
+            binary.append(data.DataDict(pairs_i))
+        return binary
 
 class SciktFacade(BaseEstimator, ClassifierMixin):
     def __init__(self,n_hidden=200,n_epochs=200,necscf=None):
@@ -52,18 +65,10 @@ class SciktFacade(BaseEstimator, ClassifierMixin):
         for i,x_i in enumerate(X):
             name_i=data.Name(f'1_1_{i}')
             tmp_data[name_i]=x_i
-        train,test= tmp_data.split()
-
-        raise Exception((len(train),len(test)))
-
-        return  #self.clf_alg.predict(X)
-#        y=[]
-#        for model_i in self.estimators_:
-#            y_i=model_i.predict_proba(X)
-#            y.append(y_i)
-#        y=np.array(y)
-#        target=np.sum(y,axis=0)
-#        return np.argmax(target,axis=1)
+        
+        result= self.necscf(tmp_data)
+        y_pred=  result.get_pred()[0]
+        return y_pred #self.clf_alg.predict(X)
 
 def binarize(cat_i,targets):
     y_i=np.zeros((len(targets),2))

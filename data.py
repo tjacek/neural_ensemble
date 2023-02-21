@@ -97,22 +97,22 @@ class DataDict(dict):
             concat_data[name_i]=concat_i
         return concat_data    
 
-class DataGroup(list):
-    def __new__(cls, name_list=None):
-        if(name_list is None):
-            name_list=[]
-        return list.__new__(cls,name_list)
+#class DataGroup(list):
+#    def __new__(cls, name_list=None):
+#        if(name_list is None):
+#            name_list=[]
+#        return list.__new__(cls,name_list)
 
-    def save(self,out_path):
-        make_dir(out_path)
-        for i,data_i in enumerate(self):
-            data_i.convert()
-            data_i.save(f'{out_path}/{i}')
+#    def save(self,out_path):
+#        make_dir(out_path)
+#        for i,data_i in enumerate(self):
+#            data_i.convert()
+#            data_i.save(f'{out_path}/{i}')
 
-def read_data_group(in_path):
-    paths=top_files(in_path)
-    datasets=[ read_data(path_i) for path_i in paths]
-    return DataGroup(datasets)
+#def read_data_group(in_path):
+#    paths=top_files(in_path)
+#    datasets=[ read_data(path_i) for path_i in paths]
+#    return DataGroup(datasets)
 
 class NameList(list):
     def __new__(cls, name_list=None):
@@ -177,6 +177,14 @@ def read_data(in_path):
         data_dict={ Name(name_i):np.array(data_i)
             for name_i,data_i in data_dict.items()}
         return DataDict(data_dict)
+
+def from_tuple(X,y,test=False):
+    test=int(test)
+    data_dict=DataDict()
+    for i,(x_i,y_i) in enumerate(zip(X,y)):
+        name_i=Name(f'{y_i}_{test}_{i}')
+        data_dict[name_i]=x_i
+    return data_dict
 
 def make_dir(path):
     if(not os.path.isdir(path)):
