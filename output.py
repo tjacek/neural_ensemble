@@ -1,5 +1,6 @@
 import numpy as np
 import sys
+from configparser import ConfigParser
 import ens,utils
 
 class ESCFExp(object):
@@ -23,7 +24,6 @@ class ESCFExp(object):
                     ens_i=alg_i(common,binary,clf_j)
                     result_i=ens_i.evaluate()
                     id_ij=",".join([str(ens_i),clf_j])
-#                    print(id_ij)
                     result_dict[id_ij]=result_i
             return result_dict
         acc=helper(in_path)    
@@ -45,22 +45,35 @@ def format(line_dict):
     for data_i,lines_i in line_dict.items():
         for line_j in lines_i:
             lines.append(f'{data_i},{line_j}')
-    print('\n'.join(lines))
+    cols=['dataset','ens_type','clf_type',
+            'acc_mean','acc_std']
+    lines=[','.join(cols)]+lines
+    return '\n'.join(lines)
 
-def build_exp():
-    ens_types=[ens.Ensemble,
-        ens.BinaryEnsemble,ens.NoEnsemble]
-    clf_types=['LR','RF']
+def build_exp(clf_config):
+    ens_types= clf_config['ens_types'].split(',')
+    ens_types= [ens.get_ensemble(ens_i) for ens_i in ens_types]
+    clf_types=clf_config['clf_types'].split(',')
     return ESCFExp(ens_types,clf_types)
 
 if __name__ == "__main__":
     if(len(sys.argv)>1):
         data_dir= sys.argv[1]
     else:
-        data_dir='uci_npz'#['test/wine']
-    if(len(sys.argv)>2):
-        data_dir=[ f'{data_dir}/{path_i}' 
-            for path_i in sys.argv[2:]]
-    exp=build_exp()
+        data_dir='fast.cfg'
+    config_obj = ConfigParser()
+    config_obj.read(data_dir)
+    clf_config=config_obj['NCSCF']
+    exp=build_exp(clf_config)
+    in_path=clf_config['in_path']
+    if('datasets' in clf_config):
+        datasets=clf_config['datasets'].split(',')
+        data_dir=[ f'{in_path}/{path_i}' 
+                  for path_i in datasets]
+    else:
+        data_dir=in_path
     line_dict=exp(data_dir)
-    format(line_dict)
+    result_text=format(line_dict)
+    f = open(clf_config['out_path'],"w")
+    f.write(result_text)
+    f.close()

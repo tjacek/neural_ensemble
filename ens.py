@@ -13,7 +13,6 @@ class Ensemble(object):
         if(self.full is None):
             self.full=[ self.common.concat(binary_i) 
                 for binary_i in self.binary]
-#        print(len(self.full))
         results=[]
         for full_i in self.full:
             result_i=learn.fit_clf(full_i,self.clf_type)
@@ -54,6 +53,13 @@ class BinaryEnsemble(object):
       
     def __str__(self):
         return 'binary'
+
+def get_ensemble(ens_type):
+    if(ens_type=='binary'):
+        return BinaryEnsemble
+    if(ens_type=='common'):
+        return NoEnsemble
+    return Ensemble
 
 def gzip_reader(in_path):
     with gzip.open(in_path, 'r') as f:        
