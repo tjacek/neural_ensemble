@@ -9,11 +9,15 @@ class Protocol(object):
                           'n_epochs':[100,250,500]}
         self.search_space=search_space
 
-    def __call__(self,in_path,n_split=10):
+    def __call__(self,in_path,n_iters=10,n_split=10):
         ensemble_type=binary.SciktFacade
-        hyperparams=find_hyperparams(in_path,self.search_space,
-            ensemble_type=ensemble_type,n_split=n_split)
-        print(hyperparams)
+#        hyperparams=find_hyperparams(in_path,self.search_space,
+#            ensemble_type=ensemble_type,n_split=n_split)
+        raw_data=data.read_data(in_path)
+        for i in range(n_iters):
+            folds_i=make_folds(raw_data,k_folds=n_split)
+            for data_j in get_splits(raw_data,folds_i):
+                raise Exception(data_j.keys())
 
 class BayesOptim(object):
     def __init__(self,clf_alg,search_spaces,n_split=5):
@@ -37,6 +41,34 @@ def find_hyperparams(train,params,ensemble_type=None,n_split=2):
     train_tuple=train.as_dataset()[:2]
     best_params= bayes_cf(*train_tuple)
     return best_params
+
+def make_folds(data_dict,k_folds=10):
+    if(type(data_dict)==str):
+        data_dict=data.read_data(data_dict)
+    names=data_dict.names()
+    folds=[[] for i in range(k_folds)]
+    cats=names.by_cat()
+    for cat_i in cats.values():
+        cat_i.shuffle()
+        for j,name_j in enumerate(cat_i):
+            folds[j % k_folds].append(name_j)
+    return folds
+
+def get_splits(data_dict,folds):
+    for i in range(len(folds)):
+        test=folds[i]
+        train=[]
+        for j,fold_j in enumerate(folds):
+            if(i!=j):
+                train+=fold_j
+        new_names={}
+        for name_i in train:
+            name_i=data.Name(name_i)
+            new_names[name_i]=name_i.set_train(False)
+        for name_i in test:
+            name_i=data.Name(name_i)
+            new_names[name_i]=name_i.set_train(True)
+        yield data_dict.rename(new_names)
 
 in_path='wine.json'#'../imb_json/cleveland'
 protocol=Protocol()
