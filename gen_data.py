@@ -12,9 +12,11 @@ class Protocol(object):
     def __call__(self,in_path,out_path,n_iters=10,n_split=10):
         necscf=binary.NECSCF()
         ensemble_type=binary.SciktFacade
-#        hyperparams=find_hyperparams(in_path,self.search_space,
-#            ensemble_type=ensemble_type,n_split=n_split)
-        hyperparams={'n_hidden':25,'n_epochs':100,'batch_size':32}
+        hyperparams=find_hyperparams(in_path,self.search_space,
+            ensemble_type=ensemble_type,n_split=n_split)
+        hyperparams['batch_size']=32
+#        hyperparams={'n_hidden':25,'n_epochs':100,'batch_size':32}
+        print(hyperparams)
         raw_data=data.read_data(in_path)
         data.make_dir(out_path)
         for i in range(n_iters):
@@ -24,10 +26,7 @@ class Protocol(object):
             for j,data_j in enumerate(get_splits(raw_data,folds_i)):
                 necscf.fit( data_j,hyperparams)
                 ens_inst=necscf(data_j)
-#                raise Exception(necscf.ens_writer)
                 necscf.ens_writer(ens_inst,f'{out_i}/{j}')
-#                print(ens_inst.evaluate().get_acc())
-#                raise Exception('ok')
 
 class BayesOptim(object):
     def __init__(self,clf_alg,search_spaces,n_split=5):
