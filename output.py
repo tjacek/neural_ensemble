@@ -1,7 +1,7 @@
 import numpy as np
 import sys
-from configparser import ConfigParser
-import ens,utils
+#from configparser import ConfigParser
+import conf,ens,utils
 
 class ESCFExp(object):
     def __init__(self,ens_types=[ens.Ensemble],
@@ -61,19 +61,9 @@ if __name__ == "__main__":
         data_dir= sys.argv[1]
     else:
         data_dir='fast.cfg'
-    config_obj = ConfigParser()
-    config_obj.read(data_dir)
-    clf_config=config_obj['NCSCF']
+    clf_config=conf.read_conf(data_dir)
     exp=build_exp(clf_config)
-    in_path=clf_config['in_path']
-    if('datasets' in clf_config):
-        datasets=clf_config['datasets'].split(',')
-        data_dir=[ f'{in_path}/{path_i}' 
-                  for path_i in datasets]
-    else:
-        data_dir=in_path
+    data_dir=conf.get_data_dir(clf_config)
     line_dict=exp(data_dir)
     result_text=format(line_dict)
-    f = open(clf_config['out_path'],"w")
-    f.write(result_text)
-    f.close()
+    conf.save_result(clf_config,result_text)
