@@ -16,6 +16,9 @@ class NECSCF(object):
         self.extractors=[]
         self.train_data=None
 
+    def __str__(self):
+        return f'{self.clf_type},{str(self.ens_type)}'
+
     def  __call__(self,common):
         binary=self.gen_binary(common)
         ens_instance=self.ens_type(common,binary)

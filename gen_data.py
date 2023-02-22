@@ -1,6 +1,6 @@
 from sklearn.model_selection import RepeatedStratifiedKFold
 from skopt import BayesSearchCV
-import data,binary
+import conf,data,binary,ens
 
 class Protocol(object):
     def __init__(self,search_space=None):
@@ -9,14 +9,15 @@ class Protocol(object):
                           'n_epochs':[100,250,500]}
         self.search_space=search_space
 
-    def __call__(self,in_path,out_path,n_iters=10,n_split=10):
-        necscf=binary.NECSCF()
+    def __call__(self,in_path,out_path,alg, n_iters=10,n_split=10):
         ensemble_type=binary.SciktFacade
+        self.search_space['necscf']=[alg]
+
         hyperparams=find_hyperparams(in_path,self.search_space,
             ensemble_type=ensemble_type,n_split=n_split)
         hyperparams['batch_size']=32
+        print(alg)
 #        hyperparams={'n_hidden':25,'n_epochs':100,'batch_size':32}
-        print(hyperparams)
         raw_data=data.read_data(in_path)
         data.make_dir(out_path)
         for i in range(n_iters):
@@ -24,9 +25,10 @@ class Protocol(object):
             data.make_dir(out_i)
             folds_i=make_folds(raw_data,k_folds=n_split)
             for j,data_j in enumerate(get_splits(raw_data,folds_i)):
-                necscf.fit( data_j,hyperparams)
-                ens_inst=necscf(data_j)
-                necscf.ens_writer(ens_inst,f'{out_i}/{j}')
+                print(alg)
+                alg.fit( data_j,hyperparams)
+                ens_inst=alg(data_j)
+                alg.ens_writer(ens_inst,f'{out_i}/{j}')
 
 class BayesOptim(object):
     def __init__(self,clf_alg,search_spaces,n_split=5):
@@ -79,6 +81,23 @@ def get_splits(data_dict,folds):
             new_names[name_i]=name_i.set_train(True)
         yield data_dict.rename(new_names)
 
-in_path='wine.json'#'../imb_json/cleveland'
-protocol=Protocol()
-protocol(in_path,'test')
+def get_alg(clf_config):
+    clf_type=clf_config['clf_type']
+    ens_type=clf_config['ens_type']
+    ens_type=ens.get_ensemble(ens_type)
+    return binary.NECSCF(clf_type=clf_type,
+            ens_type=ens_type)
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--n_iters", type=int, default=10)
+    parser.add_argument("--n_split", type=int, default=10)
+    parser.add_argument("--conf", type=str, default='ens.cfg')
+    args = parser.parse_args()
+    clf_config=conf.read_conf(args.conf)
+    alg=get_alg(clf_config)
+
+    protocol=Protocol()
+    protocol(clf_config['in_path'],clf_config['out_path'],
+        alg,args.n_iters,args.n_split)
