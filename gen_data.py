@@ -9,15 +9,25 @@ class Protocol(object):
                           'n_epochs':[100,250,500]}
         self.search_space=search_space
 
-    def __call__(self,in_path,n_iters=10,n_split=10):
+    def __call__(self,in_path,out_path,n_iters=10,n_split=10):
+        necscf=binary.NECSCF()
         ensemble_type=binary.SciktFacade
 #        hyperparams=find_hyperparams(in_path,self.search_space,
 #            ensemble_type=ensemble_type,n_split=n_split)
+        hyperparams={'n_hidden':25,'n_epochs':100,'batch_size':32}
         raw_data=data.read_data(in_path)
+        data.make_dir(out_path)
         for i in range(n_iters):
+            out_i=f'{out_path}/{i}'
+            data.make_dir(out_i)
             folds_i=make_folds(raw_data,k_folds=n_split)
-            for data_j in get_splits(raw_data,folds_i):
-                raise Exception(data_j.keys())
+            for j,data_j in enumerate(get_splits(raw_data,folds_i)):
+                necscf.fit( data_j,hyperparams)
+                ens_inst=necscf(data_j)
+#                raise Exception(necscf.ens_writer)
+                necscf.ens_writer(ens_inst,f'{out_i}/{j}')
+#                print(ens_inst.evaluate().get_acc())
+#                raise Exception('ok')
 
 class BayesOptim(object):
     def __init__(self,clf_alg,search_spaces,n_split=5):
@@ -72,4 +82,4 @@ def get_splits(data_dict,folds):
 
 in_path='wine.json'#'../imb_json/cleveland'
 protocol=Protocol()
-protocol(in_path)
+protocol(in_path,'test')

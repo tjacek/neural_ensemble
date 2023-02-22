@@ -9,7 +9,7 @@ class NECSCF(object):
         if(ens_type is None):
             ens_type=ens.Ensemble
         if(ens_writer is None):
-            ens_reader=ens.npz_writer
+            ens_writer=ens.npz_writer
         self.clf_type=clf_type
         self.ens_type=ens_type
         self.ens_writer=ens_writer
@@ -19,7 +19,15 @@ class NECSCF(object):
     def  __call__(self,common):
         binary=self.gen_binary(common)
         ens_instance=self.ens_type(common,binary)
-        return ens_instance.evaluate()
+        return ens_instance#.evaluate()
+
+    def fit(self,data,hyper):
+        train=data.split()[0]
+        X_train,y_train,names=train.as_dataset()
+        n_hidden,n_epochs=hyper['n_hidden'],hyper['n_epochs']
+        batch_size=hyper['batch_size']
+        self.make_extractor(X_train,y_train,
+            n_hidden,n_epochs,batch_size)
 
     def make_extractor(self,X,targets,n_hidden=200,
             n_epochs=200,batch_size=32):
@@ -66,9 +74,10 @@ class SciktFacade(BaseEstimator, ClassifierMixin):
             name_i=data.Name(f'1_1_{i}')
             tmp_data[name_i]=x_i
         
-        result= self.necscf(tmp_data)
+        ens_inst= self.necscf(tmp_data)
+        result=ens_inst.evaluate()
         y_pred=  result.get_pred()[0]
-        return y_pred #self.clf_alg.predict(X)
+        return y_pred
 
 def binarize(cat_i,targets):
     y_i=np.zeros((len(targets),2))
