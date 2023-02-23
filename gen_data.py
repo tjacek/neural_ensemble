@@ -25,10 +25,10 @@ class Protocol(object):
             data.make_dir(out_i)
             folds_i=make_folds(raw_data,k_folds=n_split)
             for j,data_j in enumerate(get_splits(raw_data,folds_i)):
-                print(alg)
                 alg.fit( data_j,hyperparams)
                 ens_inst=alg(data_j)
                 alg.ens_writer(ens_inst,f'{out_i}/{j}')
+            print(alg)
 
 class BayesOptim(object):
     def __init__(self,clf_alg,search_spaces,n_split=5):

@@ -60,7 +60,7 @@ if __name__ == "__main__":
     if(len(sys.argv)>1):
         data_dir= sys.argv[1]
     else:
-        data_dir='fast.cfg'
+        data_dir='base.cfg'
     clf_config=conf.read_conf(data_dir)
     exp=build_exp(clf_config)
     data_dir=conf.get_data_dir(clf_config)
