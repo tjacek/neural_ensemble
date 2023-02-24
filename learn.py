@@ -87,7 +87,10 @@ def fit_clf(data_dict_i,clf_type=None,balance=False):
 #                class_weight='balanced')
 #        else:
 #            clf_i=LogisticRegression(solver='liblinear')
-    clf_i=get_clf(clf_type)
+    if(type(clf_type)==str):
+        clf_i=get_clf(clf_type)
+    else:
+        clf_i=clf_type
     clf_i.fit(X_train,y_train)
     X_test,y_true,names=test.as_dataset()
     y_pred=clf_i.predict_proba(X_test)
