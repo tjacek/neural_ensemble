@@ -3,7 +3,6 @@ from pathlib import Path
 sys.path.append(str(Path('.').absolute().parent))
 import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin
-#from sklearn.linear_model import LogisticRegression
 import json
 import data,nn,learn,folds
 
@@ -58,11 +57,11 @@ def experiment(in_path,out_path,n_iters=10,n_split=10):
         data.make_dir(out_i)
         folds_i=folds.make_folds(raw_data,k_folds=n_split)
         splits_i=folds.get_splits(raw_data,folds_i)
-        for j,data_j in enumerate(splits_i):
-            ens_ij= NeuralEnsemble()
-            learn.fit_clf(data_j,ens_ij)
+        for j,(data_j,rename_j) in enumerate(splits_i):
+            ens_j= NeuralEnsemble()
+            learn.fit_clf(data_j,ens_j)
             out_j=f'{out_i}/{j}'
-            save_fold(ens_ij,data_j,out_j)
+            save_fold(ens_j,rename_j,out_j)
     
 def binarize(cat_i,targets):
     y_i=np.zeros((len(targets),2))
@@ -70,10 +69,15 @@ def binarize(cat_i,targets):
         y_i[j][int(target_j==cat_i)]=1
     return y_i
 
-def save_fold(ens_ij,data_j,out_j):
+def save_fold(ens_j,rename_j,out_j):
     data.make_dir(out_j)
-    ens_ij.save(f'{out_j}/models')
-    data_j.names().save(f'{out_j}/names')
-    
+    ens_j.save(f'{out_j}/models')
+    with open(f'{out_j}/rename', 'wb') as f:
+        json_str = json.dumps(rename_j)         
+        json_bytes = json_str.encode('utf-8') 
+        f.write(json_bytes)
+
+#    data_j.names().save(f'{out_j}/names')
+
 in_path='../../uci/json/wine'
 experiment(in_path,'test')

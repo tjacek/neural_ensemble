@@ -178,13 +178,19 @@ def read_data(in_path):
             for name_i,data_i in data_dict.items()}
         return DataDict(data_dict)
 
-def from_tuple(X,y,test=False):
-    test=int(test)
+def from_names(X,names):
     data_dict=DataDict()
-    for i,(x_i,y_i) in enumerate(zip(X,y)):
-        name_i=Name(f'{y_i}_{test}_{i}')
+    for name_i,x_i in zip(names,X):
         data_dict[name_i]=x_i
     return data_dict
+
+#def from_tuple(X,y,test=False):
+#    test=int(test)
+#    data_dict=DataDict()
+#    for i,(x_i,y_i) in enumerate(zip(X,y)):
+#        name_i=Name(f'{y_i}_{test}_{i}')
+#        data_dict[name_i]=x_i
+#    return data_dict
 
 def make_dir(path):
     if(not os.path.isdir(path)):

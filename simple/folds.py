@@ -26,4 +26,4 @@ def get_splits(data_dict,folds):
         for name_i in test:
             name_i=data.Name(name_i)
             new_names[name_i]=name_i.set_train(True)
-        yield data_dict.rename(new_names)
+        yield data_dict.rename(new_names),new_names
