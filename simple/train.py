@@ -4,7 +4,8 @@ sys.path.append(str(Path('.').absolute().parent))
 import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin
 #from sklearn.linear_model import LogisticRegression
-import data,nn,learn
+import json
+import data,nn,learn,folds
 
 class NeuralEnsemble(BaseEstimator, ClassifierMixin):
     def __init__(self,n_hidden=200,n_epochs=200):
@@ -43,13 +44,25 @@ class NeuralEnsemble(BaseEstimator, ClassifierMixin):
     def predict(self,X):
         prob=self.predict_proba(X)
         return np.argmax(prob,axis=0)
-        
-def experiment(in_path):
+
+    def save(self,out_path):
+        data.make_dir(out_path)
+        for i,extr_i in enumerate(self.extractors):
+            extr_i.save(f'{out_path}/{i}')
+
+def experiment(in_path,out_path,n_iters=10,n_split=10):
     raw_data=data.read_data(in_path)
-    ne= NeuralEnsemble()
-    result=learn.fit_clf(raw_data,clf_type=ne)
-    print(result.get_acc())
-    print(dir(ne))
+    data.make_dir(out_path)
+    for i in range(n_iters):
+        out_i=f'{out_path}/{i}'
+        data.make_dir(out_i)
+        folds_i=folds.make_folds(raw_data,k_folds=n_split)
+        splits_i=folds.get_splits(raw_data,folds_i)
+        for j,data_j in enumerate(splits_i):
+            ens_ij= NeuralEnsemble()
+            learn.fit_clf(data_j,ens_ij)
+            out_j=f'{out_i}/{j}'
+            save_fold(ens_ij,data_j,out_j)
     
 def binarize(cat_i,targets):
     y_i=np.zeros((len(targets),2))
@@ -57,5 +70,10 @@ def binarize(cat_i,targets):
         y_i[j][int(target_j==cat_i)]=1
     return y_i
 
+def save_fold(ens_ij,data_j,out_j):
+    data.make_dir(out_j)
+    ens_ij.save(f'{out_j}/models')
+    data_j.names().save(f'{out_j}/names')
+    
 in_path='../../uci/json/wine'
-experiment(in_path)
+experiment(in_path,'test')
