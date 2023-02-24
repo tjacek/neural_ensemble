@@ -4,16 +4,22 @@ sys.path.append(str(Path('.').absolute().parent))
 from tensorflow import keras
 import numpy as np
 import json
-import data,learn,utils,ens_feats
+import conf,data,learn,utils,ens_feats
 
-def eval(data_path,model_path,clf_types=['LR','RF'],
+def exp(data_path,model_path,clf_types=['LR','RF'],
 	        ens_types=['base','common','binary']):
     raw_data=data.read_data(data_path)
     helper= get_fold_fun(raw_data,clf_types,ens_types)
     acc=[helper(path_i) 
         for path_i in data.top_files(model_path)]
-#    line=stats(acc)
-    print(acc)
+    acc_dict={ id_i:[] for id_i in acc[0].keys()}
+    for acc_i in acc:
+        for key_j,value_j in acc_i.items():
+            acc_dict[key_j].append(value_j) 
+    lines=[]
+    for id_i,acc_i in acc_dict.items():
+    	lines.append(f'{id_i},{stats(acc_i)}')
+    return lines
 
 def get_fold_fun(raw_data,clf_types,ens_types):
     ens_types=[ens_feats.get_ensemble(type_i)
@@ -53,6 +59,14 @@ def stats(acc,as_str=True):
         return ','.join(raw)
     return raw
 
-data_path='../../uci/json/wine'
-model_path='test'
-eval(data_path,model_path)
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--json", type=str, default='../../uci/json/wine')
+    parser.add_argument("--models", type=str, default='models')
+    parser.add_argument("--result", type=str, default='result.csv')
+    args = parser.parse_args()
+    lines= exp(args.json,args.models)
+    f = open(args.result,"w")
+    f.write('\n'.join(lines))
+    f.close()

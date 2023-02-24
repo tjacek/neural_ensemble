@@ -49,7 +49,7 @@ class NeuralEnsemble(BaseEstimator, ClassifierMixin):
         for i,extr_i in enumerate(self.extractors):
             extr_i.save(f'{out_path}/{i}')
 
-def experiment(in_path,out_path,n_iters=10,n_split=10):
+def gen_data(in_path,out_path,n_iters=10,n_split=10):
     raw_data=data.read_data(in_path)
     data.make_dir(out_path)
     for i in range(n_iters):
@@ -77,7 +77,13 @@ def save_fold(ens_j,rename_j,out_j):
         json_bytes = json_str.encode('utf-8') 
         f.write(json_bytes)
 
-#    data_j.names().save(f'{out_j}/names')
-
-in_path='../../uci/json/wine'
-experiment(in_path,'test')
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--n_iters", type=int, default=10)
+    parser.add_argument("--n_split", type=int, default=10)
+    parser.add_argument("--json", type=str, default='../../uci/json/wine')
+    parser.add_argument("--models", type=str, default='models')
+    args = parser.parse_args()
+    gen_data(args.json,args.models,
+        n_iters=args.n_iters,n_split=args.n_split)
