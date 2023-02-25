@@ -4,7 +4,7 @@ sys.path.append(str(Path('.').absolute().parent))
 import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin
 import json
-import data,nn,learn,folds
+import data,nn,learn,folds,utils
 
 class NeuralEnsemble(BaseEstimator, ClassifierMixin):
     def __init__(self,n_hidden=200,n_epochs=200):
@@ -77,13 +77,19 @@ def save_fold(ens_j,rename_j,out_j):
         json_bytes = json_str.encode('utf-8') 
         f.write(json_bytes)
 
+def multi_exp(in_path,out_path,n_iters=10,n_split=10):
+    @utils.dir_map(depth=1)
+    def helper(in_path,out_path):
+        gen_data(in_path,out_path,n_iters,n_split)
+    helper(in_path,out_path) 
+
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--n_iters", type=int, default=10)
     parser.add_argument("--n_split", type=int, default=10)
-    parser.add_argument("--json", type=str, default='../../uci/json/wine')
-    parser.add_argument("--models", type=str, default='models')
+    parser.add_argument("--json", type=str, default='../uci/json')
+    parser.add_argument("--models", type=str, default='../uci/_models')
     args = parser.parse_args()
-    gen_data(args.json,args.models,
+    multi_exp(args.json,args.models,
         n_iters=args.n_iters,n_split=args.n_split)
