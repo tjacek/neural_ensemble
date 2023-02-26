@@ -59,14 +59,32 @@ def stats(acc,as_str=True):
         return ','.join(raw)
     return raw
 
+def save_lines(lines,out_path):
+    f = open(out_path,"w")
+    f.write('\n'.join(lines))
+    f.close()
+
+def multi_exp(data_path,model_path,out_path):
+    @utils.dir_fun(as_dict=True)
+    def helper(data_i):
+        name_i=data_i.split('/')[-1]
+        model_i=f'{model_path}/{name_i}'
+        return exp(data_i,model_i,['LR','RF'],
+            ['base','common','binary'])
+    lines_dict=helper(data_path)
+    lines=[]
+    for data_i,stats_i in lines_dict.items():
+        for stat_j in stats_i:
+            lines.append(f'{data_i},{stat_j}')
+    save_lines(lines,out_path)
+
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--json", type=str, default='../../uci/json/wine')
-    parser.add_argument("--models", type=str, default='models')
-    parser.add_argument("--result", type=str, default='result.csv')
+    parser.add_argument("--json", type=str, default='../uci/test')
+    parser.add_argument("--models", type=str, default='../uci/models')
+    parser.add_argument("--result", type=str, default='../uci/result.csv')
     args = parser.parse_args()
-    lines= exp(args.json,args.models)
-    f = open(args.result,"w")
-    f.write('\n'.join(lines))
-    f.close()
+    multi_exp(args.json,args.models,args.result)
+#    lines= exp(args.json,args.models)
+#    save_lines(lines,args.result)
