@@ -81,7 +81,7 @@ def multi_exp(data_path,model_path,out_path):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--json", type=str, default='../uci/test')
+    parser.add_argument("--json", type=str, default='../uci/json')
     parser.add_argument("--models", type=str, default='../uci/models')
     parser.add_argument("--result", type=str, default='../uci/result.csv')
     args = parser.parse_args()
