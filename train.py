@@ -2,6 +2,8 @@ import sys
 from pathlib import Path
 sys.path.append(str(Path('.').absolute().parent))
 import numpy as np
+from sklearn.model_selection import RepeatedStratifiedKFold
+from skopt import BayesSearchCV
 from sklearn.base import BaseEstimator, ClassifierMixin
 import json
 import data,nn,learn,folds,utils
@@ -42,23 +44,58 @@ class NeuralEnsemble(BaseEstimator, ClassifierMixin):
 
     def predict(self,X):
         prob=self.predict_proba(X)
-        return np.argmax(prob,axis=0)
+#        raise Exception(np.argmax(prob,axis=1).shape)
+        return np.argmax(prob,axis=1)
 
     def save(self,out_path):
         data.make_dir(out_path)
         for i,extr_i in enumerate(self.extractors):
             extr_i.save(f'{out_path}/{i}')
 
-def gen_data(in_path,out_path,n_iters=10,n_split=10):
+class BayesOptim(object):
+    def __init__(self,clf_alg,search_spaces,n_split=5):
+        self.clf_alg=clf_alg 
+        self.n_split=n_split
+        self.search_spaces=search_spaces
+
+    def __call__(self,X_train,y_train):
+        cv_gen=RepeatedStratifiedKFold(n_splits=self.n_split, 
+                n_repeats=1, random_state=1)
+        search = BayesSearchCV(estimator=self.clf_alg(), 
+            search_spaces=self.search_spaces,n_jobs=-1,cv=cv_gen)
+#        raise Exception( X_train.shape,len(y_train))
+
+        search.fit(X_train,y_train) 
+        best_estm=search.best_estimator_
+        return best_estm.get_params(deep=True)
+
+def find_hyperparams(train,params=None,ensemble_type=None,n_split=2):
+    if(type(train)==str):
+        train=data.read_data(train)
+    if(params is None):
+        params={'n_hidden':[25,50,100,200],
+                    'n_epochs':[100,200,300,500]}
+    if(ensemble_type is None):
+        ensemble_type=NeuralEnsemble
+    bayes_cf=BayesOptim(ensemble_type,params,n_split=n_split)
+    train_tuple=train.as_dataset()[:2]
+    best_params= bayes_cf(*train_tuple)
+    return best_params
+
+def gen_data(in_path,out_path,n_iters=10,n_split=10,bayes=True):
     raw_data=data.read_data(in_path)
     data.make_dir(out_path)
+    if(bayes):
+        hyperparams=find_hyperparams(raw_data)
+    else:
+        hyperparams={'n_hidden':200,'n_epochs':200}
     for i in range(n_iters):
         out_i=f'{out_path}/{i}'
         data.make_dir(out_i)
         folds_i=folds.make_folds(raw_data,k_folds=n_split)
         splits_i=folds.get_splits(raw_data,folds_i)
         for j,(data_j,rename_j) in enumerate(splits_i):
-            ens_j= NeuralEnsemble()
+            ens_j= NeuralEnsemble(**hyperparams)
             learn.fit_clf(data_j,ens_j)
             out_j=f'{out_i}/{j}'
             save_fold(ens_j,rename_j,out_j)
@@ -88,8 +125,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--n_iters", type=int, default=10)
     parser.add_argument("--n_split", type=int, default=10)
-    parser.add_argument("--json", type=str, default='../uci/json')
-    parser.add_argument("--models", type=str, default='../uci/_models')
+    parser.add_argument("--json", type=str, default='../uci/json/wine')
+    parser.add_argument("--models", type=str, default='models')
+    parser.add_argument("--bayes", type=bool, default=True)
     args = parser.parse_args()
-    multi_exp(args.json,args.models,
-        n_iters=args.n_iters,n_split=args.n_split)
+    gen_data(args.json,args.models,n_iters=args.n_iters,
+        n_split=args.n_split,bayes=args.bayes)
