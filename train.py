@@ -44,7 +44,6 @@ class NeuralEnsemble(BaseEstimator, ClassifierMixin):
 
     def predict(self,X):
         prob=self.predict_proba(X)
-#        raise Exception(np.argmax(prob,axis=1).shape)
         return np.argmax(prob,axis=1)
 
     def save(self,out_path):
@@ -63,8 +62,6 @@ class BayesOptim(object):
                 n_repeats=1, random_state=1)
         search = BayesSearchCV(estimator=self.clf_alg(), 
             search_spaces=self.search_spaces,n_jobs=-1,cv=cv_gen)
-#        raise Exception( X_train.shape,len(y_train))
-
         search.fit(X_train,y_train) 
         best_estm=search.best_estimator_
         return best_estm.get_params(deep=True)
@@ -114,10 +111,10 @@ def save_fold(ens_j,rename_j,out_j):
         json_bytes = json_str.encode('utf-8') 
         f.write(json_bytes)
 
-def multi_exp(in_path,out_path,n_iters=10,n_split=10):
+def multi_exp(in_path,out_path,n_iters=10,n_split=10,bayes=True):
     @utils.dir_map(depth=1)
     def helper(in_path,out_path):
-        gen_data(in_path,out_path,n_iters,n_split)
+        gen_data(in_path,out_path,n_iters,n_split,bayes)
     helper(in_path,out_path) 
 
 if __name__ == "__main__":
@@ -128,6 +125,11 @@ if __name__ == "__main__":
     parser.add_argument("--json", type=str, default='../uci/json/wine')
     parser.add_argument("--models", type=str, default='models')
     parser.add_argument("--bayes", type=bool, default=True)
+    parser.add_argument("--multi", type=bool, default=True)
     args = parser.parse_args()
-    gen_data(args.json,args.models,n_iters=args.n_iters,
+    if(args.multi):
+        fun=multi_exp
+    else:
+        fun=gen_data
+    fun(args.json,args.models,n_iters=args.n_iters,
         n_split=args.n_split,bayes=args.bayes)
