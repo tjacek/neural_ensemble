@@ -83,29 +83,6 @@ def unify_cv(dir_path='feats',show=False):
         return decor_fun
     return helper
 
-#def unify_cv(dir_path='feats',show=False):
-#    def helper(fun):
-#        @wraps(fun)
-#        def decor_fun(*args, **kwargs):
-#            results=[]
-#            k=is_object(args)
-#            if(dir_path is None):
-#                main_path=args[k]
-#            else:
-#                main_path=f'{args[k]}/{dir_path}'
-#            for path_i in get_paths(main_path):
-#                args=list(args)
-#                args[k]=path_i
-#                result_i=fun(*args,**kwargs)
-#                results.append(result_i)
-#            full_results=learn.unify_results(results)
-#            acc= full_results.get_acc()
-#            if(show):
-#                print(acc)
-#            return acc  
-#        return decor_fun
-#    return helper
-
 def dir_map(depth=2):
     def helper(fun):
         def rec_fun(in_path,out_path,counter=0):
@@ -116,10 +93,12 @@ def dir_map(depth=2):
                 for in_i in data.top_files(in_path):
                     name_i=in_i.split('/')[-1]
                     out_i=f"{out_path}/{name_i}"                
-                    rec_fun(in_i,out_i,counter+1)
+                    if(not os.path.exists(out_i)):
+                        rec_fun(in_i,out_i,counter+1)
+                    else:
+                        print(f'{out_i} exist')
         @wraps(fun)
-        def decor_fun(in_path,out_path):#*args, **kwargs):
-#            in_path,out_path=args[1],args[2]
+        def decor_fun(in_path,out_path):
             rec_fun(in_path,out_path,0)
         return decor_fun
     return helper
