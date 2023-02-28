@@ -9,27 +9,12 @@ import json
 import data,nn,learn,folds,utils
 
 class NeuralEnsemble(BaseEstimator, ClassifierMixin):
-    def __init__(self,n_hidden=200,n_epochs=200):
+    def __init__(self,n_hidden=250,n_epochs=200):
         self.n_hidden=n_hidden
         self.n_epochs=n_epochs
 
     def fit(self,X,targets):
-        self.extractors=[]
-        self.models=[]
-        n_cats=max(targets)+1
-        for cat_i in range(n_cats):
-            y_i=binarize(cat_i,targets)
-            nn_params={'dims':X.shape[1],'n_cats':2}
-            nn_i=nn.SimpleNN(n_hidden=self.n_hidden)(nn_params)
-            nn_i.fit(X,y_i,
-                epochs=self.n_epochs,batch_size=32)
-            extractor_i= nn.get_extractor(nn_i)
-            self.extractors.append(extractor_i)
-            binary_i=extractor_i.predict(X)
-            clf_i=learn.get_clf('LR')
-            full_i=np.concatenate([X,binary_i],axis=1)
-            clf_i.fit(full_i,targets)
-            self.models.append(clf_i)
+        raise NotImplementedError
 
     def predict_proba(self,X):
         votes=[]
@@ -50,6 +35,45 @@ class NeuralEnsemble(BaseEstimator, ClassifierMixin):
         data.make_dir(out_path)
         for i,extr_i in enumerate(self.extractors):
             extr_i.save(f'{out_path}/{i}')
+
+class OneVsAll(NeuralEnsemble):
+    def fit(self,X,targets):
+        self.extractors=[]
+        self.models=[]
+        n_cats=max(targets)+1
+        for cat_i in range(n_cats):
+            y_i=binarize(cat_i,targets)
+            nn_params={'dims':X.shape[1],'n_cats':2}
+            nn_i=nn.SimpleNN(n_hidden=self.n_hidden)(nn_params)
+            nn_i.fit(X,y_i,
+                epochs=self.n_epochs,batch_size=32)
+            extractor_i= nn.get_extractor(nn_i)
+            self.extractors.append(extractor_i)
+            binary_i=extractor_i.predict(X)
+            clf_i=learn.get_clf('LR')
+            full_i=np.concatenate([X,binary_i],axis=1)
+            clf_i.fit(full_i,targets)
+            self.models.append(clf_i)
+
+class OneVsAll(NeuralEnsemble):
+    def fit(self,X,targets):
+        self.extractors=[]
+        self.models=[]
+        n_cats=max(targets)+1
+        pairs = list(combinations(range(n_cats),2))
+        for i,j in pairs:
+            selected=[k for k,y_k in enumerate(targets)
+                        if((y_k==i) or (y_k==j))]
+            y_s=[ int(targets[k]==i) for k in selected]    
+            y_s= tf.keras.utils.to_categorical(y_s, num_classes = 2)
+            X_s=np.array([ X[k,:] for k in selected])
+            nn_params={'dims':X.shape[1],'n_cats':2}
+            model_i=nn.SimpleNN(n_hidden=self.n_hidden)(nn_params)
+            model_i.fit(X_s,y_s,
+                epochs=self.n_epochs,batch_size=self.batch_size)
+            extractor_i= nn.get_extractor(model_i)
+            self.extractors.append(extractor_i)
+        return self.extractors
 
 class BayesOptim(object):
     def __init__(self,clf_alg,search_spaces,n_split=5):
@@ -87,7 +111,7 @@ def gen_data(in_path,out_path,n_iters=10,n_split=10,bayes=True):
     else:
         hyperparams={'n_hidden':200,'n_epochs':200}
     for i in range(n_iters):
-        out_i=f'{out_path}/{i}'
+        out_ci=f'{out_path}/{i}'
         data.make_dir(out_i)
         folds_i=folds.make_folds(raw_data,k_folds=n_split)
         splits_i=folds.get_splits(raw_data,folds_i)
@@ -122,8 +146,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--n_iters", type=int, default=10)
     parser.add_argument("--n_split", type=int, default=10)
-    parser.add_argument("--json", type=str, default='../bayes/json/')
-    parser.add_argument("--models", type=str, default='../bayes/models')
+    parser.add_argument("--json", type=str, default='../uci/json/wine')
+    parser.add_argument("--models", type=str, default='models')
     parser.add_argument("--bayes", type=bool, default=True)
     parser.add_argument("--multi", type=bool, default=True)
     args = parser.parse_args()
