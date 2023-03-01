@@ -1,6 +1,24 @@
 import  numpy as np
 import os
+from tensorflow import keras
+
 import data,utils
+
+def show_dim(in_path):
+    @utils.dir_fun(as_dict=True)
+    def helper(in_path):
+        model_path=f'{in_path}/0/0/models/0'
+        nn=keras.models.load_model(model_path)
+        return nn.output.shape[1:][0]
+    dim_dict=helper(in_path)
+    lines=[ f'{id_i},{dim_i}' 
+        for id_i,dim_i in dim_dict.items()]
+    return '\n'.join(lines)
+
+def show_size(in_path):
+    stats=size_stats(in_path)
+    for name_i,stat_i in stats.items():
+        print(f'{name_i}:{stat_i[0]:.2}')
 
 @utils.dir_fun(True)
 def size_stats(in_path):
@@ -18,6 +36,5 @@ def get_size(in_path):
     return total_size
 
 in_path='../uci_npz/uci_10-fold/'
-stats=size_stats(in_path)
-for name_i,stat_i in stats.items():
-    print(f'{name_i}:{stat_i[0]:.2}')#,{stat_i[1]:.2}')
+txt=show_dim('test')
+print(txt)
