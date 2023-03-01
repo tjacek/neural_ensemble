@@ -1,10 +1,16 @@
 import sys
-from pathlib import Path
-sys.path.append(str(Path('.').absolute().parent))
+#from pathlib import Path
+#sys.path.append(str(Path('.').absolute().parent))
 from tensorflow import keras
 import numpy as np
 import json
 import conf,data,learn,utils,ens_feats
+import warnings
+def warn(*args,**kwargs):
+    pass
+import warnings
+warnings.warn=warn
+
 
 def exp(data_path,model_path,clf_types=['LR','RF'],
 	        ens_types=['base','common','binary']):
@@ -26,6 +32,7 @@ def get_fold_fun(raw_data,clf_types,ens_types):
         for type_i in ens_types]
     @utils.unify_cv(dir_path=None,show=False)
     def helper(in_path):
+        print(in_path)
         common,binary= gen_feats(raw_data,in_path)
         acc_dir={}
         for ens_i in ens_types:
@@ -38,7 +45,7 @@ def get_fold_fun(raw_data,clf_types,ens_types):
 
 def gen_feats(raw_data,in_path):
     model_path=f'{in_path}/models'
-    models=[keras.models.load_model(path_i)
+    models=[keras.models.load_model(path_i,compile=False)
         for path_i in data.top_files(model_path)]  
     rename_path=f'{in_path}/rename'
     with open(rename_path, 'r') as f:
@@ -81,9 +88,9 @@ def multi_exp(data_path,model_path,out_path):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--json", type=str, default='../uci/json')
-    parser.add_argument("--models", type=str, default='../uci/models')
-    parser.add_argument("--result", type=str, default='../uci/result.csv')
+    parser.add_argument("--json", type=str, default='../bayes/json')
+    parser.add_argument("--models", type=str, default='../bayes/models')
+    parser.add_argument("--result", type=str, default='../bayes/result.csv')
     args = parser.parse_args()
     multi_exp(args.json,args.models,args.result)
 #    lines= exp(args.json,args.models)
