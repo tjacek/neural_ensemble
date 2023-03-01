@@ -1,8 +1,17 @@
 import  numpy as np
 import os
 from tensorflow import keras
-
 import data,utils
+
+def show_bayes(in_path, n_split=10):
+    NeuralEnsemble=binary.get_ens('all')
+    @utils.dir_fun(as_dict=True)
+    def helper(in_path):    
+        raw_data=data.read_data(in_path)
+        return find_hyperparams(raw_data,
+            ensemble_type=NeuralEnsemble,n_split=n_split)
+    result_dict=helper(in_path)
+    return to_txt(result_dict)
 
 def show_dim(in_path):
     @utils.dir_fun(as_dict=True)
@@ -11,9 +20,7 @@ def show_dim(in_path):
         nn=keras.models.load_model(model_path)
         return nn.output.shape[1:][0]
     dim_dict=helper(in_path)
-    lines=[ f'{id_i},{dim_i}' 
-        for id_i,dim_i in dim_dict.items()]
-    return '\n'.join(lines)
+    return to_txt(dim_dict)
 
 def show_size(in_path):
     stats=size_stats(in_path)
@@ -35,6 +42,10 @@ def get_size(in_path):
     	    total_size+=size
     return total_size
 
-in_path='../uci_npz/uci_10-fold/'
+def to_txt(result_dict):
+    lines=[ f'{id_i},{str(result_i)}' 
+        for id_i,result_i in result_dict.items()]
+    return '\n'.join(lines)
+
 txt=show_dim('test')
 print(txt)
