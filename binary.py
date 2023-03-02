@@ -35,8 +35,8 @@ class NeuralEnsemble(BaseEstimator, ClassifierMixin):
     def train_extractor(self,X,y_i):
         nn_params={'dims':X.shape[1],'n_cats':2}
         nn_i=nn.SimpleNN(n_hidden=self.n_hidden)(nn_params)
-        nn_i.fit(X,y_i,
-                epochs=self.n_epochs,batch_size=32)
+        nn_i.fit(X,y_i,epochs=self.n_epochs,
+            batch_size=32,verbose = 0)
         extractor_i= nn.get_extractor(nn_i)
         self.extractors.append(extractor_i)
         return extractor_i

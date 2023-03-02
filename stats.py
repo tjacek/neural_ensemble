@@ -1,17 +1,21 @@
 import  numpy as np
 import os
 from tensorflow import keras
-import data,utils
+import binary,data,utils,train
 
-def show_bayes(in_path, n_split=10):
+def show_bayes(in_path, out_path,n_split=3):
     NeuralEnsemble=binary.get_ens('all')
-    @utils.dir_fun(as_dict=True)
+    f=open(out_path,'w')
+    @utils.dir_fun(as_dict=False)#True)
     def helper(in_path):    
         raw_data=data.read_data(in_path)
-        return find_hyperparams(raw_data,
+        hyper=train.find_hyperparams(raw_data,
             ensemble_type=NeuralEnsemble,n_split=n_split)
-    result_dict=helper(in_path)
-    return to_txt(result_dict)
+        name_i=in_path.split('/')[-1]
+        line=f'{name_i},{str(hyper)}\n'
+        f.write(line)
+        return hyper
+    result=helper(in_path)
 
 def show_dim(in_path):
     @utils.dir_fun(as_dict=True)
@@ -47,5 +51,4 @@ def to_txt(result_dict):
         for id_i,result_i in result_dict.items()]
     return '\n'.join(lines)
 
-txt=show_dim('test')
-print(txt)
+txt=show_bayes('small','bayes')

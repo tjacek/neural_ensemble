@@ -1,3 +1,4 @@
+import os
 import tensorflow.keras
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense,BatchNormalization
@@ -16,8 +17,9 @@ class SimpleNN(object):
             kernel_regularizer=regularizers.l1(0.001)))
         model.add(BatchNormalization())
         model.add(Dense(params['n_cats'], activation='softmax'))
-        model.compile(loss='categorical_crossentropy',optimizer=self.optim, metrics=['accuracy'])
-        model.summary()
+        model.compile(loss='categorical_crossentropy',optimizer=self.optim, 
+            metrics=['accuracy'])
+#        model.summary()
         return model
 
 def get_extractor(model_i):
