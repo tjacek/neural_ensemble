@@ -6,10 +6,10 @@ from skopt import BayesSearchCV
 import json
 import binary,data,nn,learn,folds,utils
 
-def multi_exp(in_path,out_path,n_iters=10,n_split=10,bayes=True):
+def multi_exp(in_path,out_path,n_iters=10,n_split=10,bayes=True,ens_type="all"):
     @utils.dir_map(depth=1)
     def helper(in_path,out_path):
-        gen_data(in_path,out_path,n_iters,n_split,bayes)
+        gen_data(in_path,out_path,n_iters,n_split,bayes,ens_type)
     helper(in_path,out_path) 
 
 def gen_data(in_path,out_path,n_iters=10,n_split=10,bayes=True,
@@ -44,20 +44,16 @@ class BayesOptim(object):
                 n_repeats=1, random_state=1)
         search = BayesSearchCV(estimator=self.clf_alg(), 
             search_spaces=self.search_spaces,n_jobs=-1,cv=cv_gen)
-        search.fit(X_train,y_train,callback=InfoCallback(search)) 
+        search.fit(X_train,y_train,callback=InfoCallback()) 
         best_estm=search.best_estimator_
         return best_estm.get_params(deep=True)
 
 class InfoCallback(object):
-    def __init__(self,search):
-        self.search=search
+    def __init__(self):
         self.iter=0 
 
     def __call__(self,optimal_result):
         self.iter+=1
-#        print(optimal_result)
-#        print(dir(optimal_result))
-#        print(dir(self.search))
         print(f"Iteration {self.iter}")
         print(f"Best params so far {optimal_result.x}")
 
@@ -87,14 +83,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--n_iters", type=int, default=10)
     parser.add_argument("--n_split", type=int, default=10)
-    parser.add_argument("--json", type=str, default='../uci/json/wine')
-    parser.add_argument("--models", type=str, default='models')
+    parser.add_argument("--json", type=str, default='../true_bayes/json')
+    parser.add_argument("--models", type=str, default='../true_bayes/models')
     parser.add_argument("--bayes",action='store_true')
-    parser.add_argument("--multi", type=bool, default=False)
+    parser.add_argument("--multi", type=bool, default=True)
     args = parser.parse_args()
     if(args.multi):
         fun=multi_exp
     else:
         fun=gen_data
     fun(args.json,args.models,n_iters=args.n_iters,
-        n_split=args.n_split,bayes=args.bayes,ens_type="One")
+        n_split=args.n_split,bayes=args.bayes,ens_type="all")
