@@ -4,7 +4,7 @@ import sys
 from sklearn.model_selection import RepeatedStratifiedKFold
 from skopt import BayesSearchCV
 import json
-import binary,data,nn,learn,folds,utils
+import conf,binary,data,nn,learn,folds,utils
 
 def multi_exp(in_path,out_path,n_iters=10,n_split=10,bayes=True,ens_type="all"):
     @utils.dir_map(depth=1)
@@ -83,14 +83,16 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--n_iters", type=int, default=10)
     parser.add_argument("--n_split", type=int, default=10)
-    parser.add_argument("--json", type=str, default='../true_bayes/json')
-    parser.add_argument("--models", type=str, default='../true_bayes/models')
-    parser.add_argument("--bayes",action='store_true')
-    parser.add_argument("--multi", type=bool, default=True)
+    parser.add_argument("--conf",type=str,default='conf/base.cfg')
+    parser.add_argument("--no_bayes",action='store_true')
+    parser.add_argument("--single",action='store_true')
     args = parser.parse_args()
-    if(args.multi):
-        fun=multi_exp
-    else:
+    train_conf=conf.read_conf(args.conf)
+
+    if(args.single):
         fun=gen_data
-    fun(args.json,args.models,n_iters=args.n_iters,
-        n_split=args.n_split,bayes=args.bayes,ens_type="all")
+    else:
+        fun=multi_exp
+    fun(train_conf['json'],train_conf['model'],
+        n_iters=args.n_iters,n_split=args.n_split,
+        bayes=(not args.no_bayes),ens_type="all")

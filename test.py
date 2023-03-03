@@ -71,13 +71,12 @@ def save_lines(lines,out_path):
     f.write('\n'.join(lines))
     f.close()
 
-def multi_exp(data_path,model_path,out_path):
+def multi_exp(data_path,model_path,out_path,clf_types,ens_types):
     @utils.dir_fun(as_dict=True)
     def helper(data_i):
         name_i=data_i.split('/')[-1]
         model_i=f'{model_path}/{name_i}'
-        return exp(data_i,model_i,['LR','RF'],
-            ['base','common','binary'])
+        return exp(data_i,model_i,clf_types,ens_types)
     lines_dict=helper(data_path)
     lines=[]
     for data_i,stats_i in lines_dict.items():
@@ -88,10 +87,14 @@ def multi_exp(data_path,model_path,out_path):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--json", type=str, default='../bayes/json')
-    parser.add_argument("--models", type=str, default='../bayes/models')
-    parser.add_argument("--result", type=str, default='../bayes/result.csv')
+    parser.add_argument("--conf",type=str,default='conf/base.cfg')
     args = parser.parse_args()
-    multi_exp(args.json,args.models,args.result)
-#    lines= exp(args.json,args.models)
-#    save_lines(lines,args.result)
+    test_conf=conf.read_conf(args.conf)
+    ens_types=test_conf['ens_types'].split(',')
+    clf_types=test_conf['clf_types'].split(',')
+    multi_exp(test_conf['json'],test_conf['model'],test_conf['result'],
+        clf_types,ens_types)    
+#    parser.add_argument("--json", type=str, default='../bayes/json')
+#    parser.add_argument("--models", type=str, default='../bayes/models')
+#    parser.add_argument("--result", type=str, default='../bayes/result.csv')
+#    multi_exp(args.json,args.models,args.result)
