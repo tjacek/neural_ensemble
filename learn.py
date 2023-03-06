@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn.metrics import classification_report,accuracy_score,f1_score
 from sklearn.linear_model import LogisticRegression
+from sklearn.neural_network import MLPClassifier
 from sklearn import ensemble
 #from sklearn.utils import class_weight
 import data
@@ -103,4 +104,6 @@ def get_clf(name_i):
         return ensemble.BaggingClassifier()
     if(name_i=='Grad'):
         return ensemble.GradientBoostingClassifier()
+    if(name_i=='MLP'):
+        return MLPClassifier()
     return LogisticRegression(solver='liblinear')
