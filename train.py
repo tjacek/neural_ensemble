@@ -5,6 +5,9 @@ from sklearn.model_selection import RepeatedStratifiedKFold
 from skopt import BayesSearchCV
 import json
 import conf,binary,data,nn,learn,folds,utils
+from tqdm import tqdm
+import tensorflow as tf
+tf.get_logger().setLevel('ERROR')
 def warn(*args, **kwargs):
     pass
 import warnings
@@ -23,11 +26,13 @@ def gen_data(in_path,out_path,n_iters=10,n_split=10,bayes=True,
     data.make_dir(out_path)
     NeuralEnsemble=binary.get_ens(ens_type)
     if(bayes):
+        print('Optimisation of hyperparams')
         hyperparams=find_hyperparams(raw_data,
             ensemble_type=NeuralEnsemble,n_split=n_split)
     else:
         hyperparams={'n_hidden':250,'n_epochs':200}
-    for i in range(n_iters):
+    print(f'Training models {out_path}')
+    for i in tqdm(range(n_iters)):
         out_i=f'{out_path}/{i}'
         data.make_dir(out_i)
         folds_i=folds.make_folds(raw_data,k_folds=n_split)
@@ -62,7 +67,7 @@ class InfoCallback(object):
         self.iter+=1
         if(self.verbose):
             print(f"Iteration {self.iter}")
-        print(f"Best params so far {optimal_result.x}")
+            print(f"Best params so far {optimal_result.x}")
 
 def find_hyperparams(train,params=None,ensemble_type=None,n_split=2):
     if(type(train)==str):
@@ -95,7 +100,6 @@ if __name__ == "__main__":
     parser.add_argument("--single",action='store_true')
     args = parser.parse_args()
     train_conf=conf.read_conf(args.conf)
-
     if(args.single):
         fun=gen_data
     else:
