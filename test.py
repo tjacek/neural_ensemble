@@ -5,19 +5,22 @@ from tensorflow import keras
 import numpy as np
 import json
 import conf,data,learn,utils,ens_feats
+import logging
+from tqdm import tqdm
+import tensorflow as tf
+tf.get_logger().setLevel('ERROR')
 import warnings
 def warn(*args,**kwargs):
     pass
 import warnings
 warnings.warn=warn
 
-
 def exp(data_path,model_path,clf_types=['LR','RF'],
 	        ens_types=['base','common','binary']):
     raw_data=data.read_data(data_path)
     helper= get_fold_fun(raw_data,clf_types,ens_types)
     acc=[helper(path_i) 
-        for path_i in data.top_files(model_path)]
+        for path_i in tqdm(data.top_files(model_path))]
     acc_dict={ id_i:[] for id_i in acc[0].keys()}
     for acc_i in acc:
         for key_j,value_j in acc_i.items():
@@ -32,7 +35,7 @@ def get_fold_fun(raw_data,clf_types,ens_types):
         for type_i in ens_types]
     @utils.unify_cv(dir_path=None,show=False)
     def helper(in_path):
-        print(in_path)
+        logging.info(f'Read models:{in_path}')
         common,binary= gen_feats(raw_data,in_path)
         acc_dir={}
         for ens_i in ens_types:
@@ -92,9 +95,9 @@ if __name__ == "__main__":
     test_conf=conf.read_conf(args.conf)
     ens_types=test_conf['ens_types'].split(',')
     clf_types=test_conf['clf_types'].split(',')
+    
+    logging.basicConfig(filename='test.log', 
+        level=logging.INFO,filemode='w', 
+        format='%(process)d-%(levelname)s-%(message)s')
     multi_exp(test_conf['json'],test_conf['model'],test_conf['result'],
         clf_types,ens_types)    
-#    parser.add_argument("--json", type=str, default='../bayes/json')
-#    parser.add_argument("--models", type=str, default='../bayes/models')
-#    parser.add_argument("--result", type=str, default='../bayes/result.csv')
-#    multi_exp(args.json,args.models,args.result)
