@@ -5,6 +5,11 @@ from sklearn.model_selection import RepeatedStratifiedKFold
 from skopt import BayesSearchCV
 import json
 import conf,binary,data,nn,learn,folds,utils
+def warn(*args, **kwargs):
+    pass
+import warnings
+warnings.warn = warn
+
 
 def multi_exp(in_path,out_path,n_iters=10,n_split=10,bayes=True,ens_type="all"):
     @utils.dir_map(depth=1)
@@ -42,19 +47,21 @@ class BayesOptim(object):
     def __call__(self,X_train,y_train):
         cv_gen=RepeatedStratifiedKFold(n_splits=self.n_split, 
                 n_repeats=1, random_state=1)
-        search = BayesSearchCV(estimator=self.clf_alg(), 
+        search = BayesSearchCV(estimator=self.clf_alg(),verbose=0,
             search_spaces=self.search_spaces,n_jobs=-1,cv=cv_gen)
         search.fit(X_train,y_train,callback=InfoCallback()) 
         best_estm=search.best_estimator_
         return best_estm.get_params(deep=True)
 
 class InfoCallback(object):
-    def __init__(self):
+    def __init__(self,verbose=True):
         self.iter=0 
+        self.verbose=verbose
 
     def __call__(self,optimal_result):
         self.iter+=1
-        print(f"Iteration {self.iter}")
+        if(self.verbose):
+            print(f"Iteration {self.iter}")
         print(f"Best params so far {optimal_result.x}")
 
 def find_hyperparams(train,params=None,ensemble_type=None,n_split=2):
@@ -81,8 +88,8 @@ def save_fold(ens_j,rename_j,out_j):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--n_iters", type=int, default=10)
-    parser.add_argument("--n_split", type=int, default=10)
+    parser.add_argument("--n_iters", type=int, default=3)
+    parser.add_argument("--n_split", type=int, default=3)
     parser.add_argument("--conf",type=str,default='conf/base.cfg')
     parser.add_argument("--no_bayes",action='store_true')
     parser.add_argument("--single",action='store_true')
