@@ -85,6 +85,7 @@ def multi_exp(data_path,model_path,out_path,clf_types,ens_types):
     for data_i,stats_i in lines_dict.items():
         for stat_j in stats_i:
             lines.append(f'{data_i},{stat_j}')
+    logging.info(f'Save results:{out_path}')
     save_lines(lines,out_path)
 
 if __name__ == "__main__":
@@ -95,8 +96,7 @@ if __name__ == "__main__":
     test_conf=conf.read_conf(args.conf)
     ens_types=test_conf['ens_types'].split(',')
     clf_types=test_conf['clf_types'].split(',')
-    
-    logging.basicConfig(filename='test.log', 
+    logging.basicConfig(filename=test_conf['log'], 
         level=logging.INFO,filemode='w', 
         format='%(process)d-%(levelname)s-%(message)s')
     multi_exp(test_conf['json'],test_conf['model'],test_conf['result'],

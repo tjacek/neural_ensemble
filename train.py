@@ -5,6 +5,7 @@ from sklearn.model_selection import RepeatedStratifiedKFold
 from skopt import BayesSearchCV
 import json
 import conf,binary,data,nn,learn,folds,utils
+import logging
 from tqdm import tqdm
 import tensorflow as tf
 tf.get_logger().setLevel('ERROR')
@@ -14,23 +15,25 @@ import warnings
 warnings.warn = warn
 
 
-def multi_exp(in_path,out_path,n_iters=10,n_split=10,bayes=True,ens_type="all"):
+def multi_exp(in_path,out_path,n_iters=10,n_split=10,hyper_optim=False,
+        ens_type="all"):
     @utils.dir_map(depth=1)
     def helper(in_path,out_path):
-        gen_data(in_path,out_path,n_iters,n_split,bayes,ens_type)
+        gen_data(in_path,out_path,n_iters,n_split,hyper_optim,ens_type)
     helper(in_path,out_path) 
 
-def gen_data(in_path,out_path,n_iters=10,n_split=10,bayes=True,
+def gen_data(in_path,out_path,n_iters=10,n_split=10,hyper_optim=None,
                 ens_type="all"):
     raw_data=data.read_data(in_path)
     data.make_dir(out_path)
+    hyperparams=hyper_optim(raw_data,ens_type,n_split)
     NeuralEnsemble=binary.get_ens(ens_type)
-    if(bayes):
-        print('Optimisation of hyperparams')
-        hyperparams=find_hyperparams(raw_data,
-            ensemble_type=NeuralEnsemble,n_split=n_split)
-    else:
-        hyperparams={'n_hidden':250,'n_epochs':200}
+#    if(bayes):
+#        print('Optimisation of hyperparams')
+#        hyperparams=find_hyperparams(raw_data,
+#            ensemble_type=NeuralEnsemble,n_split=n_split)
+#    else:
+#        hyperparams=#{'n_hidden':250,'n_epochs':200}
     print(f'Training models {out_path}')
     for i in tqdm(range(n_iters)):
         out_i=f'{out_path}/{i}'
@@ -43,52 +46,100 @@ def gen_data(in_path,out_path,n_iters=10,n_split=10,bayes=True,
             out_j=f'{out_i}/{j}'
             save_fold(ens_j,rename_j,out_j)
 
-class BayesOptim(object):
-    def __init__(self,clf_alg,search_spaces,n_split=5):
-        self.clf_alg=clf_alg 
-        self.n_split=n_split
-        self.search_spaces=search_spaces
-
-    def __call__(self,X_train,y_train):
-        cv_gen=RepeatedStratifiedKFold(n_splits=self.n_split, 
-                n_repeats=1, random_state=1)
-        search = BayesSearchCV(estimator=self.clf_alg(),verbose=0,
-            search_spaces=self.search_spaces,n_jobs=-1,cv=cv_gen)
-        search.fit(X_train,y_train,callback=InfoCallback()) 
-        best_estm=search.best_estimator_
-        return best_estm.get_params(deep=True)
-
-class InfoCallback(object):
-    def __init__(self,verbose=True):
-        self.iter=0 
-        self.verbose=verbose
-
-    def __call__(self,optimal_result):
-        self.iter+=1
-        if(self.verbose):
-            print(f"Iteration {self.iter}")
-            print(f"Best params so far {optimal_result.x}")
-
-def find_hyperparams(train,params=None,ensemble_type=None,n_split=2):
-    if(type(train)==str):
-        train=data.read_data(train)
-    if(params is None):
-        params={'n_hidden':[25,50,100,200],
-                    'n_epochs':[100,200,300,500]}
-    if(ensemble_type is None):
-        ensemble_type=binary.get_ens('All')
-    bayes_cf=BayesOptim(ensemble_type,params,n_split=n_split)
-    train_tuple=train.as_dataset()[:2]
-    best_params= bayes_cf(*train_tuple)
-    return best_params
-    
 def save_fold(ens_j,rename_j,out_j):
+    logging.info(f'Save models {out_j}')
     data.make_dir(out_j)
     ens_j.save(f'{out_j}/models')
     with open(f'{out_j}/rename', 'wb') as f:
         json_str = json.dumps(rename_j)         
         json_bytes = json_str.encode('utf-8') 
         f.write(json_bytes)
+
+class HyperOptimisation(object):
+    def __init__(self,default_params=None,search_spaces=None,verbosity=True):#n_split=10):
+        if(default_params is None):
+            default_params={'n_hidden':250,'n_epochs':200}
+        if(search_spaces is None):
+            search_spaces={'n_hidden':[25,50,100,200],
+                    'n_epochs':[100,200,300,500]}
+        self.default_params=default_params
+        self.search_spaces=search_spaces
+        self.verbosity=verbosity
+
+    def __call__(self,train,ensemble=None,n_split=10):
+        if(self.search_spaces):
+            print('Optimisation of hyperparams')
+            return self.bayes_optim(train,ensemble,n_split)
+        else:
+            return {'n_hidden':250,'n_epochs':200}
+
+    def bayes_optim(self,train,ensemble=None,n_split=10):
+        if(type(train)==str):
+            train=data.read_data(train)
+#        if(ensemble is None):
+        ensemble=binary.get_ens(ensemble)
+        def helper(X_train,y_train):
+            cv_gen=RepeatedStratifiedKFold(n_splits=n_split, 
+                    n_repeats=1, random_state=1)
+            search = BayesSearchCV(estimator=ensemble(),verbose=0,
+                    search_spaces=self.search_spaces,n_jobs=-1,cv=cv_gen)
+            search.fit(X_train,y_train,callback=InfoCallback(self.verbosity)) 
+            best_estm=search.best_estimator_
+            return best_estm.get_params(deep=True)
+        train_tuple=train.as_dataset()[:2]
+        best_params= helper(*train_tuple)
+        return best_params
+
+class InfoCallback(object):
+    def __init__(self,verbosity =True):
+        self.iter=0 
+        self.verbosity=verbosity
+
+    def __call__(self,optimal_result):
+        self.iter+=1
+        if(self.verbosity):
+            print(f"Iteration {self.iter}")
+            print(f"Best params so far {optimal_result.x}")
+
+#def find_hyperparams(train,params=None,ensemble_type=None,n_split=2):
+#    if(type(train)==str):
+#        train=data.read_data(train)
+#    if(params is None):
+#        params={'n_hidden':[25,50,100,200],
+#                    'n_epochs':[100,200,300,500]}
+#    if(ensemble_type is None):
+#        ensemble_type=binary.get_ens('All')
+#    bayes_cf=BayesOptim(ensemble_type,params,n_split=n_split)
+#    train_tuple=train.as_dataset()[:2]
+#    best_params= bayes_cf(*train_tuple)
+#    return best_params
+
+#class BayesOptim(object):
+#    def __init__(self,clf_alg,search_spaces,n_split=5):
+#        self.clf_alg=clf_alg 
+#        self.n_split=n_split
+#        self.search_spaces=search_spaces
+
+#    def __call__(self,X_train,y_train):
+#        cv_gen=RepeatedStratifiedKFold(n_splits=self.n_split, 
+#                n_repeats=1, random_state=1)
+#        search = BayesSearchCV(estimator=self.clf_alg(),verbose=0,
+#            search_spaces=self.search_spaces,n_jobs=-1,cv=cv_gen)
+#        search.fit(X_train,y_train,callback=InfoCallback()) 
+#        best_estm=search.best_estimator_
+#        return best_estm.get_params(deep=True)
+
+
+def parse_bayes(args):
+    train_conf=conf.read_conf(args.conf)
+    verbosity=train_conf.getboolean('verbosity')
+    bayes=  False if(args.no_bayes) else None
+    return HyperOptimisation(search_spaces=bayes,verbosity=verbosity)
+
+def set_logging(train_conf):
+    logging.basicConfig(filename=train_conf['log'], 
+        level=logging.INFO,filemode='w', 
+        format='%(process)d-%(levelname)s-%(message)s')
 
 if __name__ == "__main__":
     import argparse
@@ -100,10 +151,13 @@ if __name__ == "__main__":
     parser.add_argument("--single",action='store_true')
     args = parser.parse_args()
     train_conf=conf.read_conf(args.conf)
+    set_logging(train_conf)
+    bayes=parse_bayes(args)
+#    raise Exception(verbosity)
     if(args.single):
         fun=gen_data
     else:
         fun=multi_exp
     fun(train_conf['json'],train_conf['model'],
         n_iters=args.n_iters,n_split=args.n_split,
-        bayes=(not args.no_bayes),ens_type="all")
+        hyper_optim=bayes,ens_type="all")
