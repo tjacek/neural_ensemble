@@ -11,6 +11,7 @@ def warn(*args, **kwargs):
 import warnings
 warnings.warn = warn
 from sklearn.model_selection import RepeatedStratifiedKFold
+from sklearn.model_selection import GridSearchCV
 from skopt import BayesSearchCV
 import json
 from tqdm import tqdm
@@ -59,7 +60,7 @@ class HyperOptimisation(object):
                     'n_epochs':[100,200,300,500]}
         self.default_params=default_params
         self.search_spaces=search_spaces
-        self.search_alg=BayesOptim()
+        self.search_alg= GridOptim() #BayesOptim()
 #        self.verbosity=verbosity
 
     def __call__(self,train,ensemble=None,n_split=10):
@@ -91,7 +92,7 @@ class BayesOptim(object):
 
     def __call__(self,train_tuple,clf,search_spaces,cv_gen):
         search = BayesSearchCV(estimator=clf,verbose=0,
-                    search_spaces=search_spaces,n_jobs=-1,cv=cv_gen)
+                    search_spaces=search_spaces,n_jobs=self.n_jobs,cv=cv_gen)
         X_train,y_train=train_tuple
         search.fit(X_train,y_train,callback=self.get_callback()) 
         return search
@@ -106,6 +107,18 @@ class BayesOptim(object):
                 count+=1
             return callback
         return None
+
+class GridOptim(object):
+    def __init__(self,n_jobs=5):
+        self.n_jobs=n_jobs
+
+    def __call__(self,train_tuple,clf,search_spaces,cv_gen):
+        search = GridSearchCV(estimator=clf,param_grid=search_spaces,
+#                  verbose=0,
+                  n_jobs=self.n_jobs,cv=cv_gen)
+        X_train,y_train=train_tuple
+        search.fit(X_train, y_train)
+        return search
 
 def parse_bayes(args):
     train_conf=conf.read_conf(args.conf)
