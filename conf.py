@@ -17,11 +17,16 @@ def parse_dict(config_obj):
 
 def parse_hyper(config_obj):
     hyper_dict={'hyper_optim':False}
+    if('GRID'in config_obj):
+        raw_dict=config_obj['GRID']
+        hyper_dict['optim_type']='grid'
+        hyper_dict['hyper_optim']=True
+        hyper_dict['n_jobs']=int(raw_dict['n_jobs'])
     if('BAYES'in config_obj):
         raw_dict=config_obj['BAYES']
         hyper_dict['optim_type']='bayes'
         hyper_dict['hyper_optim']=True
-        hyper_dict['n_jobs']=raw_dict['n_jobs']
+        hyper_dict['n_jobs']=int(raw_dict['n_jobs'])
         hyper_dict['verbosity']=bool(raw_dict['verbosity'])
     return hyper_dict
 

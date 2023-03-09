@@ -120,11 +120,25 @@ class GridOptim(object):
         search.fit(X_train, y_train)
         return search
 
-def parse_bayes(args):
-    train_conf=conf.read_conf(args.conf)
-    verbosity=train_conf.getboolean('verbosity')
-    bayes=  False if(args.no_bayes) else None
-    return HyperOptimisation(search_spaces=bayes,verbosity=verbosity)
+def train_exp(conf_dict):
+    if(conf_dict['single']):
+        fun=gen_data
+    else:
+        fun=multi_exp
+    hyper_optim=parse_hyper(conf_dict)
+    fun(conf_dict['json'],conf_dict['model'],
+        n_iters=conf_dict['n_iters'],n_split=conf_dict['n_split'],
+        hyper_optim=hyper_optim,ens_type="all")
+
+def parse_hyper(conf_dict):
+    if(conf_dict['hyper_optim']):
+        if(conf_dict['optim_type']=='grid'):
+            return GridOptim(conf_dict['n_jobs'])
+        if(conf_dict['optim_type']=='bayes'):
+            return BayesOptim(conf_dict['n_jobs'],conf_dict['verbosity'])    
+    else:
+        return None
+#    return HyperOptimisation(search_spaces=bayes,verbosity=verbosity)
 
 def set_logging(train_conf):
     logging.basicConfig(filename=train_conf['log'], 
@@ -137,16 +151,17 @@ if __name__ == "__main__":
     parser.add_argument("--n_iters", type=int, default=3)
     parser.add_argument("--n_split", type=int, default=3)
     parser.add_argument("--conf",type=str,default='conf/base.cfg')
-    parser.add_argument("--no_bayes",action='store_true')
+#    parser.add_argument("--no_bayes",action='store_true')
     parser.add_argument("--single",action='store_true')
     args = parser.parse_args()
-    train_conf=conf.read_conf(args.conf)
-    set_logging(train_conf)
-    bayes=parse_bayes(args)
-    if(args.single):
-        fun=gen_data
-    else:
-        fun=multi_exp
-    fun(train_conf['json'],train_conf['model'],
-        n_iters=args.n_iters,n_split=args.n_split,
-        hyper_optim=bayes,ens_type="all")
+    conf_dict=conf.read_conf(args.conf)
+    conf_dict['n_iters']=args.n_iters
+    conf_dict['n_split']=args.n_split
+    conf_dict['single']=args.single
+    raise Exception(conf_dict)
+#    set_logging(train_conf)
+#    bayes=parse_bayes(args)
+
+#    fun(train_conf['json'],train_conf['model'],
+#        n_iters=args.n_iters,n_split=args.n_split,
+#        hyper_optim=bayes,ens_type="all")
