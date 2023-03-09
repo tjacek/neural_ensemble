@@ -13,7 +13,7 @@ warnings.warn = warn
 from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn.model_selection import GridSearchCV
 from skopt import BayesSearchCV
-import json
+import json,shutil
 from tqdm import tqdm
 import conf,binary,data,nn,learn,folds,utils
 
@@ -52,7 +52,7 @@ def save_fold(ens_j,rename_j,out_j):
         f.write(json_bytes)
 
 class HyperOptimisation(object):
-    def __init__(self,default_params=None,search_spaces=None,verbosity=True):
+    def __init__(self, search_alg,default_params=None,search_spaces=None):
         if(default_params is None):
             default_params={'n_hidden':250,'n_epochs':200}
         if(search_spaces is None):
@@ -60,8 +60,7 @@ class HyperOptimisation(object):
                     'n_epochs':[100,200,300,500]}
         self.default_params=default_params
         self.search_spaces=search_spaces
-        self.search_alg= GridOptim() #BayesOptim()
-#        self.verbosity=verbosity
+        self.search_alg= search_alg #GridOptim() 
 
     def __call__(self,train,ensemble=None,n_split=10):
         if(self.search_spaces):
@@ -121,6 +120,10 @@ class GridOptim(object):
         return search
 
 def train_exp(conf_dict):
+    if(not conf_dict['lazy'] and 
+        (os.path.isdir(conf_dict['model']))):
+        shutil.rmtree(conf_dict['model'])
+    set_logging(conf_dict['log'])
     if(conf_dict['single']):
         fun=gen_data
     else:
@@ -133,15 +136,15 @@ def train_exp(conf_dict):
 def parse_hyper(conf_dict):
     if(conf_dict['hyper_optim']):
         if(conf_dict['optim_type']=='grid'):
-            return GridOptim(conf_dict['n_jobs'])
+            search_alg= GridOptim(conf_dict['n_jobs'])
         if(conf_dict['optim_type']=='bayes'):
-            return BayesOptim(conf_dict['n_jobs'],conf_dict['verbosity'])    
+            search_alg= BayesOptim(conf_dict['n_jobs'],conf_dict['verbosity'])
+        return HyperOptimisation(search_alg)
     else:
         return None
-#    return HyperOptimisation(search_spaces=bayes,verbosity=verbosity)
 
-def set_logging(train_conf):
-    logging.basicConfig(filename=train_conf['log'], 
+def set_logging(log_path):
+    logging.basicConfig(filename=log_path, 
         level=logging.INFO,filemode='w', 
         format='%(process)d-%(levelname)s-%(message)s')
 
@@ -150,18 +153,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--n_iters", type=int, default=3)
     parser.add_argument("--n_split", type=int, default=3)
-    parser.add_argument("--conf",type=str,default='conf/base.cfg')
-#    parser.add_argument("--no_bayes",action='store_true')
-    parser.add_argument("--single",action='store_true')
+    parser.add_argument("--conf",type=str,default='conf/grid.cfg')
+    parser.add_argument("--lazy",action='store_true')
+    parser.add_argument("--single",action='store_true') 
     args = parser.parse_args()
     conf_dict=conf.read_conf(args.conf)
     conf_dict['n_iters']=args.n_iters
     conf_dict['n_split']=args.n_split
+    conf_dict['lazy']=args.lazy
     conf_dict['single']=args.single
-    raise Exception(conf_dict)
-#    set_logging(train_conf)
-#    bayes=parse_bayes(args)
-
-#    fun(train_conf['json'],train_conf['model'],
-#        n_iters=args.n_iters,n_split=args.n_split,
-#        hyper_optim=bayes,ens_type="all")
+#    raise Exception(conf_dict)
+    train_exp(conf_dict)
