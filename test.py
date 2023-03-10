@@ -1,19 +1,29 @@
 import sys
 #from pathlib import Path
 #sys.path.append(str(Path('.').absolute().parent))
+import os
+import sys
+import logging
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+logging.getLogger('tensorflow').setLevel(logging.ERROR)
+import tensorflow as tf
+tf.get_logger().setLevel('ERROR')
+def warn(*args, **kwargs):
+    pass
+import warnings
+warnings.warn = warn
 from tensorflow import keras
 import numpy as np
 import json
 import conf,data,learn,utils,ens_feats
-import logging
 from tqdm import tqdm
-import tensorflow as tf
-tf.get_logger().setLevel('ERROR')
-import warnings
-def warn(*args,**kwargs):
-    pass
-import warnings
-warnings.warn=warn
+
+def test_exp(conf_dict):
+    logging.basicConfig(filename=conf_dict['log'], 
+        level=logging.INFO,filemode='w', 
+        format='%(process)d-%(levelname)s-%(message)s')
+    multi_exp(conf_dict['json'],conf_dict['model'],conf_dict['result'],
+        conf_dict['clf_types'],conf_dict['ens_types']) 
 
 def exp(data_path,model_path,clf_types=['LR','RF'],
 	        ens_types=['base','common','binary']):
@@ -91,13 +101,7 @@ def multi_exp(data_path,model_path,out_path,clf_types,ens_types):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--conf",type=str,default='conf/base.cfg')
+    parser.add_argument("--conf",type=str,default='conf/grid.cfg')
     args = parser.parse_args()
-    test_conf=conf.read_conf(args.conf)
-    ens_types=test_conf['ens_types'].split(',')
-    clf_types=test_conf['clf_types'].split(',')
-    logging.basicConfig(filename=test_conf['log'], 
-        level=logging.INFO,filemode='w', 
-        format='%(process)d-%(levelname)s-%(message)s')
-    multi_exp(test_conf['json'],test_conf['model'],test_conf['result'],
-        clf_types,ens_types)    
+    conf_dict=conf.read_test(args.conf)
+    test_exp(conf_dict)
