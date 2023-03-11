@@ -14,7 +14,7 @@ class HyperOptimisation(object):
         self.search_spaces=search_spaces
         self.search_alg= search_alg #GridOptim() 
 
-    def params_name(self):
+    def param_names(self):
         return self.search_spaces.keys()
 #    def __call__(self,train,ensemble=None,n_split=10):
 #        if(self.search_spaces):
@@ -78,12 +78,23 @@ def hyper_exp(conf_path,n_split):
     dir_dict,hyper_dict=conf.read_hyper(conf_path)
     print(hyper_dict)
     hyper_optim=parse_hyper(hyper_dict)
-    optimal_result={}
+#    optimal_result={}
+    param_names=hyper_optim.param_names()
+    with open(dir_dict['hyper'],"a") as f:
+        f.write('dataset,'+','.join(param_names)+'\n')
     for path_i in data.top_files(dir_dict['json']):
         raw_data=data.read_data(path_i)
         hyperparams=hyper_optim(raw_data,"all",n_split)
-        optimal_result[path_i.split('/')[-1]]=hyperparams
-    print(optimal_result) 
+        line_i=get_line(path_i,hyperparams,param_names)
+        with open(dir_dict['hyper'],"a") as f:
+            f.write(line_i) 
+
+def get_line(path_i,hyperparams  ,param_names):
+    name=path_i.split('/')[-1]
+    line=[str(hyperparams[param_i]) 
+           for param_i in param_names]
+    line=[name]+line
+    return ','.join(line)+'\n'
 
 def parse_hyper(conf_dict):
     if(conf_dict['optim_type']=='grid'):
