@@ -7,11 +7,11 @@ def read_hyper(in_path):
     hyper_dict= parse_hyper(config_obj)
     return dir_dict,hyper_dict
 
-def read_train(in_path):
-    config_obj = ConfigParser()
-    config_obj.read(in_path)
-    dir_dict=  parse_dict(config_obj)
-    return dir_dict
+#def read_train(in_path):
+#    config_obj = ConfigParser()
+#    config_obj.read(in_path)
+#    dir_dict=  parse_dict(config_obj)
+#    return dir_dict
     
 def read_test(in_path):
     config_obj = ConfigParser()
@@ -38,7 +38,9 @@ def parse_hyper(config_obj):
     hyper= raw_dict['hyperparams'].split(',')
     hyper_dict={'hyperparams':hyper}
     for name_i in hyper:
-        hyper_dict[name_i]=parse_list(raw_dict[name_i]) #.split(',')
+        hyper_dict[name_i]=parse_list(raw_dict[name_i])
+        default_i=f'default_{name_i}'
+        hyper_dict[default_i]=raw_dict[default_i]
     hyper_dict['optim_type']=raw_dict['optim_type']
     hyper_dict['verbosity']=bool(raw_dict['verbosity'])
     hyper_dict['bayes_iter']=int(raw_dict['bayes_iter'])

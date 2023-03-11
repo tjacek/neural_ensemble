@@ -19,7 +19,11 @@ def multi_exp(conf):
     if(not conf['lazy'] and 
         (os.path.isdir(conf['model']))):
         shutil.rmtree(conf['model'])
-    get_hyper=read_hyper(conf['hyper'])
+    if(type(conf['hyper'])==str):
+        get_hyper=read_hyper(conf['hyper'])
+    else:
+        get_hyper=conf['hyper']
+    set_logging(conf['log'])
     @utils.dir_map(depth=1)
     def helper(in_path,out_path):
         gen_data(in_path,out_path,conf,get_hyper)
@@ -64,21 +68,11 @@ def read_hyper(in_path):
         return hyper_dict[path_i.split('/')[-1]]
     return helper
 
-def default_hyper(n_hidden=250,n_epochs=200):
-    hyper_dict= {'n_hidden':n_hidden,'n_epochs':n_epochs}
+def default_hyper(conf_hyper):
+    names=conf_hyper['hyperparams']
+    hyper_dict={name_i:int(conf_hyper[f'default_{name_i}']) 
+                    for name_i in names}
     return lambda path: hyper_dict
-
-#def train_exp(conf_dict):
-
-#    set_logging(conf_dict['log'])
-#    if(conf_dict['single']):
-#        fun=gen_data
-#    else:
-#        fun=multi_exp
-#    hyper_optim=parse_hyper(conf_dict)
-#    fun(conf_dict['json'],conf_dict['model'],
-#        n_iters=conf_dict['n_iters'],n_split=conf_dict['n_split'],
-#        hyper_optim=hyper_optim,ens_type="all")
 
 def set_logging(log_path):
     logging.basicConfig(filename=log_path, 
@@ -92,14 +86,13 @@ if __name__ == "__main__":
     parser.add_argument("--n_split", type=int, default=3)
     parser.add_argument("--conf",type=str,default='conf/base.cfg')
     parser.add_argument("--lazy",action='store_true')
+    parser.add_argument("--default",action='store_true')
 #    parser.add_argument("--single",action='store_true') 
     args = parser.parse_args()
-    conf_train=conf.read_train(args.conf)
+    conf_train,conf_hyper=conf.read_hyper(args.conf)
     conf_train['n_iters']=args.n_iters
     conf_train['n_split']=args.n_split
     conf_train['lazy']=args.lazy
+    if(args.default):
+        conf_train['hyper']=default_hyper(conf_hyper)
     multi_exp(conf_train )
-
-#    conf_dict['single']=args.single
-#    raise Exception(conf_dict)
-#    train_exp(conf_dict)
