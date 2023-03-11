@@ -28,6 +28,9 @@ def test_exp(conf_dict):
 def exp(data_path,model_path,clf_types=['LR','RF'],
 	        ens_types=['base','common','binary']):
     raw_data=data.read_data(data_path)
+    print(f'Test models on dataset:{data_path}')
+    print('Multiclass classifiers types used: %s' % ','.join(clf_types))
+    print('Ensemble variant used: %s' % ','.join(ens_types))
     helper= get_fold_fun(raw_data,clf_types,ens_types)
     acc=[helper(path_i) 
         for path_i in tqdm(data.top_files(model_path))]
@@ -97,11 +100,12 @@ def multi_exp(data_path,model_path,out_path,clf_types,ens_types):
             lines.append(f'{data_i},{stat_j}')
     logging.info(f'Save results:{out_path}')
     save_lines(lines,out_path)
+    print(f'Save results:{out_path}')
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--conf",type=str,default='conf/grid.cfg')
+    parser.add_argument("--conf",type=str,default='conf/base.cfg')
     args = parser.parse_args()
     conf_dict=conf.read_test(args.conf)
     test_exp(conf_dict)

@@ -21,8 +21,10 @@ def multi_exp(conf):
         shutil.rmtree(conf['model'])
     if(type(conf['hyper'])==str):
         get_hyper=read_hyper(conf['hyper'])
+        print('Hyperparameters are loaded from %s' % conf['hyper'])
     else:
         get_hyper=conf['hyper']
+        print('Default hyperparams are used %s' % get_hyper(''))
     set_logging(conf['log'])
     @utils.dir_map(depth=1)
     def helper(in_path,out_path):
@@ -32,10 +34,10 @@ def multi_exp(conf):
 def gen_data(in_path,out_path,conf,get_hyper):
     raw_data=data.read_data(in_path)
     data.make_dir(out_path)
-#    hyperparams=hyper_optim(raw_data,ens_type,n_split)
     hyperparams=get_hyper(in_path)
     NeuralEnsemble=binary.get_ens(ens_type='all')
-    print(f'Training models {out_path}')
+    print(f'Training models on dataset:{out_path}')
+    print(f'Hyperparams:{hyperparams}')
     for i in tqdm(range(conf['n_iters'])):
         out_i=f'{out_path}/{i}'
         data.make_dir(out_i)
@@ -70,7 +72,12 @@ def read_hyper(in_path):
 
 def default_hyper(conf_hyper):
     names=conf_hyper['hyperparams']
-    hyper_dict={name_i:int(conf_hyper[f'default_{name_i}']) 
+    def helper(name_i):
+        value_i=conf_hyper[f'default_{name_i}']
+        if(value_i.isnumeric()):
+            return int(value_i)
+        return value_i
+    hyper_dict={name_i:helper(name_i) 
                     for name_i in names}
     return lambda path: hyper_dict
 

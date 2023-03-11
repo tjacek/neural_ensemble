@@ -5,12 +5,9 @@ import binary, conf,data
 
 class HyperOptimisation(object):
     def __init__(self, search_alg,search_spaces=None):
-#        if(default_params is None):
-#            default_params={'n_hidden':250,'n_epochs':200}
         if(search_spaces is None):
             search_spaces={'n_hidden':[25,50,100,200],
                     'n_epochs':[100,200,300,500]}
-#        self.default_params=default_params
         self.search_spaces=search_spaces
         self.search_alg= search_alg #GridOptim() 
 
@@ -70,17 +67,21 @@ class GridOptim(object):
 
 def hyper_exp(conf_path,n_split):
     dir_dict,hyper_dict=conf.read_hyper(conf_path)
-    print(dir('abc'))
+    print('Optimisation for hyperparams')
+    for hyper_i in hyper_dict['hyperparams']:
+        print('%s:%s' % (hyper_i,','.join(hyper_dict[hyper_i])))
     hyper_optim=parse_hyper(hyper_dict)
     param_names=hyper_optim.param_names()
     with open(dir_dict['hyper'],"a") as f:
         f.write('dataset,'+','.join(param_names)+'\n')
     for path_i in data.top_files(dir_dict['json']):
+        print(f'Optimisation of hyperparams for dataset {path_i}')
         raw_data=data.read_data(path_i)
         hyperparams=hyper_optim(raw_data,"all",n_split)
         line_i=get_line(path_i,hyperparams,param_names)
         with open(dir_dict['hyper'],"a") as f:
             f.write(line_i) 
+    print('Hyperparams saved at %s' % dir_dict['hyper'])
 
 def get_line(path_i,hyperparams  ,param_names):
     name=path_i.split('/')[-1]

@@ -6,12 +6,6 @@ def read_hyper(in_path):
     dir_dict=  parse_dict(config_obj)
     hyper_dict= parse_hyper(config_obj)
     return dir_dict,hyper_dict
-
-#def read_train(in_path):
-#    config_obj = ConfigParser()
-#    config_obj.read(in_path)
-#    dir_dict=  parse_dict(config_obj)
-#    return dir_dict
     
 def read_test(in_path):
     config_obj = ConfigParser()

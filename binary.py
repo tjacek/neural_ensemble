@@ -1,13 +1,15 @@
 from sklearn.base import BaseEstimator, ClassifierMixin
 from itertools import combinations
+from keras import callbacks
 import tensorflow as tf
 import numpy as np
 import data,nn,learn
 
 class NeuralEnsemble(BaseEstimator, ClassifierMixin):
-    def __init__(self,n_hidden=250,n_epochs=200):
+    def __init__(self,n_hidden=250,multi_clf='LR'):#n_epochs=200):
         self.n_hidden=n_hidden
-        self.n_epochs=n_epochs
+        self.multi_clf=multi_clf
+#        self.n_epochs=n_epochs
 
     def fit(self,X,targets):
         raise NotImplementedError
@@ -33,18 +35,20 @@ class NeuralEnsemble(BaseEstimator, ClassifierMixin):
             extr_i.save(f'{out_path}/{i}')
 
     def train_extractor(self,X,y_i):
+        earlystopping = callbacks.EarlyStopping(monitor="accuracy",
+                mode="min", patience=5,restore_best_weights=True)
         nn_params={'dims':X.shape[1],'n_cats':2}
-        nn_i=nn.SimpleNN(n_hidden=self.n_hidden)(nn_params)
-        nn_i.fit(X,y_i,epochs=self.n_epochs,
-            batch_size=32,verbose = 0)
+        nn_i=nn.SimpleNN(n_hidden=int(self.n_hidden))(nn_params)
+        nn_i.fit(X,y_i,epochs=500,#self.n_epochs,
+            batch_size=32,verbose = 0,callbacks=earlystopping)
         extractor_i= nn.get_extractor(nn_i)
         self.extractors.append(extractor_i)
         return extractor_i
 
     def train_model(self,X,binary_i,targets):
-        clf_i=learn.get_clf('LR')
+        clf_i=learn.get_clf(self.multi_clf)#'LR')
         full_i=np.concatenate([X,binary_i],axis=1)
-        clf_i.fit(full_i,targets)
+        clf_i.fit(full_i,targets)#,callbacks=earlystopping)
         self.models.append(clf_i)
 
 class OneVsAll(NeuralEnsemble):
