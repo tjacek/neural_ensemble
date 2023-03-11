@@ -16,12 +16,6 @@ class HyperOptimisation(object):
 
     def param_names(self):
         return self.search_spaces.keys()
-#    def __call__(self,train,ensemble=None,n_split=10):
-#        if(self.search_spaces):
-#            print('Optimisation of hyperparams')
-#            return self.optim(train,ensemble,n_split)
-#        else:
-#            return self.default_params
 
     def __call__(self,train,ensemble=None,n_split=10):
         if(type(train)==str):
@@ -76,9 +70,8 @@ class GridOptim(object):
 
 def hyper_exp(conf_path,n_split):
     dir_dict,hyper_dict=conf.read_hyper(conf_path)
-    print(hyper_dict)
+    print(dir('abc'))
     hyper_optim=parse_hyper(hyper_dict)
-#    optimal_result={}
     param_names=hyper_optim.param_names()
     with open(dir_dict['hyper'],"a") as f:
         f.write('dataset,'+','.join(param_names)+'\n')
@@ -96,14 +89,13 @@ def get_line(path_i,hyperparams  ,param_names):
     line=[name]+line
     return ','.join(line)+'\n'
 
-def parse_hyper(conf_dict):
-    if(conf_dict['optim_type']=='grid'):
-        search_alg= GridOptim(int(conf_dict['n_jobs']))
-    if(conf_dict['optim_type']=='bayes'):
-        n_jobs,n_iter= int(conf_dict['n_jobs']),int(conf_dict['bayes_iter'])
-        verbosity=conf_dict['verbosity']
-        search_alg= BayesOptim(n_jobs,verbosity,n_iter)
-    return HyperOptimisation(search_alg)
+def parse_hyper(conf):
+    if(conf['optim_type']=='grid'):
+        search_alg= GridOptim(conf['n_jobs'])
+    if(conf['optim_type']=='bayes'):
+        search_alg= BayesOptim(conf['n_jobs'],conf['verbosity'],conf['bayes_iter'])
+    search_spaces={key_i:conf[key_i] for key_i in conf['hyperparams']}
+    return HyperOptimisation(search_alg,search_spaces)
 
 if __name__ == "__main__":
     import argparse

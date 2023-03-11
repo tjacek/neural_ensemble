@@ -1,11 +1,11 @@
 from configparser import ConfigParser
 
-def read_conf(in_path):
+def read_hyper(in_path):
     config_obj = ConfigParser()
     config_obj.read(in_path)
     dir_dict=  parse_dict(config_obj)
-    hyper_dict=  parse_hyper(config_obj)
-    return  {**dir_dict , **hyper_dict}
+    hyper_dict= parse_hyper(config_obj)
+    return dir_dict,hyper_dict
 
 def read_test(in_path):
     config_obj = ConfigParser()
@@ -28,21 +28,27 @@ def parse_dict(config_obj):
     return paths
 
 def parse_hyper(config_obj):
-    hyper_dict={'hyper_optim':False}
-    if('GRID'in config_obj):
-        raw_dict=config_obj['GRID']
-        hyper_dict['optim_type']='grid'
-        hyper_dict['hyper_optim']=True
-        hyper_dict['n_jobs']=int(raw_dict['n_jobs'])
-    if('BAYES'in config_obj):
-        raw_dict=config_obj['BAYES']
-        hyper_dict['optim_type']='bayes'
-        hyper_dict['hyper_optim']=True
-        hyper_dict['n_jobs']=int(raw_dict['n_jobs'])
-        hyper_dict['verbosity']=bool(raw_dict['verbosity'])
+    raw_dict= config_obj['HYPER']
+    hyper= raw_dict['hyperparams'].split(',')
+    hyper_dict={'hyperparams':hyper}
+    for name_i in hyper:
+        hyper_dict[name_i]=parse_list(raw_dict[name_i]) #.split(',')
+    hyper_dict['optim_type']=raw_dict['optim_type']
+    hyper_dict['verbosity']=bool(raw_dict['verbosity'])
+    hyper_dict['bayes_iter']=int(raw_dict['bayes_iter'])
+    hyper_dict['n_jobs']=int(raw_dict['n_jobs'])
     return hyper_dict
 
-def save_result(clf_config,result_text):
-    f = open(clf_config['out_path'],"w")
-    f.write(result_text)
-    f.close()
+def parse_list(raw_str):
+    list_i=[]
+    for item in raw_str.split(','):
+        if(item.isnumeric()):
+            list_i.append(int(item))
+        else:
+            list_i.append(item)
+    return list_i
+
+#def save_result(clf_config,result_text):
+#    f = open(clf_config['out_path'],"w")
+#    f.write(result_text)
+#    f.close()
