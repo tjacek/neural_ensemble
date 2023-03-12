@@ -18,30 +18,37 @@ import json
 import conf,data,learn,utils,ens_feats
 from tqdm import tqdm
 
-def test_exp(conf_dict):
-    logging.basicConfig(filename=conf_dict['log'], 
+def test_exp(conf):
+    logging.basicConfig(filename=conf['log'], 
         level=logging.INFO,filemode='w', 
         format='%(process)d-%(levelname)s-%(message)s')
-    multi_exp(conf_dict['json'],conf_dict['model'],conf_dict['result'],
-        conf_dict['clf_types'],conf_dict['ens_types']) 
+    @utils.dir_fun(as_dict=True)
+    def helper(data_i):
+        model_i='%s/%s' % (conf['model'],data_i.split('/')[-1])
+        return exp(data_i,model_i,conf)#clf_types,ens_types)
+    logging.info('Save results:%s' % conf['result'])
+    lines_dict=helper(conf['json'])
 
-def exp(data_path,model_path,clf_types=['LR','RF'],
-	        ens_types=['base','common','binary']):
+def exp(data_path,model_path,conf):
+#    clf_types=['LR','RF'],clf_types=['base','common','binary']):
     raw_data=data.read_data(data_path)
     print(f'Test models on dataset:{data_path}')
-    print('Multiclass classifiers types used: %s' % ','.join(clf_types))
-    print('Ensemble variant used: %s' % ','.join(ens_types))
-    helper= get_fold_fun(raw_data,clf_types,ens_types)
+    print('Multiclass classifiers types used: %s' % ','.join(conf['clf_types']))
+    print('Ensemble variant used: %s' % ','.join(conf['ens_types']))
+    helper= get_fold_fun(raw_data,conf['clf_types'],conf['ens_types'])
     acc=[helper(path_i) 
-        for path_i in tqdm(data.top_files(model_path))]
+        for path_i in tqdm(data.top_files(model_path))]#conf['model']))]
     acc_dict={ id_i:[] for id_i in acc[0].keys()}
     for acc_i in acc:
         for key_j,value_j in acc_i.items():
             acc_dict[key_j].append(value_j) 
-    lines=[]
-    for id_i,acc_i in acc_dict.items():
-    	lines.append(f'{id_i},{stats(acc_i)}')
-    return lines
+    data_i=data_path.split('/')[-1]    
+    with open(conf['result'],"a") as f:
+        f.write('dataset,ens_type,clf_type,mean_acc,std_acc\n')
+    for id_j,acc_j in acc_dict.items():
+        line_j=f'{data_i},{id_j},{stats(acc_j)}'
+        with open(conf['result'],"a") as f:
+            f.write(line_j+ '\n')
 
 def get_fold_fun(raw_data,clf_types,ens_types):
     ens_types=[ens_feats.get_ensemble(type_i)
@@ -81,26 +88,6 @@ def stats(acc,as_str=True):
     if(as_str):
         return ','.join(raw)
     return raw
-
-def save_lines(lines,out_path):
-    f = open(out_path,"w")
-    f.write('\n'.join(lines))
-    f.close()
-
-def multi_exp(data_path,model_path,out_path,clf_types,ens_types):
-    @utils.dir_fun(as_dict=True)
-    def helper(data_i):
-        name_i=data_i.split('/')[-1]
-        model_i=f'{model_path}/{name_i}'
-        return exp(data_i,model_i,clf_types,ens_types)
-    lines_dict=helper(data_path)
-    lines=[]
-    for data_i,stats_i in lines_dict.items():
-        for stat_j in stats_i:
-            lines.append(f'{data_i},{stat_j}')
-    logging.info(f'Save results:{out_path}')
-    save_lines(lines,out_path)
-    print(f'Save results:{out_path}')
 
 if __name__ == "__main__":
     import argparse
