@@ -13,7 +13,7 @@ import warnings
 warnings.warn = warn
 from tensorflow import keras
 import numpy as np
-import json
+import json,time
 import conf,data,learn,utils,ens_feats
 from tqdm import tqdm
 
@@ -29,6 +29,7 @@ def test_exp(conf):
     lines_dict=helper(conf['json'])
 
 def exp(data_path,model_path,conf):
+    
     raw_data=data.read_data(data_path)
     clf_types,ens_types=conf['clf_types'],conf['ens_types']
     print(f'Test models on dataset:{data_path}')
@@ -43,10 +44,10 @@ def exp(data_path,model_path,conf):
             acc_dict[key_j].append(value_j) 
     data_i=data_path.split('/')[-1]    
     with open(conf['result'],"a") as f:
-        f.write('dataset,ens_type,clf_type,mean_acc,std_acc\n')
-    for id_j,acc_j in acc_dict.items():
-        line_j=f'{data_i},{id_j},{stats(acc_j)}'
-        with open(conf['result'],"a") as f:
+        f.write('dataset,ens_type,clf_type,mean_acc,std_acc,max_acc\n')
+        for id_j,acc_j in acc_dict.items():
+            line_j=f'{data_i},{id_j},{stats(acc_j)}'
+#        with open(conf['result'],"a") as f:
             f.write(line_j+ '\n')
     print('Saved result for {} at {}\n'.format(data_path,conf['result']))
 
@@ -55,6 +56,7 @@ def get_fold_fun(raw_data,clf_types,ens_types):
         for type_i in ens_types]
     @utils.unify_cv(dir_path=None,show=False)
     def helper(in_path):
+        st=time.time()
         logging.info(f'Read models:{in_path}')
         common,binary= gen_feats(raw_data,in_path)
         acc_dir={}
@@ -63,6 +65,7 @@ def get_fold_fun(raw_data,clf_types,ens_types):
                 ens_inst=ens_i(common,binary)
                 id_ij=f'{str(ens_inst)},{clf_j}'
                 acc_dir[id_ij]=ens_inst(clf_j)
+        logging.info(f'Evaluate models from:{in_path} took {(time.time()-st):.4f}s')
         return acc_dir
     return helper
 
