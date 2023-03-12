@@ -1,3 +1,4 @@
+import argparse
 from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn.model_selection import GridSearchCV
 from skopt import BayesSearchCV
@@ -7,9 +8,9 @@ class HyperOptimisation(object):
     def __init__(self, search_alg,search_spaces=None):
         if(search_spaces is None):
             search_spaces={'n_hidden':[25,50,100,200],
-                    'n_epochs':[100,200,300,500]}
+                           'multi_clf':['LR','RF']}
         self.search_spaces=search_spaces
-        self.search_alg= search_alg #GridOptim() 
+        self.search_alg= search_alg
 
     def param_names(self):
         return self.search_spaces.keys()
@@ -18,16 +19,13 @@ class HyperOptimisation(object):
         if(type(train)==str):
             train=data.read_data(train)
         ensemble=binary.get_ens(ensemble)
-        def helper(X_train,y_train):
-            cv_gen=RepeatedStratifiedKFold(n_splits=n_split, 
+        X_train,y_train=train.as_dataset()[:2]
+        cv_gen=RepeatedStratifiedKFold(n_splits=n_split, 
                     n_repeats=1, random_state=1)
-            search=self.search_alg((X_train,y_train),ensemble(),
+        search=self.search_alg((X_train,y_train),ensemble(),
                 self.search_spaces,cv_gen)
-            best_estm=search.best_estimator_
-            return best_estm.get_params(deep=True)
-        train_tuple=train.as_dataset()[:2]
-        best_params= helper(*train_tuple)
-        return best_params
+        best_estm=search.best_estimator_
+        return best_estm.get_params(deep=True)
 
 class BayesOptim(object):
     def __init__(self,n_jobs=1,verbosity=True,n_iter=20):
@@ -69,7 +67,9 @@ def hyper_exp(conf_path,n_split):
     dir_dict,hyper_dict=conf.read_hyper(conf_path)
     print('Optimisation for hyperparams')
     for hyper_i in hyper_dict['hyperparams']:
-        print('%s:%s' % (hyper_i,','.join(hyper_dict[hyper_i])))
+        print(type(hyper_dict[hyper_i]))
+        hyper_values= ','.join(map(str,hyper_dict[hyper_i]))
+        print('{}:{}'.format(hyper_i,hyper_values))#'%s:%s' % (hyper_i,)))
     hyper_optim=parse_hyper(hyper_dict)
     param_names=hyper_optim.param_names()
     with open(dir_dict['hyper'],"a") as f:
@@ -81,9 +81,9 @@ def hyper_exp(conf_path,n_split):
         line_i=get_line(path_i,hyperparams,param_names)
         with open(dir_dict['hyper'],"a") as f:
             f.write(line_i) 
-    print('Hyperparams saved at %s' % dir_dict['hyper'])
+    print('Hyperparams saved at {}'.format(dir_dict['hyper']))
 
-def get_line(path_i,hyperparams  ,param_names):
+def get_line(path_i,hyperparams,param_names):
     name=path_i.split('/')[-1]
     line=[str(hyperparams[param_i]) 
            for param_i in param_names]
@@ -99,10 +99,8 @@ def parse_hyper(conf):
     return HyperOptimisation(search_alg,search_spaces)
 
 if __name__ == "__main__":
-    import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--n_split", type=int, default=3)
     parser.add_argument("--conf",type=str,default='conf/base.cfg')
     args = parser.parse_args()
-#    conf_dict=conf.read_conf(args.conf,'HYPER')
     hyper_exp(args.conf,args.n_split)
