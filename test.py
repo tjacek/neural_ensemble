@@ -1,9 +1,8 @@
-import sys
 #from pathlib import Path
 #sys.path.append(str(Path('.').absolute().parent))
 import os
 import sys
-import logging
+import logging,argparse
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 logging.getLogger('tensorflow').setLevel(logging.ERROR)
 import tensorflow as tf
@@ -19,25 +18,25 @@ import conf,data,learn,utils,ens_feats
 from tqdm import tqdm
 
 def test_exp(conf):
-    logging.basicConfig(filename=conf['log'], 
+    logging.basicConfig(filename='{}_test.log'.format(conf['log']), 
         level=logging.INFO,filemode='w', 
         format='%(process)d-%(levelname)s-%(message)s')
     @utils.dir_fun(as_dict=True)
     def helper(data_i):
         model_i='%s/%s' % (conf['model'],data_i.split('/')[-1])
-        return exp(data_i,model_i,conf)#clf_types,ens_types)
+        return exp(data_i,model_i,conf)
     logging.info('Save results:%s' % conf['result'])
     lines_dict=helper(conf['json'])
 
 def exp(data_path,model_path,conf):
-#    clf_types=['LR','RF'],clf_types=['base','common','binary']):
     raw_data=data.read_data(data_path)
+    clf_types,ens_types=conf['clf_types'],conf['ens_types']
     print(f'Test models on dataset:{data_path}')
-    print('Multiclass classifiers types used: %s' % ','.join(conf['clf_types']))
-    print('Ensemble variant used: %s' % ','.join(conf['ens_types']))
-    helper= get_fold_fun(raw_data,conf['clf_types'],conf['ens_types'])
+    print('Multiclass classifiers types used:{}'.format(','.join(clf_types)))
+    print('Ensemble variant used:{}'.format(','.join(ens_types)))
+    helper= get_fold_fun(raw_data,clf_types,ens_types)
     acc=[helper(path_i) 
-        for path_i in tqdm(data.top_files(model_path))]#conf['model']))]
+        for path_i in tqdm(data.top_files(model_path))]
     acc_dict={ id_i:[] for id_i in acc[0].keys()}
     for acc_i in acc:
         for key_j,value_j in acc_i.items():
@@ -49,6 +48,7 @@ def exp(data_path,model_path,conf):
         line_j=f'{data_i},{id_j},{stats(acc_j)}'
         with open(conf['result'],"a") as f:
             f.write(line_j+ '\n')
+    print('Saved result for {} at {}\n'.format(data_path,conf['result']))
 
 def get_fold_fun(raw_data,clf_types,ens_types):
     ens_types=[ens_feats.get_ensemble(type_i)
@@ -84,13 +84,12 @@ def gen_feats(raw_data,in_path):
 
 def stats(acc,as_str=True):
     raw=[f'{fun_i(acc):.4f}' 
-        for fun_i in [np.mean,np.std]]
+        for fun_i in [np.mean,np.std,np.amax]]
     if(as_str):
         return ','.join(raw)
     return raw
 
 if __name__ == "__main__":
-    import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--conf",type=str,default='conf/base.cfg')
     args = parser.parse_args()

@@ -1,7 +1,6 @@
-import sys
 import os
 import sys
-import logging
+import logging,argparse
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 logging.getLogger('tensorflow').setLevel(logging.ERROR)
 import tensorflow as tf
@@ -11,7 +10,7 @@ def warn(*args, **kwargs):
 import warnings
 warnings.warn = warn
 import pandas as pd 
-import json,shutil
+import json,shutil,time
 from tqdm import tqdm
 import conf,binary,data,nn,learn,folds,utils
 
@@ -21,11 +20,14 @@ def multi_exp(conf):
         shutil.rmtree(conf['model'])
     if(type(conf['hyper'])==str):
         get_hyper=read_hyper(conf['hyper'])
-        print('Hyperparameters are loaded from %s' % conf['hyper'])
+        print('Hyperparameters are loaded from {}'.format(conf['hyper']))
     else:
         get_hyper=conf['hyper']
-        print('Default hyperparams are used %s' % get_hyper(''))
-    set_logging(conf['log'])
+        default= str(get_hyper(''))
+        print('Default hyperparams are used {}'.format(default))
+    logging.basicConfig(filename='{}_train.log'.format(conf['log']), 
+        level=logging.INFO,filemode='w', 
+        format='%(process)d-%(levelname)s-%(message)s')
     @utils.dir_map(depth=1)
     def helper(in_path,out_path):
         gen_data(in_path,out_path,conf,get_hyper)
@@ -39,7 +41,9 @@ def gen_data(in_path,out_path,conf,get_hyper):
     print(f'Training models on dataset:{out_path}')
     print(f'Hyperparams:{hyperparams}')
     for i in tqdm(range(conf['n_iters'])):
+        st=time.time()
         out_i=f'{out_path}/{i}'
+        logging.info(f'Folder {out_i} created.')
         data.make_dir(out_i)
         folds_i=folds.make_folds(raw_data,k_folds=conf['n_split'])
         splits_i=folds.get_splits(raw_data,folds_i)
@@ -47,10 +51,12 @@ def gen_data(in_path,out_path,conf,get_hyper):
             ens_j= NeuralEnsemble(**hyperparams)
             learn.fit_clf(data_j,ens_j)
             out_j=f'{out_i}/{j}'
+            logging.info(f'Save models {out_j}')
             save_fold(ens_j,rename_j,out_j)
+        logging.info(f'Iteration {out_i} took {(time.time()-st):.4f}s')
+    print(f'Models saved at {out_path}\n')
 
 def save_fold(ens_j,rename_j,out_j):
-    logging.info(f'Save models {out_j}')
     data.make_dir(out_j)
     ens_j.save(f'{out_j}/models')
     with open(f'{out_j}/rename', 'wb') as f:
@@ -81,20 +87,13 @@ def default_hyper(conf_hyper):
                     for name_i in names}
     return lambda path: hyper_dict
 
-def set_logging(log_path):
-    logging.basicConfig(filename=log_path, 
-        level=logging.INFO,filemode='w', 
-        format='%(process)d-%(levelname)s-%(message)s')
-
 if __name__ == "__main__":
-    import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--n_iters", type=int, default=3)
     parser.add_argument("--n_split", type=int, default=3)
     parser.add_argument("--conf",type=str,default='conf/base.cfg')
     parser.add_argument("--lazy",action='store_true')
     parser.add_argument("--default",action='store_true')
-#    parser.add_argument("--single",action='store_true') 
     args = parser.parse_args()
     conf_train,conf_hyper=conf.read_hyper(args.conf)
     conf_train['n_iters']=args.n_iters
