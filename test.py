@@ -12,8 +12,9 @@ def warn(*args, **kwargs):
 import warnings
 warnings.warn = warn
 from tensorflow import keras
+from keras.models import model_from_json
 import numpy as np
-import json,time
+import json,time,gzip
 import conf,data,learn,utils,ens_feats
 from tqdm import tqdm
 
@@ -70,12 +71,7 @@ def get_fold_fun(raw_data,clf_types,ens_types):
     return helper
 
 def gen_feats(raw_data,in_path):
-    model_path=f'{in_path}/models'
-    models=[keras.models.load_model(path_i,compile=False)
-        for path_i in data.top_files(model_path)]  
-    rename_path=f'{in_path}/rename'
-    with open(rename_path, 'r') as f:
-        rename_dict= json.load(f)
+    rename_dict,models=read_fold(in_path)
     common=raw_data.rename(rename_dict)
     X,y,names=common.as_dataset()
     binary=[]
@@ -91,6 +87,26 @@ def stats(acc,as_str=True):
     if(as_str):
         return ','.join(raw)
     return raw
+
+def read_fold(in_path):
+#    raise Exception(in_path)
+    with gzip.open(in_path, 'r') as f:        
+        json_bytes = f.read()                      
+        json_str = json_bytes.decode('utf-8')           
+        raw_dict = json.loads(json_str)
+        rename_dict=raw_dict['rename']
+        models=[ model_from_json(model_i) 
+            for model_i in raw_dict['models']]
+        return rename_dict,models
+
+#def read_fold(in_path):
+#    model_path=f'{in_path}/models'
+#    models=[keras.models.load_model(path_i,compile=False)
+#        for path_i in data.top_files(model_path)]  
+#    rename_path=f'{in_path}/rename'
+#    with open(rename_path, 'r') as f:
+#        rename_dict= json.load(f)
+#    return rename_dict,models
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

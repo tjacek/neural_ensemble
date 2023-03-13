@@ -10,7 +10,7 @@ def warn(*args, **kwargs):
 import warnings
 warnings.warn = warn
 import pandas as pd 
-import json,shutil,time
+import json,shutil,time,gzip
 from tqdm import tqdm
 import conf,binary,data,nn,learn,folds,utils
 
@@ -30,10 +30,10 @@ def multi_exp(conf):
         format='%(process)d-%(levelname)s-%(message)s')
     @utils.dir_map(depth=1)
     def helper(in_path,out_path):
-        gen_data(in_path,out_path,conf,get_hyper)
+        single_inter(in_path,out_path,conf,get_hyper)
     helper(conf['json'],conf['model']) 
 
-def gen_data(in_path,out_path,conf,get_hyper):
+def single_inter(in_path,out_path,conf,get_hyper):
     raw_data=data.read_data(in_path)
     data.make_dir(out_path)
     hyperparams=get_hyper(in_path)
@@ -57,12 +57,23 @@ def gen_data(in_path,out_path,conf,get_hyper):
     print(f'Models saved at {out_path}\n')
 
 def save_fold(ens_j,rename_j,out_j):
-    data.make_dir(out_j)
-    ens_j.save(f'{out_j}/models')
-    with open(f'{out_j}/rename', 'wb') as f:
-        json_str = json.dumps(rename_j)         
+    raw_dict={
+      'rename':rename_j,
+      'models':[extr.to_json() 
+            for extr in ens_j.extractors]
+    }
+    with gzip.open(out_j, 'wb') as f:
+        json_str = json.dumps(raw_dict)         
         json_bytes = json_str.encode('utf-8') 
         f.write(json_bytes)
+
+#def save_fold(ens_j,rename_j,out_j):
+#    data.make_dir(out_j)
+#    ens_j.save(f'{out_j}/models')
+#    with open(f'{out_j}/rename', 'wb') as f:
+#        json_str = json.dumps(rename_j)         
+#        json_bytes = json_str.encode('utf-8') 
+#        f.write(json_bytes)
 
 def read_hyper(in_path):
     hyper_frame=pd.read_csv(in_path)
@@ -86,6 +97,7 @@ def default_hyper(conf_hyper):
     hyper_dict={name_i:helper(name_i) 
                     for name_i in names}
     return lambda path: hyper_dict
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
