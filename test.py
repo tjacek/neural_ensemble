@@ -14,6 +14,7 @@ warnings.warn = warn
 from tensorflow import keras
 from keras.models import model_from_json
 import numpy as np
+import pandas as pd 
 import json,time,gzip,shutil
 import conf,data,learn,utils,ens_feats
 from tqdm import tqdm
@@ -21,6 +22,8 @@ from tqdm import tqdm
 def test_exp(conf):
     if(os.path.isdir(conf['output'])):
         shutil.rmtree(conf['output'])
+    if(os.path.exists(conf['result'])):
+        os.remove(conf['result'])
     logging.basicConfig(filename='{}_test.log'.format(conf['log']), 
         level=logging.INFO,filemode='w', 
         format='%(process)d-%(levelname)s-%(message)s')
@@ -49,16 +52,6 @@ def exp(data_path,model_path,output_path,conf):
         for key_j,value_j in result_i.items():
             value_j.save(f'{output_path}/{key_j}/{i}') 
     print('Saved result for {} at {}\n'.format(data_path,output_path))
-
-#    full_result={ id_i:[] for id_i in result[0].keys()}    
-#    data_i=data_path.split('/')[-1]    
-#    with open(conf['result'],"a") as f:
-#        f.write('dataset,ens_type,clf_type,mean_acc,std_acc,max_acc\n')
-#        for id_j,acc_j in acc_dict.items():
-#            raise Exception(type(acc_j[0]))
-#            line_j=f'{data_i},{id_j},{stats(acc_j)}'
-#        with open(conf['result'],"a") as f:
-#            f.write(line_j+ '\n')
 
 def get_fold_fun(raw_data,clf_types,ens_types):
     ens_types=[ens_feats.get_ensemble(type_i)
@@ -99,6 +92,21 @@ def read_fold(in_path):
             for model_i in raw_dict['models']]
         return rename_dict,models
 
+def make_results(conf):
+    @utils.dir_fun(True)
+    @utils.dir_fun(True)
+    def helper(in_path):
+        acc=[learn.read_result(path_i).get_acc()
+           for path_i in data.top_files(in_path) ]
+        return acc
+    acc_dict=helper(conf['output'])
+    with open(conf['result'],"a") as f:
+        f.write('dataset,ens_type,clf_type,mean_acc,std_acc,max_acc\n')
+        for data_i,dict_i in acc_dict.items():
+            for id_j,acc_j in dict_i.items():
+                line_ij=f'{data_i},{id_j},{stats(acc_j)}'
+                f.write(line_ij+ '\n')
+
 def stats(acc,as_str=True):
     raw=[f'{fun_i(acc):.4f}' 
         for fun_i in [np.mean,np.std,np.amax]]
@@ -106,9 +114,24 @@ def stats(acc,as_str=True):
         return ','.join(raw)
     return raw
 
+def best_frame(result_path,out_path=None):
+    result=pd.read_csv(result_path)
+    lines=[]
+    for data_i in result['dataset'].unique():
+        df_i=result[result['dataset']==data_i]
+        k=df_i['mean_acc'].argmax()
+        row_i=df_i.iloc[k].to_list()
+        lines.append(row_i)
+    best=pd.DataFrame(lines,columns=result.columns)
+    best.to_csv(out_path)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--conf",type=str,default='conf/base.cfg')
     args = parser.parse_args()
     conf_dict=conf.read_test(args.conf)
     test_exp(conf_dict)
+    make_results(conf_dict)
+    print("Saved results at {}".format(conf_dict['result']))
+    best_frame(conf_dict['result'],conf_dict['best'])
+    print("Saved best results at {}".format(conf_dict['best']))

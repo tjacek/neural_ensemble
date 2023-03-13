@@ -20,7 +20,7 @@ def dir_fun(as_dict=False):
     def helper(fun):
         @wraps(fun)
         def dir_decorator(*args, **kwargs):
-            print(args)
+#            print(args)
             k= is_object(args)
             in_path= args[k]
             if(as_dict):
@@ -29,7 +29,7 @@ def dir_fun(as_dict=False):
                 output=[]
             paths=get_paths(in_path)
             for path_i in paths:
-                print(path_i)
+#                print(path_i)
                 new_args=list(args)
                 new_args[k]=path_i
                 out_i=fun(*new_args,**kwargs)
@@ -73,10 +73,10 @@ def unify_cv(dir_path='feats',show=False):
                 for key_i in results[0].keys():
                     by_key_i=[r_j[key_i] for r_j in results]
                     full_i=learn.unify_results(by_key_i)
-                    acc[key_i]=full_i.get_acc()
+                    acc[key_i]=full_i#.get_acc()
             else:
                 full_results=learn.unify_results(results)
-                acc= full_results.get_acc()
+                acc= full_results#.get_acc()
             if(show):
                 print(acc)
             return acc  

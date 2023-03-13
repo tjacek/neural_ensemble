@@ -7,16 +7,16 @@ import json
 #from sklearn.utils import class_weight
 import data
 
-class Votes(object):
-    def __init__(self,results):
-        self.results=results
+#class Votes(object):
+#    def __init__(self,results):
+#        self.results=results
 
-    def names(self):
-        return self.results[0].names()
+#    def names(self):
+#        return self.results[0].names()
 
-    def get_classes(self,name_i):
-        return [ np.argmax(result_i[name_i]) 
-                for result_i in self.results]
+#    def get_classes(self,name_i):
+#        return [ np.argmax(result_i[name_i]) 
+#                for result_i in self.results]
 
 #    def dynamic_voting(self,s_dict):
 #        result=Result()
@@ -31,8 +31,8 @@ class Votes(object):
 #            result[name_i]=np.argmax(count_i)    
 #        return result
     
-    def vote(self):
-        return voting(self.results)
+#    def vote(self):
+#        return voting(self.results)
 
 class Result(data.DataDict):
     def get_pred(self):
@@ -66,6 +66,15 @@ def get_label(vote_i):
         return np.argmax(vote_i)
     else:
         return vote_i
+
+def read_result(in_path):
+    with open(in_path, 'r') as f:        
+        json_str = f.read()                      
+#        json_str = json_bytes.decode('utf-8')           
+        raw_dict = json.loads(json_str)
+        raw_dict= {data.Name(name_i):value_i
+            for name_i,value_i in raw_dict.items()}
+        return Result(raw_dict)
 
 def make_result(names,y_pred):
     result=[(name_i,pred_i) 
