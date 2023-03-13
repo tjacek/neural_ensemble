@@ -3,6 +3,7 @@ from sklearn.metrics import classification_report,accuracy_score,f1_score
 from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
 from sklearn import ensemble
+import json
 #from sklearn.utils import class_weight
 import data
 
@@ -17,18 +18,18 @@ class Votes(object):
         return [ np.argmax(result_i[name_i]) 
                 for result_i in self.results]
 
-    def dynamic_voting(self,s_dict):
-        result=Result()
-        for name_i,clfs_i in s_dict.items():
-            if(clfs_i is None):
-                ballot_i=[ r[name_i] 
-                    for r in self.results]
-            else:
-                ballot_i=[self.results[s][name_i] 
-                    for s in clfs_i]
-            count_i=np.sum(ballot_i ,axis=0)
-            result[name_i]=np.argmax(count_i)    
-        return result
+#    def dynamic_voting(self,s_dict):
+#        result=Result()
+#        for name_i,clfs_i in s_dict.items():
+#            if(clfs_i is None):
+#                ballot_i=[ r[name_i] 
+#                    for r in self.results]
+#            else:
+#                ballot_i=[self.results[s][name_i] 
+#                    for s in clfs_i]
+#            count_i=np.sum(ballot_i ,axis=0)
+#            result[name_i]=np.argmax(count_i)    
+#        return result
     
     def vote(self):
         return voting(self.results)
@@ -37,10 +38,7 @@ class Result(data.DataDict):
     def get_pred(self):
         y_pred,y_true=[],[]
         for name_i,vote_i in self.items():
-            if(type(vote_i)==np.ndarray):
-                y_pred.append(np.argmax(vote_i))
-            else:
-                y_pred.append(vote_i)
+            y_pred.append(get_label(vote_i) )
             y_true.append(name_i.get_cat())
         return y_pred,y_true
     
@@ -50,11 +48,25 @@ class Result(data.DataDict):
     def get_acc(self):
         y_pred,y_true=self.get_pred()
         return accuracy_score(y_pred,y_true)
-
+    
     def report(self):
         y_pred,y_true=self.get_pred()
         print(classification_report(y_true, y_pred,digits=4))
 	
+    def save(self,out_path):
+        raw_dict={name_i:int(get_label(value_i))
+            for name_i,value_i in self.items()}
+        with open(out_path, 'wb') as f:
+            json_str = json.dumps(raw_dict)         
+            json_bytes = json_str.encode('utf-8') 
+            f.write(json_bytes)
+
+def get_label(vote_i):
+    if(type(vote_i)==np.ndarray):
+        return np.argmax(vote_i)
+    else:
+        return vote_i
+
 def make_result(names,y_pred):
     result=[(name_i,pred_i) 
             for name_i,pred_i in zip(names,y_pred)]
