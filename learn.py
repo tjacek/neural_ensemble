@@ -81,13 +81,6 @@ def fit_clf(data_dict_i,clf_type=None,balance=False):
     data_dict_i.norm()
     train,test= data_dict_i.split()
     X_train,y_train,names=train.as_dataset()
-
-#    if(clf_i is None):
-#        if(balance):
-#            clf_i=LogisticRegression(solver='liblinear',
-#                class_weight='balanced')
-#        else:
-#            clf_i=LogisticRegression(solver='liblinear')
     if(type(clf_type)==str):
         clf_i=get_clf(clf_type)
     else:
@@ -100,6 +93,9 @@ def fit_clf(data_dict_i,clf_type=None,balance=False):
 def get_clf(name_i):        
     if(name_i=="RF"):
         return ensemble.RandomForestClassifier()
+    if(name_i=="LR(imb)"):
+        return LogisticRegression(solver='liblinear',
+            class_weight='balanced')
     if(name_i=='Bag'):
         return ensemble.BaggingClassifier()
     if(name_i=='Grad'):
