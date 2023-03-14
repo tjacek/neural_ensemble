@@ -15,6 +15,7 @@ from tqdm import tqdm
 import conf,binary,data,nn,learn,folds,utils
 
 def multi_exp(conf):
+    data.make_dir(conf['main_dict'])
     if(not conf['lazy'] and 
         (os.path.isdir(conf['model']))):
         shutil.rmtree(conf['model'])
@@ -66,14 +67,6 @@ def save_fold(ens_j,rename_j,out_j):
         json_str = json.dumps(raw_dict)         
         json_bytes = json_str.encode('utf-8') 
         f.write(json_bytes)
-
-#def save_fold(ens_j,rename_j,out_j):
-#    data.make_dir(out_j)
-#    ens_j.save(f'{out_j}/models')
-#    with open(f'{out_j}/rename', 'wb') as f:
-#        json_str = json.dumps(rename_j)         
-#        json_bytes = json_str.encode('utf-8') 
-#        f.write(json_bytes)
 
 def read_hyper(in_path):
     hyper_frame=pd.read_csv(in_path)

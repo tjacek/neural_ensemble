@@ -22,9 +22,11 @@ def parse_clf(config_obj):
 def parse_dict(config_obj):
     raw_dict= config_obj['DIR']
     dir_path=raw_dict['main_dict']
-    paths={ key_i:f'{dir_path}/{raw_dict[key_i]}' 
-            for key_i in raw_dict
-                if(key_i!='main_dict')}
+    paths={'json':raw_dict['json'],
+            'main_dict':raw_dict['main_dict']}
+    for key_i in raw_dict:
+        if(key_i!='main_dict' and key_i!='json'):
+            paths[key_i]=f'{dir_path}/{raw_dict[key_i]}'
     return paths
 
 def parse_hyper(config_obj):
@@ -49,8 +51,3 @@ def parse_list(raw_str):
         else:
             list_i.append(item)
     return list_i
-
-#def save_result(clf_config,result_text):
-#    f = open(clf_config['out_path'],"w")
-#    f.write(result_text)
-#    f.close()
