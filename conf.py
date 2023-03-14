@@ -1,3 +1,4 @@
+import os,logging,warnings
 from configparser import ConfigParser
 
 def read_hyper(in_path):
@@ -51,3 +52,12 @@ def parse_list(raw_str):
         else:
             list_i.append(item)
     return list_i
+
+def silence_warnings():
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+    import tensorflow as tf
+    logging.getLogger('tensorflow').setLevel(logging.ERROR)
+    tf.get_logger().setLevel('ERROR')
+    def warn(*args, **kwargs):
+        pass
+    warnings.warn = warn

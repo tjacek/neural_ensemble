@@ -6,10 +6,9 @@ import numpy as np
 import data,nn,learn
 
 class NeuralEnsemble(BaseEstimator, ClassifierMixin):
-    def __init__(self,n_hidden=250,multi_clf='LR'):#n_epochs=200):
+    def __init__(self,n_hidden=250,multi_clf='LR'):
         self.n_hidden=n_hidden
         self.multi_clf=multi_clf
-#        self.n_epochs=n_epochs
 
     def fit(self,X,targets):
         raise NotImplementedError
@@ -38,7 +37,8 @@ class NeuralEnsemble(BaseEstimator, ClassifierMixin):
         earlystopping = callbacks.EarlyStopping(monitor="accuracy",
                 mode="min", patience=5,restore_best_weights=True)
         nn_params={'dims':X.shape[1],'n_cats':2}
-        nn_i=nn.SimpleNN(n_hidden=int(self.n_hidden))(nn_params)
+        n_hidd= int(self.n_hidden*X.shape[1])
+        nn_i=nn.SimpleNN(n_hidden=n_hidd)(nn_params)
         nn_i.fit(X,y_i,epochs=500,#self.n_epochs,
             batch_size=32,verbose = 0,callbacks=earlystopping)
         extractor_i= nn.get_extractor(nn_i)

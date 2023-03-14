@@ -1,14 +1,6 @@
-import os
-import sys
-import logging,argparse
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-logging.getLogger('tensorflow').setLevel(logging.ERROR)
-import tensorflow as tf
-tf.get_logger().setLevel('ERROR')
-def warn(*args, **kwargs):
-    pass
-import warnings
-warnings.warn = warn
+import conf 
+conf.silence_warnings()
+import sys,os,logging,argparse
 import pandas as pd 
 import json,shutil,time,gzip
 from tqdm import tqdm
@@ -90,7 +82,6 @@ def default_hyper(conf_hyper):
     hyper_dict={name_i:helper(name_i) 
                     for name_i in names}
     return lambda path: hyper_dict
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

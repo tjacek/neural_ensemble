@@ -1,16 +1,8 @@
 #from pathlib import Path
 #sys.path.append(str(Path('.').absolute().parent))
-import os
-import sys
-import logging,argparse
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-logging.getLogger('tensorflow').setLevel(logging.ERROR)
-import tensorflow as tf
-tf.get_logger().setLevel('ERROR')
-def warn(*args, **kwargs):
-    pass
-import warnings
-warnings.warn = warn
+import conf 
+conf.silence_warnings()
+import sys,os,logging,argparse
 from tensorflow import keras
 from keras.models import model_from_json
 import numpy as np
@@ -27,7 +19,6 @@ def test_exp(conf):
     logging.basicConfig(filename='{}_test.log'.format(conf['log']), 
         level=logging.INFO,filemode='w', 
         format='%(process)d-%(levelname)s-%(message)s')
-#    @utils.dir_fun(as_dict=True)
     @utils.dir_map(1)
     def helper(model_path,output_path):
         name=model_path.split('/')[-1]
