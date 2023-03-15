@@ -56,7 +56,7 @@ def get_fold_fun(raw_data,clf_types,ens_types):
         for ens_i in ens_types:
             for clf_j in clf_types:
                 ens_inst=ens_i(common,binary)
-                id_ij=f'{str(ens_inst)},{clf_j}'
+                id_ij=f'{str(ens_inst)}_{clf_j}'
                 acc_dir[id_ij]=ens_inst(clf_j)
         logging.info(f'Evaluate models from:{in_path} took {(time.time()-st):.4f}s')
         return acc_dir

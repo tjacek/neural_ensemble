@@ -7,11 +7,11 @@ def gen_cf(conf):
     df=pd.read_csv(conf['best'])
     data.make_dir(conf['cf'])
     for i,row_i in df.iterrows():
-        dir_i="{},{}".format(row_i['ens_type'],
+        dir_i="{}_{}".format(row_i['ens_type'],
         	row_i['clf_type'])
         in_i="{}/{}/{}".format(conf['output'],
         	row_i['dataset'],dir_i)
-        out_i="{}/{},{}".format(conf['cf'],
+        out_i="{}/{}_{}".format(conf['cf'],
         	row_i['dataset'],dir_i)
         data.make_dir(out_i)    
         for j,path_j in enumerate(data.top_files(in_i)):
