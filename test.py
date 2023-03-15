@@ -118,9 +118,10 @@ def best_frame(result_path,out_path=None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--conf",type=str,default='conf/base.cfg')
+    parser.add_argument("--conf",type=str,default='conf/ovo.cfg')
     args = parser.parse_args()
-    conf_dict=conf.read_test(args.conf)
+    conf_dict=conf.read_conf(args.conf,['dir','clf'])
+#    raise Exception(conf_dict)
     test_exp(conf_dict)
     make_results(conf_dict)
     print("Saved results at {}".format(conf_dict['result']))

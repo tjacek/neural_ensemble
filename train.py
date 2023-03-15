@@ -30,7 +30,7 @@ def single_inter(in_path,out_path,conf,get_hyper):
     raw_data=data.read_data(in_path)
     data.make_dir(out_path)
     hyperparams=get_hyper(in_path)
-    NeuralEnsemble=binary.get_ens(ens_type='all')
+    NeuralEnsemble=binary.get_ens(conf['binary_type'])
     print(f'Training models on dataset:{out_path}')
     print(f'Hyperparams:{hyperparams}')
     for i in tqdm(range(conf['n_iters'])):
@@ -85,13 +85,14 @@ def default_hyper(conf_hyper):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--n_iters", type=int, default=3)
-    parser.add_argument("--n_split", type=int, default=3)
-    parser.add_argument("--conf",type=str,default='conf/base.cfg')
+    parser.add_argument("--n_iters", type=int, default=10)
+    parser.add_argument("--n_split", type=int, default=10)
+    parser.add_argument("--conf",type=str,default='conf/ovo.cfg')
     parser.add_argument("--lazy",action='store_true')
     parser.add_argument("--default",action='store_true')
     args = parser.parse_args()
-    conf_train,conf_hyper=conf.read_hyper(args.conf)
+    conf_train=conf.read_conf(args.conf,['clf','dir'])
+#    raise Exception(conf_train)
     conf_train['n_iters']=args.n_iters
     conf_train['n_split']=args.n_split
     conf_train['lazy']=args.lazy

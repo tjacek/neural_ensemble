@@ -1,26 +1,28 @@
 import os,logging,warnings
 from configparser import ConfigParser
 
-def read_hyper(in_path):
+def read_conf(in_path,dict_types):
+    if(type(dict_types)==str):
+        dict_types=[dict_types]
     config_obj = ConfigParser()
     config_obj.read(in_path)
-    dir_dict=  parse_dict(config_obj)
-    hyper_dict= parse_hyper(config_obj)
-    return dir_dict,hyper_dict
-    
-def read_test(in_path):
-    config_obj = ConfigParser()
-    config_obj.read(in_path)
-    dir_dict=parse_dict(config_obj)    
-    clf_dict=  parse_clf(config_obj)
-    return  {**dir_dict , **clf_dict}
-
+    parse_dict={'clf':parse_clf,
+                'dir':parse_dir,
+                'hyper':parse_hyper}
+    full_dict={}
+    for type_i in dict_types:
+        dict_i=parse_dict[type_i](config_obj)
+        full_dict.update(dict_i)
+    return full_dict 
+        
 def parse_clf(config_obj):
     raw_dict= config_obj['CLF']
-    return { key_i:raw_dict[key_i].split(',') 
-            for key_i in raw_dict}
+    clf_dict={ key_i:raw_dict[key_i].split(',') 
+                for key_i in raw_dict}
+    clf_dict['binary_type']=clf_dict['binary_type'][0]
+    return clf_dict
 
-def parse_dict(config_obj):
+def parse_dir(config_obj):
     raw_dict= config_obj['DIR']
     dir_path=raw_dict['main_dict']
     paths={'json':raw_dict['json'],

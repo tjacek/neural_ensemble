@@ -85,6 +85,6 @@ def binarize(cat_i,targets):
     return y_i
 
 def get_ens(ens_type):
-    if(ens_type=='One'):
+    if(ens_type=='one'):
         return OneVsOne
     return OneVsAll

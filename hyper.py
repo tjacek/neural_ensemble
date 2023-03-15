@@ -15,10 +15,10 @@ class HyperOptimisation(object):
     def param_names(self):
         return self.search_spaces.keys()
 
-    def __call__(self,train,ensemble=None,n_split=10):
+    def __call__(self,train,binary_type=None,n_split=10):
         if(type(train)==str):
             train=data.read_data(train)
-        ensemble=binary.get_ens(ensemble)
+        ensemble=binary.get_ens(binary_type)
         X_train,y_train=train.as_dataset()[:2]
         cv_gen=RepeatedStratifiedKFold(n_splits=n_split, 
                     n_repeats=1, random_state=1)
@@ -64,24 +64,25 @@ class GridOptim(object):
         return search
 
 def hyper_exp(conf_path,n_split):
-    dir_dict,hyper_dict=conf.read_hyper(conf_path)
+    conf_dict=conf.read_conf(conf_path,['dir','hyper','clf'])
+    data.make_dir(conf_dict['main_dict'])
     print('Optimisation for hyperparams')
-    for hyper_i in hyper_dict['hyperparams']:
-        print(type(hyper_dict[hyper_i]))
-        hyper_values= ','.join(map(str,hyper_dict[hyper_i]))
+    for hyper_i in conf_dict['hyperparams']:
+        print(type(conf_dict[hyper_i]))
+        hyper_values= ','.join(map(str,conf_dict[hyper_i]))
         print('{}:{}'.format(hyper_i,hyper_values))#'%s:%s' % (hyper_i,)))
-    hyper_optim=parse_hyper(hyper_dict)
+    hyper_optim=parse_hyper(conf_dict)
     param_names=hyper_optim.param_names()
-    with open(dir_dict['hyper'],"a") as f:
+    with open(conf_dict['hyper'],"a") as f:
         f.write('dataset,'+','.join(param_names)+'\n')
-    for path_i in data.top_files(dir_dict['json']):
+    for path_i in data.top_files(conf_dict['json']):
         print(f'Optimisation of hyperparams for dataset {path_i}')
         raw_data=data.read_data(path_i)
-        hyperparams=hyper_optim(raw_data,"all",n_split)
+        hyperparams=hyper_optim(raw_data,conf_dict['binary_type'],n_split)
         line_i=get_line(path_i,hyperparams,param_names)
-        with open(dir_dict['hyper'],"a") as f:
+        with open(conf_dict['hyper'],"a") as f:
             f.write(line_i) 
-    print('Hyperparams saved at {}'.format(dir_dict['hyper']))
+    print('Hyperparams saved at {}'.format(conf_dict['hyper']))
 
 def get_line(path_i,hyperparams,param_names):
     name=path_i.split('/')[-1]
@@ -100,7 +101,7 @@ def parse_hyper(conf):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--n_split", type=int, default=3)
-    parser.add_argument("--conf",type=str,default='conf/base.cfg')
+    parser.add_argument("--n_split", type=int, default=10)
+    parser.add_argument("--conf",type=str,default='conf/ovo.cfg')
     args = parser.parse_args()
     hyper_exp(args.conf,args.n_split)
