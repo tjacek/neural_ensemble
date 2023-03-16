@@ -2,6 +2,7 @@ import numpy as np
 from sklearn.metrics import classification_report,accuracy_score,f1_score
 from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
+from sklearn.metrics import confusion_matrix
 from sklearn import ensemble
 import json
 #from sklearn.utils import class_weight
@@ -53,6 +54,10 @@ class Result(data.DataDict):
         y_pred,y_true=self.get_pred()
         print(classification_report(y_true, y_pred,digits=4))
 	
+    def get_cf(self):
+        y_pred,y_true=self.get_pred()
+        return confusion_matrix(y_true, y_pred)
+
     def save(self,out_path):
         raw_dict={name_i:int(get_label(value_i))
             for name_i,value_i in self.items()}
