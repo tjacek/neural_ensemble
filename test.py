@@ -1,5 +1,3 @@
-#from pathlib import Path
-#sys.path.append(str(Path('.').absolute().parent))
 import conf 
 conf.silence_warnings()
 import sys,os,logging,argparse
@@ -95,6 +93,7 @@ def make_results(conf):
         f.write('dataset,ens_type,clf_type,mean_acc,std_acc,max_acc\n')
         for data_i,dict_i in acc_dict.items():
             for id_j,acc_j in dict_i.items():
+                id_j=','.join(id_j.split('_'))
                 line_ij=f'{data_i},{id_j},{stats(acc_j)}'
                 f.write(line_ij+ '\n')
 
