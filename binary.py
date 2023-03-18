@@ -6,8 +6,9 @@ import numpy as np
 import data,nn,learn
 
 class NeuralEnsemble(BaseEstimator, ClassifierMixin):
-    def __init__(self,n_hidden=250,multi_clf='LR'):
+    def __init__(self,n_hidden=250,l1=0.001,multi_clf='LR'):
         self.n_hidden=n_hidden
+        self.l1=l1
         self.multi_clf=multi_clf
 
     def fit(self,X,targets):
@@ -38,8 +39,9 @@ class NeuralEnsemble(BaseEstimator, ClassifierMixin):
                 mode="min", patience=5,restore_best_weights=True)
         nn_params={'dims':X.shape[1],'n_cats':2}
         n_hidd= int(self.n_hidden*X.shape[1])
-        nn_i=nn.SimpleNN(n_hidden=n_hidd)(nn_params)
-        nn_i.fit(X,y_i,epochs=500,#self.n_epochs,
+        l1=float(self.l1)
+        nn_i=nn.SimpleNN(n_hidden=n_hidd,l1=l1)(nn_params)
+        nn_i.fit(X,y_i,epochs=500,
             batch_size=32,verbose = 0,callbacks=earlystopping)
         extractor_i= nn.get_extractor(nn_i)
         self.extractors.append(extractor_i)
