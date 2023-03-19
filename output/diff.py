@@ -3,7 +3,7 @@ from pathlib import Path
 sys.path.append(str(Path('.').absolute()))
 import pandas as pd
 
-def comp(default_path,paths):
+def comp(default_path,paths,out_path):
     default=pd.read_csv(default_path)
     df={ id_i:pd.read_csv(path_i) 
          for id_i,path_i in paths.items()}
@@ -15,13 +15,11 @@ def comp(default_path,paths):
             acc_ij=get_acc(data_i,clf_j,default)
             for optim_t,df_t in df.items():
                 diff_t= get_acc(data_i,clf_j,df_t)-acc_ij 
-#                line_t=f'{data_i},{clf_j},{optim_t},{diff_t:0.2}'
                 line_t= data_i,clf_j,optim_t,diff_t
-                lines.append(line_t)#.split(','))
+                lines.append(line_t)
     cols=['dataset','clf','optim','diff']
     df= pd.DataFrame(lines,columns=cols)
-    print(df[df['diff']>0])
-    print(df[df['diff']<0])
+    df.to_csv(out_path, index=False)
 
 def get_acc(data_i,clf_j,df):
     row_ij=df[(df['dataset']==data_i) 
@@ -34,4 +32,4 @@ in_path='../uci/default/result.csv'
 paths={'bayes':'../uci/bayes/result.csv',
        'grid':'../uci/grid/result.csv'}
 
-comp(in_path,paths)
+comp(in_path,paths,'diff.csv')

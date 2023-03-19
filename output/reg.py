@@ -12,20 +12,12 @@ def reg_frame(result,stats,clf=None):
         result=pd.read_csv(result)
     if(type(stats)==str):
         stats=pd.read_csv(stats)
-    new_data=[]
-    for data_i,row_i in plot.best_gen(result):
-        clf_i=  row_i['clf'] if(clf is None) else clf
-        common=result[ (result.dataset==data_i) & 
-                       (result.ens=='common') &
-                       (result.clf==clf_i)]      
-        diff_i=float(row_i['mean_acc'] - common['mean_acc'])
-        stats_i= stats[stats.dataset==data_i]
-        stats_i=stats_i.iloc[0].tolist()
-        stats_i.append(diff_i)
-        new_data.append(stats_i)
-    new_cols=stats.columns.tolist()+['diff']
-    new_data=pd.DataFrame(new_data, columns=new_cols)    
-    return new_data
+    for col_i in stats.columns:
+        def helper(data_j):
+            index_j=(stats['dataset']==data_j)
+            return stats[index_j][col_i].to_list()[0]
+        result[col_i]=result['dataset'].apply(helper)
+    return result
 
 def linear_reg(df,robust=False):
     if(robust):
@@ -36,6 +28,7 @@ def linear_reg(df,robust=False):
     y=df['diff'].to_numpy()
     clf.fit(X,y)
     return clf.coef_/np.sum(np.abs(clf.coef_))
+    
 
 def p_value(df):
     X=df[['classes','samples','features','gini']].to_numpy()
@@ -47,12 +40,9 @@ def p_value(df):
 
 
 
-result_path='../uci_bayes/bayes/result.csv'
+result_path='diff.csv'
 stats_path='stats.csv'
-df_reg=reg_frame(result_path,stats_path,clf='LR')
+df_reg=reg_frame(result_path,stats_path)
 coff=linear_reg(df_reg)
-print(coff)
-coff=linear_reg(df_reg,True)
-print(coff)
-plot.scatter_plot(df_reg,x_col='gini',y_col='diff')
+print([f'{c:2f}' for c in coff])
 p_value(df_reg)
