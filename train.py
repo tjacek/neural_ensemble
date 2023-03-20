@@ -89,13 +89,17 @@ if __name__ == "__main__":
     parser.add_argument("--n_split", type=int, default=10)
     parser.add_argument("--conf",type=str,default='conf/ovo.cfg')
     parser.add_argument("--lazy",action='store_true')
+    parser.add_argument("--dir_path",type=str)
     parser.add_argument("--default",action='store_true')
+#    parser.add_argument('--hyper_optim',
+#        choices=['default', 'bayes', 'grid','conf'],default='conf')
+
     args = parser.parse_args()
-    conf_train=conf.read_conf(args.conf,['clf','dir'])
-#    raise Exception(conf_train)
+    conf_train=conf.read_conf(args.conf,
+        ['clf','dir','hyper'],args.dir_path)
     conf_train['n_iters']=args.n_iters
     conf_train['n_split']=args.n_split
     conf_train['lazy']=args.lazy
     if(args.default):
-        conf_train['hyper']=default_hyper(conf_hyper)
+        conf_train['hyper']=default_hyper(conf_train)        
     multi_exp(conf_train )
