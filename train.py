@@ -91,9 +91,6 @@ if __name__ == "__main__":
     parser.add_argument("--lazy",action='store_true')
     parser.add_argument("--dir_path",type=str)
     parser.add_argument("--default",action='store_true')
-#    parser.add_argument('--hyper_optim',
-#        choices=['default', 'bayes', 'grid','conf'],default='conf')
-
     args = parser.parse_args()
     conf_train=conf.read_conf(args.conf,
         ['clf','dir','hyper'],args.dir_path)

@@ -64,7 +64,6 @@ class GridOptim(object):
         return search
 
 def hyper_exp(conf_path,n_split):
-    conf_dict=conf.read_conf(conf_path,['dir','hyper','clf'])
     data.make_dir(conf_dict['main_dict'])
     print('Optimisation for hyperparams')
     for hyper_i in conf_dict['hyperparams']:
@@ -102,6 +101,13 @@ def parse_hyper(conf):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--n_split", type=int, default=10)
-    parser.add_argument("--conf",type=str,default='conf/ovo.cfg')
+    parser.add_argument("--conf",type=str,default='conf/l1.cfg')
+    parser.add_argument("--dir_path",type=str)
+    parser.add_argument('--optim_type',
+        choices=[ 'bayes', 'grid','conf'],default='conf')
     args = parser.parse_args()
-    hyper_exp(args.conf,args.n_split)
+    conf_dict=conf.read_conf(args.conf,
+        ['dir','hyper','clf'],args.dir_path)
+    if(args.optim_type!='conf'):
+        conf_dict['optim_type']=args.optim_type
+    hyper_exp(conf_dict,args.n_split)

@@ -26,21 +26,6 @@ def box_gen(conf):
                 for data_j in dataset}
         box_plot(ens_i,dict_i,'{}/{}'.format(conf['box'],ens_i))
 
-#def find_best(in_path):
-#    result_df=pd.read_csv(in_path)   
-#    best_result={}
-#    for data_i,row_i in best_gen(result_df):
-#        best_result[data_i]=(row_i['mean_acc'],row_i['std_acc'])
-#    return best_result
-
-#def best_gen(result_df,ens_type='NECSCF'):
-#    dataset=result_df['dataset'].unique()
-#    ens_df=result_df[result_df['ens']=='NECSCF']
-#    for data_i in dataset:
-#        df_i=ens_df[ens_df['dataset']==data_i]
-#        k=df_i['mean_acc'].argmax()
-#        yield data_i,df_i.iloc[k]
-
 def box_plot(ens_i,dict_i,out_i):
     plt.clf()
     acc,labels = [],[]
@@ -86,6 +71,7 @@ def get_limit(series):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--conf",type=str,default='conf/base.cfg')
+    parser.add_argument("--dir_path",type=str)
     args = parser.parse_args()
-    conf_dict = conf.read_conf(args.conf,'dir')
+    conf_dict = conf.read_conf(args.conf,'dir',args.dir_path)
     box_gen(conf_dict)

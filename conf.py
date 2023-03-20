@@ -1,7 +1,7 @@
 import os,logging,warnings
 from configparser import ConfigParser
 
-def read_conf(in_path,dict_types):
+def read_conf(in_path,dict_types,dir_path=None):
     if(type(dict_types)==str):
         dict_types=[dict_types]
     config_obj = ConfigParser()
@@ -11,28 +11,30 @@ def read_conf(in_path,dict_types):
                 'hyper':parse_hyper}
     full_dict={}
     for type_i in dict_types:
-        dict_i=parse_dict[type_i](config_obj)
+        dict_i=parse_dict[type_i](config_obj,
+            dir_path)
         full_dict.update(dict_i)
     return full_dict 
         
-def parse_clf(config_obj):
+def parse_clf(config_obj,dir_path=None):
     raw_dict= config_obj['CLF']
     clf_dict={ key_i:raw_dict[key_i].split(',') 
                 for key_i in raw_dict}
     clf_dict['binary_type']=clf_dict['binary_type'][0]
     return clf_dict
 
-def parse_dir(config_obj):
+def parse_dir(config_obj,dir_path=None):
     raw_dict= config_obj['DIR']
-    dir_path=raw_dict['main_dict']
+    if(dir_path is None):
+        dir_path=raw_dict['main_dict']
     paths={'json':raw_dict['json'],
-            'main_dict':raw_dict['main_dict']}
+            'main_dict':dir_path}
     for key_i in raw_dict:
         if(key_i!='main_dict' and key_i!='json'):
             paths[key_i]=f'{dir_path}/{raw_dict[key_i]}'
     return paths
 
-def parse_hyper(config_obj):
+def parse_hyper(config_obj,dir_path=None):
     raw_dict= config_obj['HYPER']
     hyper= raw_dict['hyperparams'].split(',')
     hyper_dict={'hyperparams':hyper}
@@ -49,8 +51,10 @@ def parse_hyper(config_obj):
 def parse_list(raw_str):
     list_i=[]
     for item in raw_str.split(','):
-        if(item.isnumeric()):
+        if(item.isdigit()):
             list_i.append(int(item))
+        elif( item.replace(".","").isdigit()):
+            list_i.append(float(item))
         else:
             list_i.append(item)
     return list_i
