@@ -8,33 +8,6 @@ import json
 #from sklearn.utils import class_weight
 import data
 
-#class Votes(object):
-#    def __init__(self,results):
-#        self.results=results
-
-#    def names(self):
-#        return self.results[0].names()
-
-#    def get_classes(self,name_i):
-#        return [ np.argmax(result_i[name_i]) 
-#                for result_i in self.results]
-
-#    def dynamic_voting(self,s_dict):
-#        result=Result()
-#        for name_i,clfs_i in s_dict.items():
-#            if(clfs_i is None):
-#                ballot_i=[ r[name_i] 
-#                    for r in self.results]
-#            else:
-#                ballot_i=[self.results[s][name_i] 
-#                    for s in clfs_i]
-#            count_i=np.sum(ballot_i ,axis=0)
-#            result[name_i]=np.argmax(count_i)    
-#        return result
-    
-#    def vote(self):
-#        return voting(self.results)
-
 class Result(data.DataDict):
     def get_pred(self):
         y_pred,y_true=[],[]

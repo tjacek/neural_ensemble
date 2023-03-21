@@ -1,4 +1,6 @@
+from multiprocessing import Pool
 import learn
+
 
 class EnsFeatures(object):
     def __init__(self,common,binary):
@@ -8,16 +10,43 @@ class EnsFeatures(object):
     def __call__(self,clf_type='LR'):
         full=[ self.common.concat(binary_i) 
                 for binary_i in self.binary]
-        results=[]
-        for full_i in full:
-            result_i=learn.fit_clf(full_i,clf_type)
-            results.append(result_i)
+        helper= FitClf(clf_type)
+
+        n_models=len(self.binary)
+        with Pool(n_models) as p:
+            results=p.map(helper, self.binary)
         results=[result_i.split()[1] 
             for result_i in results]
         return learn.voting(results)
 
     def __str__(self):
         return 'NECSCF'
+
+class FitClf(object):
+    def __init__(self,clf):
+        self.clf=clf
+
+    def __call__(self,full_i):
+        return learn.fit_clf(full_i,self.clf)
+
+#class EnsFeatures(object):
+#    def __init__(self,common,binary):
+#        self.common=common
+#        self.binary=binary
+
+#    def __call__(self,clf_type='LR'):
+#        full=[ self.common.concat(binary_i) 
+#                for binary_i in self.binary]
+#        results=[]
+#        for full_i in full:
+#            result_i=learn.fit_clf(full_i,clf_type)
+#            results.append(result_i)
+#        results=[result_i.split()[1] 
+#            for result_i in results]
+#        return learn.voting(results)
+
+#    def __str__(self):
+#        return 'NECSCF'
 
 class BinaryEnsemble(object):
     def __init__(self,common,binary,clf_type=None):
