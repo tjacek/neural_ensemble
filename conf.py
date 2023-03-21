@@ -1,4 +1,4 @@
-import os,logging,warnings
+import os,logging,warnings,time
 from configparser import ConfigParser
 
 def read_conf(in_path,dict_types,dir_path=None):
@@ -67,3 +67,6 @@ def silence_warnings():
     def warn(*args, **kwargs):
         pass
     warnings.warn = warn
+
+def log_time(txt,st):
+    logging.info(f'{txt} took {(time.time()-st):.4f}s')

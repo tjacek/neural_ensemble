@@ -22,7 +22,6 @@ def test_exp(conf):
         name=model_path.split('/')[-1]
         data_path='{}/{}'.format(conf['json'],name)
         return exp(data_path,model_path,output_path,conf)
-#    logging.info('Save results:%s' % conf['result'])
     helper(conf['model'],conf['output'])#)
 
 def exp(data_path,model_path,output_path,conf):
@@ -50,13 +49,14 @@ def get_fold_fun(raw_data,clf_types,ens_types):
         st=time.time()
         logging.info(f'Read models:{in_path}')
         common,binary= gen_feats(raw_data,in_path)
+        conf.log_time(f'Features generated:{in_path}',st)
         acc_dir={}
         for ens_i in ens_types:
             for clf_j in clf_types:
                 ens_inst=ens_i(common,binary)
                 id_ij=f'{str(ens_inst)}_{clf_j}'
                 acc_dir[id_ij]=ens_inst(clf_j)
-        logging.info(f'Evaluate models from:{in_path} took {(time.time()-st):.4f}s')
+        conf.log_time(f'Evaluate models from:{in_path}',st)
         return acc_dir
     return helper
 
@@ -120,6 +120,8 @@ if __name__ == "__main__":
     parser.add_argument("--conf",type=str,default='conf/ovo.cfg')
     parser.add_argument("--dir_path",type=str)
     args = parser.parse_args()
+#    raise Exception(args)
+
     conf_dict=conf.read_conf(args.conf,['dir','clf'],args.dir_path)
     test_exp(conf_dict)
     make_results(conf_dict)
