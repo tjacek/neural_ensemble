@@ -1,4 +1,4 @@
-from multiprocessing import Pool
+from multiprocessing import Pool, get_context
 import learn
 
 
@@ -13,22 +13,25 @@ class EnsFeatures(object):
         helper= FitClf(clf_type)
 
         n_models=len(self.binary)
-        with Pool(n_models) as p:
+        with get_context("spawn").Pool(n_models) as p:
             results=p.map(helper, self.binary)
-        results=[result_i.split()[1] 
-            for result_i in results]
+#            p.close()
+#            p.terminate()
+#            p.join()      
+#        results=[result_i.split()[1] 
+#            for result_i in results]
         return learn.voting(results)
 
     def __str__(self):
         return 'NECSCF'
 
 class FitClf(object):
-    def __init__(self,clf):
+    def __init__(self, clf):
         self.clf=clf
 
     def __call__(self,full_i):
-        return learn.fit_clf(full_i,self.clf)
-
+        result=learn.fit_clf(full_i,self.clf)
+        return result.split()[1]
 #class EnsFeatures(object):
 #    def __init__(self,common,binary):
 #        self.common=common

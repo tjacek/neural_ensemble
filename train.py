@@ -6,47 +6,49 @@ import json,shutil,time,gzip
 from tqdm import tqdm
 import conf,binary,data,nn,learn,folds,utils
 
-def multi_exp(conf):
-    data.make_dir(conf['main_dict'])
-    if(not conf['lazy'] and 
-        (os.path.isdir(conf['model']))):
-        shutil.rmtree(conf['model'])
-    if(type(conf['hyper'])==str):
-        get_hyper=read_hyper(conf['hyper'])
+def multi_exp(conf_dict):
+    data.make_dir(conf_dict['main_dict'])
+    if(not conf_dict['lazy'] and 
+        (os.path.isdir(conf_dict['model']))):
+        shutil.rmtree(conf_dict['model'])
+    if(type(conf_dict['hyper'])==str):
+        get_hyper=read_hyper(conf_dict['hyper'])
         print('Hyperparameters are loaded from {}'.format(conf['hyper']))
     else:
-        get_hyper=conf['hyper']
+        get_hyper=conf_dict['hyper']
         default= str(get_hyper(''))
         print('Default hyperparams are used {}'.format(default))
-    logging.basicConfig(filename='{}_train.log'.format(conf['log']), 
+    logging.basicConfig(filename='{}_train.log'.format(conf_dict['log']), 
         level=logging.INFO,filemode='w', 
         format='%(process)d-%(levelname)s-%(message)s')
     @utils.dir_map(depth=1)
     def helper(in_path,out_path):
-        single_inter(in_path,out_path,conf,get_hyper)
-    helper(conf['json'],conf['model']) 
+        single_inter(in_path,out_path,conf_dict,get_hyper)
+    helper(conf_dict['json'],conf_dict['model']) 
 
-def single_inter(in_path,out_path,conf,get_hyper):
+def single_inter(in_path,out_path,conf_dict,get_hyper):
     raw_data=data.read_data(in_path)
     data.make_dir(out_path)
     hyperparams=get_hyper(in_path)
-    NeuralEnsemble=binary.get_ens(conf['binary_type'])
+    NeuralEnsemble=binary.get_ens(conf_dict['binary_type'])
     print(f'Training models on dataset:{out_path}')
     print(f'Hyperparams:{hyperparams}')
-    for i in tqdm(range(conf['n_iters'])):
+    for i in tqdm(range(conf_dict['n_iters'])):
         st=time.time()
         out_i=f'{out_path}/{i}'
         logging.info(f'Folder {out_i} created.')
         data.make_dir(out_i)
-        folds_i=folds.make_folds(raw_data,k_folds=conf['n_split'])
+        folds_i=folds.make_folds(raw_data,k_folds=conf_dict['n_split'])
         splits_i=folds.get_splits(raw_data,folds_i)
         for j,(data_j,rename_j) in enumerate(splits_i):
             ens_j= NeuralEnsemble(**hyperparams)
             learn.fit_clf(data_j,ens_j)
             out_j=f'{out_i}/{j}'
-            logging.info(f'Save models {out_j}')
+#            logging.info(f'Save models {out_j}')
+            conf.log_time(f'Save models {out_j}',st)
             save_fold(ens_j,rename_j,out_j)
-        logging.info(f'Iteration {out_i} took {(time.time()-st):.4f}s')
+#        logging.info(f'Iteration {out_i} took {(time.time()-st):.4f}s')
+        conf.log_time(f'Iteration {out_i}',st)
     print(f'Models saved at {out_path}\n')
 
 def save_fold(ens_j,rename_j,out_j):
