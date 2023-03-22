@@ -1,21 +1,25 @@
 import  numpy as np
 import os
 from tensorflow import keras
-import binary,data,utils,train
+import time
+#import binary,data,utils,train
+import test,utils,data,ens_feats
 
-def show_bayes(in_path, out_path,n_split=3):
-    NeuralEnsemble=binary.get_ens('all')
-    f=open(out_path,'w')
-    @utils.dir_fun(as_dict=False)#True)
-    def helper(in_path):    
-        raw_data=data.read_data(in_path)
-        hyper=train.find_hyperparams(raw_data,
-            ensemble_type=NeuralEnsemble,n_split=n_split)
-        name_i=in_path.split('/')[-1]
-        line=f'{name_i},{str(hyper)}\n'
-        f.write(line)
-        return hyper
-    result=helper(in_path)
+def variant_time(data_path,model_path):
+    clf_types=['LR','LR-imb','RF']
+    ens_types=['base','binary','common']
+    raw_data=data.read_data(data_path)
+    common,binary= test.gen_feats(raw_data,model_path)
+    lines=[]
+    for ens_i in ens_types:
+        for clf_j in clf_types:
+            st=time.time()
+            ens_inst=ens_feats.get_ensemble(ens_i)(common,binary)
+            id_ij=f'{str(ens_inst)},{clf_j}'
+            ens_inst(clf_j)
+            lines.append(f'{id_ij},{(time.time()-st):.4f}s')
+            print(lines[-1])
+    print('\n'.join(lines))
 
 def show_dim(in_path):
     @utils.dir_fun(as_dict=True)
@@ -51,4 +55,6 @@ def to_txt(result_dict):
         for id_i,result_i in result_dict.items()]
     return '\n'.join(lines)
 
-txt=show_bayes('small','bayes')
+data_path='../slow/json/mfeat-fourier'
+model_path= '../slow/models/mfeat-fourier/0/0'
+variant_time(data_path,model_path)
