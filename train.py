@@ -13,7 +13,7 @@ def multi_exp(conf_dict):
         shutil.rmtree(conf_dict['model'])
     if(type(conf_dict['hyper'])==str):
         get_hyper=read_hyper(conf_dict['hyper'])
-        print('Hyperparameters are loaded from {}'.format(conf['hyper']))
+        print('Hyperparameters are loaded from {}'.format(conf_dict['hyper']))
     else:
         get_hyper=conf_dict['hyper']
         default= str(get_hyper(''))

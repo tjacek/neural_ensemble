@@ -1,7 +1,7 @@
 #!/bin/bash
 conf_path=conf/l1.cfg
-n_iters=3
-n_split=3
+n_iters=10
+n_split=10
 
 echo 'conf path' ${conf_path}
 echo 'n_iters' ${n_iters}
@@ -11,18 +11,18 @@ exp(){
   if [ $2 != 'default' ]; then 
   { 
   	echo 'Optimisation of hyperparametrs';
-    python hyper.py --conf ${conf_path} --n_split ${n_split} \
-        --dir_path $1   --optim_type $2;
+#    python hyper.py --conf ${conf_path} --n_split ${n_split} \
+#        --dir_path $1   --optim_type $2;
     echo 'Training models';
     python train.py --conf ${conf_path} --n_iters ${n_iters} \
-        --n_split ${n_split} --dir_path $1  
+       --lazy --n_split ${n_split} --dir_path $1  
   } 
 #  fi
 
   elif [ $2 == 'default' ]; then 
   { 
     echo 'Training models';
-    python train.py --default --conf ${conf_path} \
+    python train.py --default --conf ${conf_path} --lazy \
      --n_iters ${n_iters}  --n_split ${n_split} --dir_path $1  
   }
   fi
@@ -34,8 +34,8 @@ exp(){
   python output/cf.py --conf ${conf_path} --dir_path $1	
 }
 
-dir='../small'
+dir='../l1'
 
-exp "${dir}/default" 'default'
-exp "${dir}/grid" 'grid'
+#exp "${dir}/default" 'default'
+#exp "${dir}/grid" 'grid'
 exp "${dir}/bayes" 'bayes'
