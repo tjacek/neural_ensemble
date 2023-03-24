@@ -1,4 +1,4 @@
-import os,logging,warnings,time
+import argparse,os,logging,warnings,time
 from configparser import ConfigParser
 
 def read_conf(in_path,dict_types,dir_path=None):
@@ -58,6 +58,19 @@ def parse_list(raw_str):
         else:
             list_i.append(item)
     return list_i
+
+def parse_args(default_conf='conf/l1.cfg'):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--n_split", type=int, default=10)
+    parser.add_argument("--n_iters", type=int, default=10)
+    parser.add_argument("--conf",type=str,default=default_conf)
+    parser.add_argument("--dir_path",type=str)
+    parser.add_argument("--lazy",action='store_true')
+    parser.add_argument("--default",action='store_true')
+    parser.add_argument('--optim_type',
+        choices=[ 'bayes', 'grid','conf'],default='conf')
+    args = parser.parse_args()
+    return args
 
 def silence_warnings():
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'

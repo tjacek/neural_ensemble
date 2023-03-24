@@ -69,7 +69,6 @@ def hyper_exp(conf_path,n_split):
     data.make_dir(conf_dict['main_dict'])
     print('Optimisation for hyperparams')
     for hyper_i in conf_dict['hyperparams']:
-        print(type(conf_dict[hyper_i]))
         hyper_values= ','.join(map(str,conf_dict[hyper_i]))
         print('{}:{}'.format(hyper_i,hyper_values))#'%s:%s' % (hyper_i,)))
     hyper_optim=parse_hyper(conf_dict)
@@ -101,14 +100,7 @@ def parse_hyper(conf):
     return HyperOptimisation(search_alg,search_spaces)
 
 if __name__ == "__main__":
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--n_split", type=int, default=10)
-    parser.add_argument("--conf",type=str,default='conf/l1.cfg')
-    parser.add_argument("--dir_path",type=str)
-    parser.add_argument('--optim_type',
-        choices=[ 'bayes', 'grid','conf'],default='conf')
-    args = parser.parse_args()
+    args=conf.parse_args(default_conf='conf/small.cfg') 
     conf_dict=conf.read_conf(args.conf,
         ['dir','hyper','clf'],args.dir_path)
     if(args.optim_type!='conf'):
