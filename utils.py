@@ -83,7 +83,7 @@ def unify_cv(dir_path='feats',show=False):
         return decor_fun
     return helper
 
-def dir_map(depth=2):
+def dir_map(depth=2, overwrite=False):
     def helper(fun):
         def rec_fun(in_path,out_path,counter=0):
             if(counter==depth):
@@ -93,7 +93,7 @@ def dir_map(depth=2):
                 for in_i in data.top_files(in_path):
                     name_i=in_i.split('/')[-1]
                     out_i=f"{out_path}/{name_i}"                
-                    if(not os.path.exists(out_i)):
+                    if(overwrite or (not os.path.exists(out_i))):
                         rec_fun(in_i,out_i,counter+1)
                     else:
                         print(f'{out_i} exist')
