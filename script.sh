@@ -1,13 +1,15 @@
 #!/bin/bash
-conf_path=conf/l1.cfg
-n_iters=10
-n_split=10
+conf_path=conf/small.cfg
+dir='../small'
+n_iters=3
+n_split=3
 
 echo 'conf path' ${conf_path}
 echo 'n_iters' ${n_iters}
 echo 'n_split' ${n_split}
 
 exp(){
+  start_time="$(date -u +%s)"
   if [ $2 != 'default' ]; then 
   { 
   	echo 'Optimisation of hyperparametrs';
@@ -24,8 +26,11 @@ exp(){
      --n_iters ${n_iters}  --n_split ${n_split} --dir_path $1  
   }
   fi
-
   eval_model $1
+  
+  end_time="$(date -u +%s)"
+  elapsed="$(($end_time-$start_time))"  
+  echo "Time ${2} ${elapsed}"
 }
 
 eval_model(){
@@ -37,12 +42,10 @@ eval_model(){
   python output/cf.py --conf ${conf_path} --dir_path $1 
 }
 
-dir='../l1'
+exp "${dir}/default" 'default'
+exp "${dir}/grid" 'grid'
+exp "${dir}/bayes" 'bayes'
 
-#exp "${dir}/default" 'default'
-#exp "${dir}/grid" 'grid'
-#exp "${dir}/bayes" 'bayes'
-
-eval_model "${dir}/default" 
-eval_model "${dir}/grid"
+#eval_model "${dir}/default" 
+#eval_model "${dir}/grid"
 #eval_model "${dir}/bayes" #'bayes'

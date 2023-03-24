@@ -1,8 +1,10 @@
+import conf
+conf.silence_warnings()
 import argparse
 from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn.model_selection import GridSearchCV
 from skopt import BayesSearchCV
-import binary, conf,data
+import binary,data
 
 class HyperOptimisation(object):
     def __init__(self, search_alg,search_spaces=None):
@@ -99,6 +101,7 @@ def parse_hyper(conf):
     return HyperOptimisation(search_alg,search_spaces)
 
 if __name__ == "__main__":
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--n_split", type=int, default=10)
     parser.add_argument("--conf",type=str,default='conf/l1.cfg')

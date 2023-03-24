@@ -1,6 +1,8 @@
 import sys
 from pathlib import Path
 sys.path.append(str(Path('.').absolute()))
+import conf
+conf.silence_warnings()
 import argparse
 import numpy as np
 import pandas as pd 
