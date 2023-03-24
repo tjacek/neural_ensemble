@@ -91,10 +91,10 @@ def fit_clf(data_dict_i,clf_type=None,balance=False):
 
 def get_clf(name_i):        
     if(name_i=="RF"):
-        return ensemble.RandomForestClassifier()
+        return ensemble.RandomForestClassifier(n_jobs=5)
     if(name_i=="LR-imb"):
         return LogisticRegression(solver='liblinear',
-            class_weight='balanced')
+            class_weight='balanced',n_jobs=5)
     if(name_i=='Bag'):
         return ensemble.BaggingClassifier()
     if(name_i=='Grad'):
@@ -103,4 +103,4 @@ def get_clf(name_i):
         return MLPClassifier()
     if(name_i=='MLP-TF'):
         return nn.NNFacade()
-    return LogisticRegression(solver='liblinear')
+    return LogisticRegression(solver='liblinear',n_jobs=5)

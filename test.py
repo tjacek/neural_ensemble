@@ -22,7 +22,7 @@ def test_exp(conf):
         name=model_path.split('/')[-1]
         data_path='{}/{}'.format(conf['json'],name)
         return exp(data_path,model_path,output_path,conf)
-    helper(conf['model'],conf['output'])#)
+    helper(conf['model'],conf['output'])
 
 def exp(data_path,model_path,output_path,conf):
     raw_data=data.read_data(data_path)
@@ -52,8 +52,8 @@ def get_fold_fun(raw_data,clf_types,ens_types):
         conf.log_time(f'Features generated:{in_path}',st)
         acc_dir={}
         for ens_i in ens_types:
+            ens_inst=ens_i(common,binary)
             for clf_j in clf_types:
-                ens_inst=ens_i(common,binary)
                 id_ij=f'{str(ens_inst)}_{clf_j}'
                 acc_dir[id_ij]=ens_inst(clf_j)
         conf.log_time(f'Evaluate models from:{in_path}',st)
