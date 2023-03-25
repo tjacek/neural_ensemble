@@ -93,9 +93,9 @@ def get_line(path_i,hyperparams,param_names):
 
 def parse_hyper(conf):
     if(conf['optim_type']=='grid'):
-        search_alg= GridOptim(conf['n_jobs'])
+        search_alg= GridOptim(conf['hyper_jobs'])
     if(conf['optim_type']=='bayes'):
-        search_alg= BayesOptim(conf['n_jobs'],conf['verbosity'],conf['bayes_iter'])
+        search_alg= BayesOptim(conf['hyper_jobs'],conf['verbosity'],conf['bayes_iter'])
     search_spaces={key_i:conf[key_i] for key_i in conf['hyperparams']}
     return HyperOptimisation(search_alg,search_spaces)
 
@@ -105,4 +105,6 @@ if __name__ == "__main__":
         ['dir','hyper','clf'],args.dir_path)
     if(args.optim_type!='conf'):
         conf_dict['optim_type']=args.optim_type
+    if( not (args.hyper_jobs is None)):
+        conf_dict['hyper_jobs']=args.hyper_jobs
     hyper_exp(conf_dict,args.n_split)

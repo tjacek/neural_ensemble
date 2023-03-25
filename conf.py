@@ -1,6 +1,8 @@
 import argparse,os,logging,warnings,time
 from configparser import ConfigParser
 
+GLOBAL={'clf_jobs':5}
+
 def read_conf(in_path,dict_types,dir_path=None):
     if(type(dict_types)==str):
         dict_types=[dict_types]
@@ -45,7 +47,7 @@ def parse_hyper(config_obj,dir_path=None):
     hyper_dict['optim_type']=raw_dict['optim_type']
     hyper_dict['verbosity']=bool(raw_dict['verbosity'])
     hyper_dict['bayes_iter']=int(raw_dict['bayes_iter'])
-    hyper_dict['n_jobs']=int(raw_dict['n_jobs'])
+    hyper_dict['hyper_jobs']=int(raw_dict['hyper_jobs'])
     return hyper_dict
 
 def parse_list(raw_str):
@@ -69,7 +71,10 @@ def parse_args(default_conf='conf/l1.cfg'):
     parser.add_argument("--default",action='store_true')
     parser.add_argument('--optim_type',
         choices=[ 'bayes', 'grid','conf'],default='conf')
+    parser.add_argument("--clf_jobs", type=int, default=5)
+    parser.add_argument("--hyper_jobs", type=int, default=1)
     args = parser.parse_args()
+    GLOBAL['clf_jobs']=args.clf_jobs
     return args
 
 def silence_warnings():

@@ -116,11 +116,6 @@ def best_frame(result_path,out_path=None):
     best.to_csv(out_path)
 
 if __name__ == "__main__":
-#    parser = argparse.ArgumentParser()
-#    parser.add_argument("--conf",type=str,default='conf/small.cfg')
-#    parser.add_argument("--lazy",action='store_true')
-#    parser.add_argument("--dir_path",type=str)
-#    args = parser.parse_args()
     args = conf.parse_args(default_conf='conf/small.cfg')
     conf_dict=conf.read_conf(args.conf,['dir','clf'],args.dir_path)
     conf_dict['lazy']=args.lazy
