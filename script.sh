@@ -4,7 +4,7 @@ dir='../small'
 n_iters=3
 n_split=3
 clf_jobs=1
-hyper_jobs=3
+hyper_jobs=5
 
 echo 'conf path' ${conf_path}
 echo 'n_iters' ${n_iters}
@@ -36,7 +36,6 @@ exp(){
   
   end_time="$(date -u +%s)"
   elapsed="$(($end_time-$start_time))"  
-  echo "Time ${2} ${elapsed}"
 }
 
 eval_model(){
@@ -48,9 +47,18 @@ eval_model(){
   python output/cf.py --conf ${conf_path} --dir_path $1 
 }
 
+elapsed=0
 exp "${dir}/default" 'default'
+elapsed1=${elapsed}
 exp "${dir}/grid" 'grid'
+elapsed2=${elapsed}
 exp "${dir}/bayes" 'bayes'
+elapsed3=${elapsed}
+
+echo "Time default ${elapsed1}"
+echo "Time grid ${elapsed2}"
+echo "Time bayes ${elapsed3}"
+
 
 #eval_model "${dir}/default" 
 #eval_model "${dir}/grid"
