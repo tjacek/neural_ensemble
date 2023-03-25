@@ -1,7 +1,8 @@
 import argparse,os,logging,warnings,time
 from configparser import ConfigParser
 
-GLOBAL={'clf_jobs':5}
+GLOBAL={'clf_jobs':5,
+'batch_size':256}
 
 def read_conf(in_path,dict_types,dir_path=None):
     if(type(dict_types)==str):

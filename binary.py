@@ -3,7 +3,7 @@ from itertools import combinations
 from keras import callbacks
 import tensorflow as tf
 import numpy as np
-import data,nn,learn
+import conf,data,nn,learn
 
 class NeuralEnsemble(BaseEstimator, ClassifierMixin):
     def __init__(self,n_hidden=250,l1=0.001,multi_clf='LR'):
@@ -41,8 +41,8 @@ class NeuralEnsemble(BaseEstimator, ClassifierMixin):
         n_hidd= int(self.n_hidden*X.shape[1])
         l1=float(self.l1)
         nn_i=nn.SimpleNN(n_hidden=n_hidd,l1=l1)(nn_params)
-        nn_i.fit(X,y_i,epochs=500,
-            batch_size=32,verbose = 0,callbacks=earlystopping)
+        nn_i.fit(X,y_i,epochs=500,batch_size=conf.GLOBAL['batch_size'] ,
+            verbose = 0,callbacks=earlystopping)
         extractor_i= nn.get_extractor(nn_i)
         self.extractors.append(extractor_i)
         return extractor_i

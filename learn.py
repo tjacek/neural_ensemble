@@ -6,7 +6,7 @@ from sklearn.metrics import confusion_matrix
 from sklearn import ensemble
 import json
 #from sklearn.utils import class_weight
-import data,nn
+import conf,data,nn
 
 class Result(data.DataDict):
     def get_pred(self):
@@ -91,10 +91,11 @@ def fit_clf(data_dict_i,clf_type=None,balance=False):
 
 def get_clf(name_i):        
     if(name_i=="RF"):
-        return ensemble.RandomForestClassifier(n_jobs=5)
+        n_jobs=conf.GLOBAL['clf_jobs']
+        return ensemble.RandomForestClassifier(n_jobs=n_jobs)
     if(name_i=="LR-imb"):
         return LogisticRegression(solver='liblinear',
-            class_weight='balanced',n_jobs=5)
+            class_weight='balanced')#,n_jobs=5)
     if(name_i=='Bag'):
         return ensemble.BaggingClassifier()
     if(name_i=='Grad'):
@@ -103,4 +104,4 @@ def get_clf(name_i):
         return MLPClassifier()
     if(name_i=='MLP-TF'):
         return nn.NNFacade()
-    return LogisticRegression(solver='liblinear',n_jobs=5)
+    return LogisticRegression(solver='liblinear')#,n_jobs=5)

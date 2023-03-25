@@ -9,6 +9,7 @@ from tensorflow.keras import Input, Model
 from keras import callbacks
 from tensorflow import one_hot
 from sklearn.base import BaseEstimator, ClassifierMixin
+import conf
 
 class SimpleNN(object):
     def __init__(self,n_hidden=10,l1=0.001):
@@ -48,8 +49,8 @@ class NNFacade(BaseEstimator, ClassifierMixin):
         nn_params={'dims':X.shape[1],'n_cats':n_cats}
         self.model=SimpleNN(n_hidden=n_hidden)(nn_params)
         y=one_hot(targets,n_cats)
-        self.model.fit(X,y,epochs=500,
-            batch_size=32,verbose = 0,callbacks=earlystopping)
+        self.model.fit(X,y,epochs=500,batch_size=conf.GLOBAL['batch_size'],
+            verbose = 0,callbacks=earlystopping)
 
     def predict_proba(self,X):
         return self.model.predict(X)
