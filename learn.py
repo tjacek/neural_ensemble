@@ -4,6 +4,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import confusion_matrix
 from sklearn import ensemble
+from sklearn.svm import SVC
 import json
 #from sklearn.utils import class_weight
 import conf,data,nn
@@ -104,4 +105,6 @@ def get_clf(name_i):
         return MLPClassifier()
     if(name_i=='MLP-TF'):
         return nn.NNFacade()
+    if(name_i=="SVC"):
+        return SVC(probability=True)
     return LogisticRegression(solver='liblinear')#,n_jobs=5)
