@@ -39,6 +39,7 @@ exp(){
   
   end_time="$(date -u +%s)"
   elapsed="$(($end_time-$start_time))"  
+  echo "Elapsed" ${elapsed}
 }
 
 eval_model(){

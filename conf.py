@@ -1,8 +1,11 @@
 import argparse,os,logging,warnings,time
 from configparser import ConfigParser
 
-GLOBAL={'clf_jobs':5,
-'batch_ratio':0.5}
+GLOBAL={'clf_jobs':5,'batch_ratio':0.5}
+
+DEFAULT_DIR={'model':'models','output':'output',
+'result':'result.csv','log':'info','hyper':'hyper.csv',
+'best':'best.csv','cf':'cf','box':'box'}
 
 def read_conf(in_path,dict_types,dir_path=None):
     if(type(dict_types)==str):
@@ -35,6 +38,10 @@ def parse_dir(config_obj,dir_path=None):
     for key_i in raw_dict:
         if(key_i!='main_dict' and key_i!='json'):
             paths[key_i]=f'{dir_path}/{raw_dict[key_i]}'
+    for name_i,value_i in DEFAULT_DIR.items():
+        if(not name_i in paths):
+            paths[name_i]=f'{dir_path}/{value_i}'
+#    raise Exception(paths)
     return paths
 
 def parse_hyper(config_obj,dir_path=None):
