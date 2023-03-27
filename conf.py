@@ -2,7 +2,7 @@ import argparse,os,logging,warnings,time
 from configparser import ConfigParser
 
 GLOBAL={'clf_jobs':5,
-'batch_size':256}
+'batch_ratio':0.5}
 
 def read_conf(in_path,dict_types,dir_path=None):
     if(type(dict_types)==str):
@@ -74,8 +74,11 @@ def parse_args(default_conf='conf/l1.cfg'):
         choices=[ 'bayes', 'grid','conf'],default='conf')
     parser.add_argument("--clf_jobs", type=int, default=5)
     parser.add_argument("--hyper_jobs", type=int, default=1)
+    parser.add_argument("--batch_ratio", type=float, default=0.5)
     args = parser.parse_args()
     GLOBAL['clf_jobs']=args.clf_jobs
+    if(not (args.batch_ratio is None)):
+        GLOBAL['batch_ratio']= args.batch_ratio
     return args
 
 def silence_warnings():

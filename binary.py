@@ -41,7 +41,8 @@ class NeuralEnsemble(BaseEstimator, ClassifierMixin):
         n_hidd= int(self.n_hidden*X.shape[1])
         l1=float(self.l1)
         nn_i=nn.SimpleNN(n_hidden=n_hidd,l1=l1)(nn_params)
-        nn_i.fit(X,y_i,epochs=500,batch_size=conf.GLOBAL['batch_size'] ,
+        batch_size=int(conf.GLOBAL['batch_ratio'] * X.shape[0])
+        nn_i.fit(X,y_i,epochs=500,batch_size=batch_size,
             verbose = 0,callbacks=earlystopping)
         extractor_i= nn.get_extractor(nn_i)
         self.extractors.append(extractor_i)

@@ -4,13 +4,15 @@ dir='../small'
 n_iters=3
 n_split=3
 clf_jobs=1
-hyper_jobs=5
+hyper_jobs=1
+batch_ratio=0.5
 
 echo 'conf path' ${conf_path}
 echo 'n_iters' ${n_iters}
 echo 'n_split' ${n_split}
 echo 'clf_jobs' ${clf_jobs}
 echo 'hyper_jobs' ${hyper_jobs}
+echo 'batch_ratio' ${batch_ratio}
 
 exp(){
   start_time="$(date -u +%s)"
@@ -19,17 +21,18 @@ exp(){
   	echo 'Optimisation of hyperparametrs';
     python hyper.py --conf ${conf_path} --n_split ${n_split} \
         --dir_path $1   --optim_type $2 --clf_jobs ${clf_jobs} \
-        --hyper_jobs ${hyper_jobs};
+        --hyper_jobs ${hyper_jobs}  --batch_ratio ${batch_ratio};
     echo 'Training models';
     python train.py --conf ${conf_path} --n_iters ${n_iters} \
-       --lazy --n_split ${n_split} --dir_path $1 --clf_jobs ${clf_jobs} 
+       --lazy --n_split ${n_split} --dir_path $1 \
+       --clf_jobs ${clf_jobs} --batch_ratio ${batch_ratio};
   } 
   elif [ $2 == 'default' ]; then 
   { 
     echo 'Training models';
     python train.py --default --conf ${conf_path} --lazy \
      --n_iters ${n_iters}  --n_split ${n_split} --dir_path $1 \
-     --clf_jobs ${clf_jobs}  
+     --clf_jobs ${clf_jobs} --batch_ratio ${batch_ratio}; 
   }
   fi
   eval_model $1
@@ -40,7 +43,8 @@ exp(){
 
 eval_model(){
   echo 'Test model';
-  python test.py --conf ${conf_path} --dir_path $1 --clf_jobs ${clf_jobs}
+  python test.py --conf ${conf_path} --dir_path $1 --clf_jobs ${clf_jobs} \
+          --batch_ratio ${batch_ratio};
   echo 'Genreate plot';
   python output/plot.py --conf ${conf_path} --dir_path $1
   echo 'Genreate confusion matrix';
