@@ -47,7 +47,7 @@ class DataDict(dict):
         return [ name_i.get_cat() for name_i in names]
 
     def n_cats(self):
-        return np.argmax(self.get_labels())
+        return self.names().n_cats()
 
     def split(self,selector=None,shuffle=True):
         if(selector is None):
