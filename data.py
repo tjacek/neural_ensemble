@@ -97,22 +97,12 @@ class DataDict(dict):
             concat_data[name_i]=concat_i
         return concat_data    
 
-#class DataGroup(list):
-#    def __new__(cls, name_list=None):
-#        if(name_list is None):
-#            name_list=[]
-#        return list.__new__(cls,name_list)
-
-#    def save(self,out_path):
-#        make_dir(out_path)
-#        for i,data_i in enumerate(self):
-#            data_i.convert()
-#            data_i.save(f'{out_path}/{i}')
-
-#def read_data_group(in_path):
-#    paths=top_files(in_path)
-#    datasets=[ read_data(path_i) for path_i in paths]
-#    return DataGroup(datasets)
+    def to_csv(self,out_path):
+        with open(out_path, 'w') as f:
+            for name_i,value_i in self.items():
+                line_i=','.join(value_i)
+                line_i=f'{line_i},{name_i.get_cat()}'
+                f.write(line_i)
 
 class NameList(list):
     def __new__(cls, name_list=None):
