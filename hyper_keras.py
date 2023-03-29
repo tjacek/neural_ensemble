@@ -12,6 +12,36 @@ from tensorflow.keras import Input, Model
 import keras_tuner as kt
 import data,binary
 
+
+class SimpleBuilder(object):#kt.HyperModel):
+    def __init__(self,dim,n_cats,n_hidden,l1):
+        self.dim=dim
+        self.n_cats=n_cats
+        self.n_hidden=n_hidden
+        self.l1=l1
+
+    def __call__(self,hp):
+        input_layer = Input(shape=(self.dim))
+        l1_coff = hp.Float('l1', min_value=self.l1[0], 
+            max_value=self.l1[0], step=32)
+        #hp.Choice('kernel_regularizer', values=[0.01,0.001,0.1,0.005,0.05]) 
+        
+#        raise Exception(self.n_hidden)
+        p_units = hp.Int('units', min_value=int(self.n_hidden[0]), 
+            max_value= int(self.n_hidden[1]), step=32)
+              
+        x_i=Dense(units=p_units,activation='relu',name=f"hidden",
+                kernel_regularizer=regularizers.l1(l1=l1_coff))(input_layer)
+        x_i=BatchNormalization(name=f'batch')(x_i)
+        x_i=Dense(self.n_cats,activation='softmax')(x_i)
+
+        model= Model(inputs=input_layer, outputs=x_i)
+        optim=optimizers.RMSprop(learning_rate=0.00001)
+        model.compile(loss='categorical_crossentropy',
+            optimizer=optim,metrics=['accuracy'])
+#        model.summary()
+        return model
+
 class EnsmbleBuilder(object):
     def __init__(self,dim,n_cats,n_hidden,l1):
         self.dim=dim
@@ -24,7 +54,7 @@ class EnsmbleBuilder(object):
         l1_coff = hp.Float('l1', min_value=self.l1[0], 
         	max_value=self.l1[0], step=32)
         #hp.Choice('kernel_regularizer', values=[0.01,0.001,0.1,0.005,0.05]) 
-        p_units = hp.Int('units', min_value=self.n_hidden[0], 
+        p_units = hp.Int('units', min_value= self.n_hidden[0], 
         	max_value=self.n_hidden[1], step=32)
               
         models=[]
@@ -38,7 +68,7 @@ class EnsmbleBuilder(object):
         model= Model(inputs=input_layer, outputs=concat_layer)
         optim=optimizers.RMSprop(learning_rate=0.00001)
         model.compile(loss='categorical_crossentropy',
-            optimizer=optim)#,metrics=['accuracy'])
+            optimizer=optim,metrics=['accuracy'])
 #        model.summary()
         return model
 
@@ -68,17 +98,28 @@ def single_exp(raw_data,hp_ranges):
     dim=raw_data.dim()
     n_cats= raw_data.n_cats()
     l1,hid_ratio=hp_ranges['l1'],hp_ranges['hid_ratio']
-    n_hidden=dim* np.array(hid_ratio)
-    model_builder=EnsmbleBuilder(dim,n_cats,n_hidden,l1)
-    tuner = kt.Hyperband(model_builder,
-                objective="categorical_crossentropy",#'val_accuracy',
-                max_epochs=100,
-                factor=3,
-                directory=None,#'my_dir',
-                project_name=None)#'intro_to_kt')
+    n_hidden=dim* np.array(hid_ratio)#*10
+    model_builder= SimpleBuilder(dim,n_cats,n_hidden,l1) #EnsmbleBuilder(dim,n_cats,n_hidden,l1)
+
+    tuner=kt.BayesianOptimization(model_builder,
+                objective='accuracy',
+                max_trials=4,
+                overwrite=True)
+#    tuner = kt.Hyperband(model_builder,
+#                objective='val_accuracy',  
+#                max_epochs=10,
+#                factor=3,
+#                directory=None,
+#                project_name=None)
     X,y,names=raw_data.as_dataset()
-    y=np.array(binary.binarize(y))
-    tuner.search(X, y, epochs=50, validation_split=0.1)#, callbacks=[stop_early])
+#    y=np.array(y)
+
+    y=tf.one_hot(y,depth=n_cats)
+#    raise Exception(y)
+#    y=np.array(binary.binarize(y))
+
+    tuner.search(X, y, epochs=50, validation_split=0.1,verbose=0)#, callbacks=[stop_early])
+    tuner.results_summary()
     best_hps=tuner.get_best_hyperparameters(num_trials=10)[0]
     best={'l1':best_hps.get('l1'),'units':best_hps.get('units')}
     return best
