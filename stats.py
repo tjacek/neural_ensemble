@@ -6,7 +6,7 @@ import time
 import test,utils,data,ens_feats
 
 def variant_time(data_path,model_path):
-    clf_types=['MLP-TF','LR','LR-imb','RF']
+    clf_types=['SVC']#'MLP-TF','RF']#,'LR','LR-imb',]
     ens_types=['base','binary','common']
     raw_data=data.read_data(data_path)
     common,binary= test.gen_feats(raw_data,model_path)

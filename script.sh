@@ -1,10 +1,10 @@
 #!/bin/bash
-conf_path=conf/small.cfg
+conf_path=conf/ovo.cfg
 dir='../small'
 n_iters=3
 n_split=3
 clf_jobs=1
-hyper_jobs=1
+hyper_jobs=5
 batch_ratio=0.5
 
 echo 'conf path' ${conf_path}
@@ -53,17 +53,16 @@ eval_model(){
 }
 
 elapsed=0
-exp "${dir}/default" 'default'
+exp "${dir}/ovo" 'default'
 elapsed1=${elapsed}
-exp "${dir}/grid" 'grid'
-elapsed2=${elapsed}
-exp "${dir}/bayes" 'bayes'
-elapsed3=${elapsed}
+#exp "${dir}/grid" 'grid'
+#elapsed2=${elapsed}
+#exp "${dir}/bayes" 'bayes'
+#elapsed3=${elapsed}
 
 echo "Time default ${elapsed1}"
-echo "Time grid ${elapsed2}"
-echo "Time bayes ${elapsed3}"
-
+#echo "Time grid ${elapsed2}"
+#echo "Time bayes ${elapsed3}"
 
 #eval_model "${dir}/default" 
 #eval_model "${dir}/grid"

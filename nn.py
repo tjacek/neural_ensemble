@@ -37,25 +37,25 @@ class BinaryEnsemble(object):
 #        model.summary()
         return model
 
-#class SimpleNN(object):
-#    def __init__(self,n_hidden=10,l1=0.001):
-#        self.n_hidden=n_hidden
-#        self.l1=l1
-#        self.optim=optimizers.RMSprop(learning_rate=0.00001)
+class SimpleNN(object):
+    def __init__(self,n_hidden=10,l1=0.001):
+        self.n_hidden=n_hidden
+        self.l1=l1
+        self.optim=optimizers.RMSprop(learning_rate=0.00001)
 
-#    def __call__(self,params):
-#        model = Sequential()
-#        if(self.l1>0):
-#            reg=regularizers.l1(0.001)
-#        else:
-#            reg=None
-#        model.add(Dense(self.n_hidden, input_dim=params['dims'], activation='relu',name="hidden",
-#            kernel_regularizer=reg))
-#        model.add(BatchNormalization())
-#        model.add(Dense(params['n_cats'], activation='softmax'))
-#        model.compile(loss='categorical_crossentropy',optimizer=self.optim, 
-#            metrics=['accuracy'])
-#        return model
+    def __call__(self,params):
+        model = Sequential()
+        if(self.l1>0):
+            reg=regularizers.l1(0.001)
+        else:
+            reg=None
+        model.add(Dense(self.n_hidden, input_dim=params['dims'], activation='relu',name="hidden",
+            kernel_regularizer=reg))
+        model.add(BatchNormalization())
+        model.add(Dense(params['n_cats'], activation='softmax'))
+        model.compile(loss='categorical_crossentropy',optimizer=self.optim, 
+            metrics=['accuracy'])
+        return model
 
 def get_extractor(model_i):
     return Model(inputs=model_i.input,
@@ -74,8 +74,8 @@ class NNFacade(BaseEstimator, ClassifierMixin):
         nn_params={'dims':X.shape[1],'n_cats':n_cats}
         self.model=SimpleNN(n_hidden=n_hidden)(nn_params)
         y=one_hot(targets,n_cats)
-        batch_size= int(self.batch_ratio * X.shape[0])
-        self.model.fit(X,y,epochs=500,batch_size=conf.GLOBAL['batch_size'],
+        batch_size= int(conf.GLOBAL['batch_ratio'],* X.shape[0])
+        self.model.fit(X,y,epochs=500,batch_size=batch_size,
             verbose = 0,callbacks=earlystopping)
 
     def predict_proba(self,X):
