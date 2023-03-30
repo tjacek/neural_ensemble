@@ -9,7 +9,7 @@ from tensorflow.keras import Input, Model
 from sklearn.base import BaseEstimator, ClassifierMixin
 from keras import callbacks
 import time
-import learn,nn
+import learn,nn,ovo
 
 class NeuralEnsemble(BaseEstimator, ClassifierMixin):
     def __init__(self,hid_ratio=1,batch_ratio=0.5,l1=0.001,multi_clf='RF'):
@@ -74,5 +74,5 @@ def binarize(labels):
 
 def get_ens(ens_type):
     if(ens_type=='one'):
-        raise NotImplementedError
+        return ovo.OneVsOne
     return NeuralEnsemble
