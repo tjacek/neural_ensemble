@@ -2,7 +2,7 @@ import  numpy as np
 import os
 from tensorflow import keras
 import time
-#import binary,data,utils,train
+from collections import defaultdict
 import test,utils,data,ens_feats
 
 def variant_time(data_path,model_path):
@@ -20,6 +20,29 @@ def variant_time(data_path,model_path):
             lines.append(f'{id_ij},{(time.time()-st):.4f}s')
             print(lines[-1])
     print('\n'.join(lines))
+
+def full_time(in_path):
+    parse_time(in_path,'info_train.log','Save')
+    parse_time(in_path,'info_test.log','Evaluate')
+
+def parse_time(in_path,filename='info_train.log',line_type='Save'):
+    train_path=f'{in_path}/{filename}'
+    time_dict = defaultdict(lambda :[])
+    with open(train_path) as f:
+        lines=f.readlines()
+        for line_i in lines:
+            if(line_i.find(line_type)> -1):
+                raw_i=line_i.split('/')
+                name_i=raw_i[-3]
+                time_i= raw_i[-1].split(' ')[-1]
+                time_i=time_i.replace('s','')
+                time_dict[name_i].append(float(time_i))
+    stats_from_dict(time_dict)
+
+def stats_from_dict(time_dict):
+    for name_i,time_i in time_dict.items():
+        stats= np.mean(time_i),np.std(time_i)
+        print(f'{name_i},{stats[0]:.4},{stats[1]:.4}')
 
 def show_dim(in_path):
     @utils.dir_fun(as_dict=True)
@@ -50,11 +73,12 @@ def get_size(in_path):
     	    total_size+=size
     return total_size
 
-def to_txt(result_dict):
-    lines=[ f'{id_i},{str(result_i)}' 
-        for id_i,result_i in result_dict.items()]
-    return '\n'.join(lines)
+#def to_txt(result_dict):
+#    lines=[ f'{id_i},{str(result_i)}' 
+#        for id_i,result_i in result_dict.items()]
+#    return '\n'.join(lines)
 
-data_path='../slow/json/mfeat-fourier'
-model_path= '../slow/models/mfeat-fourier/0/0'
-variant_time(data_path,model_path)
+#data_path='../slow/json/mfeat-fourier'
+#model_path= '../slow/models/mfeat-fourier/0/0'
+#variant_time(data_path,model_path)
+full_time('../small/ovo')
