@@ -27,7 +27,7 @@ class SimpleBuilder(object):#kt.HyperModel):
         #hp.Choice('kernel_regularizer', values=[0.01,0.001,0.1,0.005,0.05]) 
         
 #        raise Exception(self.n_hidden)
-        p_units = hp.Int('units', min_value=int(self.n_hidden[0]), 
+        p_units = hp.Int('hid_ratio', min_value=int(self.n_hidden[0]), 
             max_value= int(self.n_hidden[1]), step=32)
               
         x_i=Dense(units=p_units,activation='relu',name=f"hidden",
@@ -54,7 +54,7 @@ class EnsmbleBuilder(object):
         l1_coff = hp.Float('l1', min_value=self.l1[0], 
         	max_value=self.l1[0], step=32)
         #hp.Choice('kernel_regularizer', values=[0.01,0.001,0.1,0.005,0.05]) 
-        p_units = hp.Int('units', min_value= self.n_hidden[0], 
+        p_units = hp.Int('n_hidden', min_value= self.n_hidden[0], 
         	max_value=self.n_hidden[1], step=32)
               
         models=[]
@@ -83,14 +83,20 @@ def hyper_exp(conf_dict,n_split):
     hp_ranges={'l1':helper(conf_dict['l1']),
         'hid_ratio':helper(conf_dict['hid_ratio'])
     }
+    names=conf_dict['hyperparams']
     with open(conf_dict['hyper'],"a") as f:
-        f.write('dataset,hid_ratio,l1') 
+        f.write('dataset,{}\n'.format(','.join(names))) 
     for path_i in data.top_files(conf_dict['json']):
         print(f'Optimisation of hyperparams for dataset {path_i}')
         raw_data=data.read_data(path_i)
+        dim=raw_data.dim()
         split_ratio=1.0/args.n_split
         best=single_exp(raw_data,hp_ranges,split_ratio)
+        best['hid_ratio']= best['hid_ratio']/float(dim)
         print(best)
+        data_i=path_i.split('/')[-1]
+        line_i='{},{}\n'.format(data_i,
+           ','.join([str(best[name_j])  for name_j in names]))
         line_i=','.join([str(v) for v in best.values()])+'\n'
         with open(conf_dict['hyper'],"a") as f:
             f.write(line_i) 
@@ -117,7 +123,7 @@ def single_exp(raw_data,hp_ranges,split_ratio=0.1):
        verbose=0,callbacks=[stop_early])
     tuner.results_summary()
     best_hps=tuner.get_best_hyperparameters(num_trials=10)[0]
-    best={'l1':best_hps.get('l1'),'units':best_hps.get('units')}
+    best={'l1':best_hps.get('l1'),'hid_ratio':best_hps.get('hid_ratio')}
     return best
 
 if __name__ == "__main__":
