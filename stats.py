@@ -3,7 +3,7 @@ import os
 from tensorflow import keras
 import time
 from collections import defaultdict
-import test,utils,data,ens_feats
+import test,utils,data,ens_feats,output.plot
 
 def variant_time(data_path,model_path):
     clf_types=['SVC']#'MLP-TF','RF']#,'LR','LR-imb',]
@@ -22,9 +22,13 @@ def variant_time(data_path,model_path):
     print('\n'.join(lines))
 
 def full_time(in_path):
-    parse_time(in_path,'info_train.log','Save')
-    parse_time(in_path,'info_test.log','Evaluate')
-
+    time_dict= parse_time(in_path,'info_train.log','Save')
+    p= output.plot.box_plot('Dict',time_dict)
+    p.show()
+    p=parse_time(in_path,'info_test.log','Evaluate')
+    p= output.plot.box_plot('Dict',time_dict)
+    p.show()
+    
 def parse_time(in_path,filename='info_train.log',line_type='Save'):
     train_path=f'{in_path}/{filename}'
     time_dict = defaultdict(lambda :[])
@@ -38,6 +42,7 @@ def parse_time(in_path,filename='info_train.log',line_type='Save'):
                 time_i=time_i.replace('s','')
                 time_dict[name_i].append(float(time_i))
     stats_from_dict(time_dict)
+    return time_dict
 
 def stats_from_dict(time_dict):
     for name_i,time_i in time_dict.items():
@@ -82,5 +87,5 @@ def to_txt(result_dict):
     return '\n'.join(lines)
 
 #variant_time(data_path,model_path)
-#full_time('../small/ovo')
-show_dim('../small/hyper')
+full_time('../small/hyper')
+#show_dim('../small/hyper')

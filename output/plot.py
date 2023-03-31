@@ -28,7 +28,8 @@ def box_gen(conf):
                 for data_j in dataset}
         box_plot(ens_i,dict_i,'{}/{}'.format(conf['box'],ens_i))
 
-def box_plot(ens_i,dict_i,out_i):
+def box_plot(ens_i,dict_i,out_i=None,
+        xlabel='Acc',ylabel='Dataset'):
     plt.clf()
     acc,labels = [],[]
     for label_i,acc_i in dict_i.items():
@@ -36,10 +37,12 @@ def box_plot(ens_i,dict_i,out_i):
         labels.append(label_i)
     plt.boxplot(acc, labels=labels)
     plt.title(ens_i)
-    plt.xlabel("Acc")
-    plt.ylabel("Dataset")
-    plt.savefig(f'{out_i}.png')
-
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    if(not (out_i is None)):
+        plt.savefig(f'{out_i}.png')
+    return plt
+    
 def scatter_plot(df,x_col,y_col='diff'):
     x=df[x_col].to_numpy()
     y=df[y_col].to_numpy()
