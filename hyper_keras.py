@@ -78,47 +78,43 @@ def hyper_exp(conf_dict,n_split):
     for hyper_i in conf_dict['hyperparams']:
         hyper_values= ','.join(map(str,conf_dict[hyper_i]))
         print('{}:{}'.format(hyper_i,hyper_values))
-    
+
     helper=lambda x:(min(x),max(x))
     hp_ranges={'l1':helper(conf_dict['l1']),
         'hid_ratio':helper(conf_dict['hid_ratio'])
     }
-
+    with open(conf_dict['hyper'],"a") as f:
+        f.write('dataset,hid_ratio,l1') 
     for path_i in data.top_files(conf_dict['json']):
         print(f'Optimisation of hyperparams for dataset {path_i}')
         raw_data=data.read_data(path_i)
-        best=single_exp(raw_data,hp_ranges)
+        split_ratio=1.0/args.n_split
+        best=single_exp(raw_data,hp_ranges,split_ratio)
         print(best)
         line_i=','.join([str(v) for v in best.values()])+'\n'
         with open(conf_dict['hyper'],"a") as f:
             f.write(line_i) 
     print('Hyperparams saved at {}'.format(conf_dict['hyper']))
 
-def single_exp(raw_data,hp_ranges):
+def single_exp(raw_data,hp_ranges,split_ratio=0.1):
     dim=raw_data.dim()
     n_cats= raw_data.n_cats()
     l1,hid_ratio=hp_ranges['l1'],hp_ranges['hid_ratio']
     n_hidden=dim* np.array(hid_ratio)#*10
+    stop_early = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5)
+
     model_builder= SimpleBuilder(dim,n_cats,n_hidden,l1) #EnsmbleBuilder(dim,n_cats,n_hidden,l1)
 
     tuner=kt.BayesianOptimization(model_builder,
                 objective='accuracy',
                 max_trials=4,
                 overwrite=True)
-#    tuner = kt.Hyperband(model_builder,
-#                objective='val_accuracy',  
-#                max_epochs=10,
-#                factor=3,
-#                directory=None,
-#                project_name=None)
     X,y,names=raw_data.as_dataset()
-#    y=np.array(y)
-
     y=tf.one_hot(y,depth=n_cats)
-#    raise Exception(y)
 #    y=np.array(binary.binarize(y))
 
-    tuner.search(X, y, epochs=50, validation_split=0.1,verbose=0)#, callbacks=[stop_early])
+    tuner.search(X, y, epochs=150, validation_split=split_ratio,
+       verbose=0,callbacks=[stop_early])
     tuner.results_summary()
     best_hps=tuner.get_best_hyperparameters(num_trials=10)[0]
     best={'l1':best_hps.get('l1'),'units':best_hps.get('units')}
