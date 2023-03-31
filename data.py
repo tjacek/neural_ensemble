@@ -100,7 +100,8 @@ class DataDict(dict):
     def to_csv(self,out_path):
         with open(out_path, 'w') as f:
             for name_i,value_i in self.items():
-                line_i=','.join(value_i)
+                line_i=','.join([str(f_j) 
+                    for f_j in value_i])
                 line_i=f'{line_i},{name_i.get_cat()}'
                 f.write(line_i)
 
@@ -174,14 +175,6 @@ def from_names(X,names):
         data_dict[name_i]=x_i
     return data_dict
 
-#def from_tuple(X,y,test=False):
-#    test=int(test)
-#    data_dict=DataDict()
-#    for i,(x_i,y_i) in enumerate(zip(X,y)):
-#        name_i=Name(f'{y_i}_{test}_{i}')
-#        data_dict[name_i]=x_i
-#    return data_dict
-
 def make_dir(path):
     if(not os.path.isdir(path)):
         os.mkdir(path)
@@ -190,3 +183,11 @@ def top_files(path):
     paths=[ path+'/'+file_i for file_i in os.listdir(path)]
     paths=sorted(paths)#,key=natural_keys)
     return paths
+
+if __name__ == "__main__":
+    import utils
+    @utils.dir_map(depth=1)
+    def helper(in_path,out_path):
+        data_i=read_data(in_path)
+        data_i.to_csv(out_path)
+    helper('../uci/json','csv')
