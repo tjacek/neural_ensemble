@@ -19,9 +19,15 @@ exp(){
   if [ $2 != 'default' ]; then 
   { 
   	echo 'Optimisation of hyperparametrs';
-    python hyper.py --conf ${conf_path} --n_split ${n_split} \
-        --dir_path $1   --optim_type $2 --clf_jobs ${clf_jobs} \
-        --hyper_jobs ${hyper_jobs}  --batch_ratio ${batch_ratio};
+    python hyper_keras.py --conf ${conf_path} --dir_path $1
+#    --conf ${conf_path} --n_split ${n_split} \
+#        --dir_path $1   --optim_type $2 --clf_jobs ${clf_jobs} \
+#        --hyper_jobs ${hyper_jobs}  --batch_ratio ${batch_ratio};
+
+#    python hyper.py --conf ${conf_path} --n_split ${n_split} \
+#        --dir_path $1   --optim_type $2 --clf_jobs ${clf_jobs} \
+#        --hyper_jobs ${hyper_jobs}  --batch_ratio ${batch_ratio};
+
     echo 'Training models';
     python train.py --conf ${conf_path} --n_iters ${n_iters} \
        --lazy --n_split ${n_split} --dir_path $1 \
@@ -53,15 +59,15 @@ eval_model(){
 }
 
 elapsed=0
-exp "${dir}/ovo" 'default'
-elapsed1=${elapsed}
-#exp "${dir}/grid" 'grid'
-#elapsed2=${elapsed}
+#exp "${dir}/ovo" 'default'
+#elapsed1=${elapsed}
+exp "${dir}/hyper" 'hyper'
+elapsed2=${elapsed}
 #exp "${dir}/bayes" 'bayes'
 #elapsed3=${elapsed}
 
-echo "Time default ${elapsed1}"
-#echo "Time grid ${elapsed2}"
+#echo "Time default ${elapsed1}"
+echo "Time grid ${elapsed2}"
 #echo "Time bayes ${elapsed3}"
 
 #eval_model "${dir}/default" 

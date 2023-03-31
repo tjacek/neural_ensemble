@@ -97,7 +97,7 @@ def hyper_exp(conf_dict,n_split):
         data_i=path_i.split('/')[-1]
         line_i='{},{}\n'.format(data_i,
            ','.join([str(best[name_j])  for name_j in names]))
-        line_i=','.join([str(v) for v in best.values()])+'\n'
+ #       line_i=','.join([str(v) for v in best.values()])+'\n'
         with open(conf_dict['hyper'],"a") as f:
             f.write(line_i) 
     print('Hyperparams saved at {}'.format(conf_dict['hyper']))
