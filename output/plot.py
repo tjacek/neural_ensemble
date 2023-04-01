@@ -38,6 +38,7 @@ def box_plot(ens_i,dict_i,out_i=None,
     plt.boxplot(acc, labels=labels)
     plt.title(ens_i)
     plt.xlabel(xlabel)
+    plt.xticks(rotation = 90)
     plt.ylabel(ylabel)
     if(not (out_i is None)):
         plt.savefig(f'{out_i}.png')

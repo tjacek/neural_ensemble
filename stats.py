@@ -23,10 +23,10 @@ def variant_time(data_path,model_path):
 
 def full_time(in_path):
     time_dict= parse_time(in_path,'info_train.log','Save')
-    p= output.plot.box_plot('Dict',time_dict)
+    p= output.plot.box_plot('Dict',time_dict,xlabel='Dataset',ylabel='time')
     p.show()
     p=parse_time(in_path,'info_test.log','Evaluate')
-    p= output.plot.box_plot('Dict',time_dict)
+    p= output.plot.box_plot('Dict',time_dict,xlabel='Dataset',ylabel='time')
     p.show()
     
 def parse_time(in_path,filename='info_train.log',line_type='Save'):
@@ -87,5 +87,5 @@ def to_txt(result_dict):
     return '\n'.join(lines)
 
 #variant_time(data_path,model_path)
-full_time('../small/hyper')
+full_time('../uci/ova')
 #show_dim('../small/hyper')
