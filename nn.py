@@ -74,7 +74,7 @@ class NNFacade(BaseEstimator, ClassifierMixin):
         nn_params={'dims':X.shape[1],'n_cats':n_cats}
         self.model=SimpleNN(n_hidden=n_hidden)(nn_params)
         y=one_hot(targets,n_cats)
-        batch_size= int(conf.GLOBAL['batch_ratio'],* X.shape[0])
+        batch_size= int(conf.GLOBAL['batch_ratio']* X.shape[0])
         self.model.fit(X,y,epochs=500,batch_size=batch_size,
             verbose = 0,callbacks=earlystopping)
 

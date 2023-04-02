@@ -6,7 +6,7 @@ from collections import defaultdict
 import test,utils,data,ens_feats,output.plot
 
 def variant_time(data_path,model_path):
-    clf_types=['SVC']#'MLP-TF','RF']#,'LR','LR-imb',]
+    clf_types=['MLP-TF','RF']#,'LR','LR-imb',]
     ens_types=['base','binary','common']
     raw_data=data.read_data(data_path)
     common,binary= test.gen_feats(raw_data,model_path)
@@ -19,7 +19,7 @@ def variant_time(data_path,model_path):
             ens_inst(clf_j)
             lines.append(f'{id_ij},{(time.time()-st):.4f}s')
             print(lines[-1])
-    print('\n'.join(lines))
+#    print('\n'.join(lines))
 
 def full_time(in_path):
     time_dict= parse_time(in_path,'info_train.log','Save')
@@ -86,6 +86,6 @@ def to_txt(result_dict):
         for id_i,result_i in result_dict.items()]
     return '\n'.join(lines)
 
-#variant_time(data_path,model_path)
-full_time('../uci/ova')
+variant_time('../uci/json/mfeat-fourier','../uci/ova/models/mfeat-fourier/0/0',)
+#full_time('../uci/ova')
 #show_dim('../small/hyper')
