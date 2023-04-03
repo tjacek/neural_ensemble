@@ -102,7 +102,7 @@ class DataDict(dict):
             for name_i,value_i in self.items():
                 line_i=','.join([str(f_j) 
                     for f_j in value_i])
-                line_i=f'{line_i},{name_i.get_cat()}'
+                line_i=f'{line_i},{name_i.get_cat()}\n'
                 f.write(line_i)
 
 class NameList(list):
