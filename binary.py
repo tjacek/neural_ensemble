@@ -46,6 +46,7 @@ class NeuralEnsemble(BaseEstimator, ClassifierMixin):
             full_i=np.concatenate([X,binary_i],axis=1)
             clf_i.fit(full_i,targets)
             self.models.append(clf_i)
+        return self
 
     def predict_proba(self,X):
         votes=[]
@@ -88,6 +89,7 @@ class OneVsOne(NeuralEnsemble):
             extractor_i=self.train_extractor(X_s,y_s)
             binary_i=extractor_i.predict(X)
             self.train_model(X,binary_i,y)
+        return self
 
     def select_pairs(self,X,y):
         train,test=split_dataset(X,np.array(y))
