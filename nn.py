@@ -69,12 +69,12 @@ class NNFacade(BaseEstimator, ClassifierMixin):
     def fit(self,X,targets):
         n_cats=max(targets)+1
         n_hidden= int(self.ratio*X.shape[1])
+        batch_size= int(conf.GLOBAL['batch_ratio']* X.shape[0])
         earlystopping = callbacks.EarlyStopping(monitor="accuracy",
                 mode="min", patience=5,restore_best_weights=True)
         nn_params={'dims':X.shape[1],'n_cats':n_cats}
         self.model=SimpleNN(n_hidden=n_hidden)(nn_params)
         y=one_hot(targets,n_cats)
-        batch_size= int(conf.GLOBAL['batch_ratio']* X.shape[0])
         self.model.fit(X,y,epochs=500,batch_size=batch_size,
             verbose = 0,callbacks=earlystopping)
 
@@ -84,3 +84,20 @@ class NNFacade(BaseEstimator, ClassifierMixin):
     def predict(self,X):
         prob=self.model.predict(X)
         return np.argmax(prob,axis=1)
+
+
+class MulticlassNN(BaseEstimator, ClassifierMixin):
+    def __init__(self,ratio=0.33):
+        self.ratio=ratio
+        self.model=None
+
+    def fit(self,X,targets):
+        n_cats=max(targets)+1
+        n_hidden= int(self.ratio*X.shape[1])   
+        batch_size= int(conf.GLOBAL['batch_ratio']* X.shape[0])
+
+    def build_model(self,params):
+        model = Sequential()
+        input_dim=params['n_cats']*params['dims']
+        model.add(Dense(self.n_hidden, input_dim=input_dim, activation='relu',name="hidden",
+            kernel_regularizer=reg))
