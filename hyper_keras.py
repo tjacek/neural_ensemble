@@ -12,7 +12,6 @@ from tensorflow.keras import Input, Model
 import keras_tuner as kt
 import data,binary
 
-
 class SimpleBuilder(object):#kt.HyperModel):
     def __init__(self,dim,n_cats,n_hidden,l1):
         self.dim=dim
@@ -73,7 +72,7 @@ class EnsmbleBuilder(object):
         return model
 
 def hyper_exp(conf_dict,n_split):
-    data.make_dir(conf_dict['main_dict'])
+    data.make_dir(conf_dict['main_dir'])
     print('Optimisation for hyperparams')
     for hyper_i in conf_dict['hyperparams']:
         hyper_values= ','.join(map(str,conf_dict[hyper_i]))
@@ -86,11 +85,11 @@ def hyper_exp(conf_dict,n_split):
     names=conf_dict['hyperparams']
     with open(conf_dict['hyper'],"a") as f:
         f.write('dataset,{}\n'.format(','.join(names))) 
-    for path_i in data.top_files(conf_dict['json']):
+    for path_i in data.top_files(conf_dict['data_dir']):
         print(f'Optimisation of hyperparams for dataset {path_i}')
         raw_data=data.read_data(path_i)
         dim=raw_data.dim()
-        split_ratio=1.0/args.n_split
+        split_ratio=1.0/args.n_splits
         best=single_exp(raw_data,hp_ranges,split_ratio)
         best['hid_ratio']= best['hid_ratio']/float(dim)
         print(best)
@@ -126,9 +125,23 @@ def single_exp(raw_data,hp_ranges,split_ratio=0.1):
     best={'l1':best_hps.get('l1'),'hid_ratio':best_hps.get('hid_ratio')}
     return best
 
+def parse_args(default_conf='conf/l1.cfg'):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--n_splits", type=int, default=10)
+#    parser.add_argument("--n_iters", type=int, default=10)
+    parser.add_argument("--conf",type=str,default=default_conf)
+    parser.add_argument("--data_dir",type=str)
+    parser.add_argument("--main_dir",type=str)
+    parser.add_argument("--batch_size",type=int)
+    args = parser.parse_args()
+    return args
+
 if __name__ == "__main__":
-    args=conf.parse_args(default_conf='conf/small.cfg') 
+    args=parse_args(default_conf='conf/small.cfg') 
     conf_dict=conf.read_conf(args.conf,
-        ['dir','hyper','clf'],args.dir_path)
-#    print(conf_dict)
-    hyper_exp(conf_dict,args.n_split)
+        ['hyper','clf'])#,args.dir_path)
+    conf.add_dir_paths(conf_dict,args.data_dir,
+                                 args.main_dir)
+    conf.GLOBAL['batch_size']=args.batch_size
+    print(conf_dict)
+    hyper_exp(conf_dict,args.n_splits)
