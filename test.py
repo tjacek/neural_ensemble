@@ -20,7 +20,7 @@ def test_exp(conf):
     @utils.dir_map(1,overwrite=True)
     def helper(model_path,output_path):
         name=model_path.split('/')[-1]
-        data_path='{}/{}'.format(conf['json'],name)
+        data_path='{}/{}'.format(conf['data_dir'],name)
         return exp(data_path,model_path,output_path,conf)
     helper(conf['model'],conf['output'])#)
 
@@ -115,9 +115,24 @@ def best_frame(result_path,out_path=None):
     best=pd.DataFrame(lines,columns=result.columns)
     best.to_csv(out_path)
 
+def parse_args(default_conf='conf/l1.cfg'):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--conf",type=str,default=default_conf)
+    parser.add_argument("--data_dir",type=str)
+    parser.add_argument("--main_dir",type=str)
+    parser.add_argument("--batch_size",type=int)    
+    parser.add_argument("--lazy",action='store_true')
+    args = parser.parse_args()
+    return args    
+
 if __name__ == "__main__":
-    args = conf.parse_args(default_conf='conf/small.cfg')
-    conf_dict=conf.read_conf(args.conf,['dir','clf'],args.dir_path)
+    args=parse_args(default_conf='conf/l1.cfg')
+    conf_dict=conf.read_conf(args.conf,['clf'])
+    conf.add_dir_paths(conf_dict,args.data_dir,
+                        args.main_dir)
+    print(conf_dict)
+#    args = conf.parse_args(default_conf='conf/small.cfg')
+#    conf_dict=conf.read_conf(args.conf,['dir','clf'],args.dir_path)
     conf_dict['lazy']=args.lazy
     test_exp(conf_dict)
     make_results(conf_dict)
