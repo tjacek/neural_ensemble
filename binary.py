@@ -12,14 +12,13 @@ from tensorflow.keras import Input, Model
 from sklearn.base import BaseEstimator, ClassifierMixin
 from keras import callbacks
 import time
-import learn,nn
+import learn,nn,conf
 
 class NeuralEnsemble(BaseEstimator, ClassifierMixin):
-    def __init__(self,hid_ratio=1,batch_ratio=0.5,l1=0.001,multi_clf='RF'):
+    def __init__(self,hid_ratio=1,l1=0.001,multi_clf='RF'):
         self.hid_ratio=hid_ratio
         self.l1=l1
         self.multi_clf=multi_clf
-        self.batch_ratio=batch_ratio
 
     def fit(self,X,targets):
         n_cats=max(targets)+1
@@ -31,7 +30,7 @@ class NeuralEnsemble(BaseEstimator, ClassifierMixin):
         l1=float(self.l1)
         ensemble=nn.BinaryEnsemble(n_hidd,l1)(nn_params)
         
-        batch_size= int(self.batch_ratio * X.shape[0])
+        batch_size=conf.GLOBAL['batch_size'] #int(self.batch_ratio * X.shape[0])
         start=time.time()
         ensemble.fit(X,y,epochs=100,
             batch_size=batch_size,verbose = 0)
@@ -43,6 +42,7 @@ class NeuralEnsemble(BaseEstimator, ClassifierMixin):
             self.extractors.append(extractor_i)           
             binary_i=extractor_i.predict(X)
             clf_i=learn.get_clf(self.multi_clf)#'LR')
+            print(str(clf_i))
             full_i=np.concatenate([X,binary_i],axis=1)
             clf_i.fit(full_i,targets)
             self.models.append(clf_i)
@@ -124,7 +124,7 @@ class OneVsOne(NeuralEnsemble):
         l1=float(self.l1)
         start=time.time()
         nn_i=nn.SimpleNN(n_hidden=n_hidd,l1=l1)(nn_params)
-        batch_size= int(self.batch_ratio * X.shape[0])
+        batch_size=conf.GLOBAL['batch_size']#int(self.batch_ratio * X.shape[0])
         start=time.time()
         nn_i.fit(X,y_i,epochs=100,
             batch_size=batch_size,verbose = 0)#,callbacks=earlystopping)

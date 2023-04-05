@@ -7,7 +7,7 @@ from tqdm import tqdm
 import conf,binary,data,nn,learn,folds,utils
 
 def multi_exp(conf_dict):
-    data.make_dir(conf_dict['main_dict'])
+    data.make_dir(conf_dict['main_dir'])
     if(not conf_dict['lazy'] and 
         (os.path.isdir(conf_dict['model']))):
         shutil.rmtree(conf_dict['model'])
@@ -24,7 +24,7 @@ def multi_exp(conf_dict):
     @utils.dir_map(depth=1)
     def helper(in_path,out_path):
         single_inter(in_path,out_path,conf_dict,get_hyper)
-    helper(conf_dict['json'],conf_dict['model']) 
+    helper(conf_dict['data_dir'],conf_dict['model']) 
 
 def single_inter(in_path,out_path,conf_dict,get_hyper):
     raw_data=data.read_data(in_path)
@@ -38,16 +38,14 @@ def single_inter(in_path,out_path,conf_dict,get_hyper):
         out_i=f'{out_path}/{i}'
         logging.info(f'Folder {out_i} created.')
         data.make_dir(out_i)
-        folds_i=folds.make_folds(raw_data,k_folds=conf_dict['n_split'])
+        folds_i=folds.make_folds(raw_data,k_folds=conf_dict['n_splits'])
         splits_i=folds.get_splits(raw_data,folds_i)
         for j,(data_j,rename_j) in enumerate(splits_i):
             ens_j= NeuralEnsemble(**hyperparams)
             learn.fit_clf(data_j,ens_j)
             out_j=f'{out_i}/{j}'
-#            logging.info(f'Save models {out_j}')
             conf.log_time(f'Save models {out_j}',st)
             save_fold(ens_j,rename_j,out_j)
-#        logging.info(f'Iteration {out_i} took {(time.time()-st):.4f}s')
         conf.log_time(f'Iteration {out_i}',st)
     print(f'Models saved at {out_path}\n')
 
@@ -85,13 +83,38 @@ def default_hyper(conf_hyper):
                     for name_i in names}
     return lambda path: hyper_dict
 
+def parse_args(default_conf='conf/l1.cfg'):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--n_splits", type=int, default=10)
+    parser.add_argument("--n_iters", type=int, default=10)
+    parser.add_argument("--conf",type=str,default=default_conf)
+    parser.add_argument("--data_dir",type=str)
+    parser.add_argument("--main_dir",type=str)
+    parser.add_argument("--batch_size",type=int)
+    parser.add_argument("--default",action='store_true')
+    parser.add_argument("--lazy",action='store_true')
+    args = parser.parse_args()
+    return args
+
 if __name__ == "__main__":
-    args = conf.parse_args(default_conf='conf/small.cfg')
-    conf_train=conf.read_conf(args.conf,
-        ['clf','dir','hyper'],args.dir_path)
-    conf_train['n_iters']=args.n_iters
-    conf_train['n_split']=args.n_split
-    conf_train['lazy']=args.lazy
+    args=parse_args(default_conf='conf/l1.cfg')
+    conf_dict=conf.read_conf(args.conf,
+        ['hyper','clf'])#,args.dir_path)
+    conf.add_dir_paths(conf_dict,args.data_dir,
+                                 args.main_dir)
     if(args.default):
-        conf_train['hyper']=default_hyper(conf_train)        
-    multi_exp(conf_train )
+        conf_train['hyper']=default_hyper(conf_train)     
+    conf_dict['n_iters']=args.n_iters
+    conf_dict['n_splits']=args.n_splits
+    conf_dict['lazy']=args.lazy
+    conf.GLOBAL['batch_size']=args.batch_size
+
+    print(conf_dict)
+    multi_exp(conf_dict )
+#    args = conf.parse_args(default_conf='conf/small.cfg')
+#    conf_train=conf.read_conf(args.conf,
+#        ['clf','dir','hyper'],args.dir_path)
+
+#    if(args.default):
+#        conf_train['hyper']=default_hyper(conf_train)        
+#    multi_exp(conf_train )
