@@ -12,8 +12,6 @@ from tqdm import tqdm
 def test_exp(conf):
 #    if(os.path.isdir(conf['output'])):
 #        shutil.rmtree(conf['output'])
-    if(os.path.exists(conf['result'])):
-        os.remove(conf['result'])
     logging.basicConfig(filename='{}_test.log'.format(conf['log']), 
         level=logging.INFO,filemode='w', 
         format='%(process)d-%(levelname)s-%(message)s')
@@ -50,14 +48,14 @@ def get_fold_fun(raw_data,clf_types,ens_types):
         logging.info(f'Read models:{in_path}')
         common,binary= gen_feats(raw_data,in_path)
         conf.log_time(f'Features generated:{in_path}',st)
-        acc_dir={}
+        result_dir={}
         for ens_i in ens_types:
             for clf_j in clf_types:
                 ens_inst=ens_i(common,binary)
                 id_ij=f'{str(ens_inst)}_{clf_j}'
-                acc_dir[id_ij]=ens_inst(clf_j)
+                result_dir[id_ij]=ens_inst(clf_j)
         conf.log_time(f'Evaluate models from:{in_path}',st)
-        return acc_dir
+        return result_dir
     return helper
 
 def gen_feats(raw_data,in_path):
@@ -81,40 +79,6 @@ def read_fold(in_path):
             for model_i in raw_dict['models']]
         return rename_dict,models
 
-def make_results(conf):
-    @utils.dir_fun(True)
-    @utils.dir_fun(True)
-    def helper(in_path):
-        acc=[learn.read_result(path_i).get_acc()
-           for path_i in data.top_files(in_path) ]
-        return acc
-    acc_dict=helper(conf['output'])
-    with open(conf['result'],"a") as f:
-        f.write('dataset,ens_type,clf_type,mean_acc,std_acc,max_acc\n')
-        for data_i,dict_i in acc_dict.items():
-            for id_j,acc_j in dict_i.items():
-                id_j=','.join(id_j.split('_'))
-                line_ij=f'{data_i},{id_j},{stats(acc_j)}'
-                f.write(line_ij+ '\n')
-
-def stats(acc,as_str=True):
-    raw=[f'{fun_i(acc):.4f}' 
-        for fun_i in [np.mean,np.std,np.amax]]
-    if(as_str):
-        return ','.join(raw)
-    return raw
-
-def best_frame(result_path,out_path=None):
-    result=pd.read_csv(result_path)
-    lines=[]
-    for data_i in result['dataset'].unique():
-        df_i=result[result['dataset']==data_i]
-        k=df_i['mean_acc'].argmax()
-        row_i=df_i.iloc[k].to_list()
-        lines.append(row_i)
-    best=pd.DataFrame(lines,columns=result.columns)
-    best.to_csv(out_path)
-
 def parse_args(default_conf='conf/l1.cfg'):
     parser = argparse.ArgumentParser()
     parser.add_argument("--conf",type=str,default=default_conf)
@@ -130,12 +94,7 @@ if __name__ == "__main__":
     conf_dict=conf.read_conf(args.conf,['clf'])
     conf.add_dir_paths(conf_dict,args.data_dir,
                         args.main_dir)
+    conf.GLOBAL['batch_size']=args.batch_size
     print(conf_dict)
-#    args = conf.parse_args(default_conf='conf/small.cfg')
-#    conf_dict=conf.read_conf(args.conf,['dir','clf'],args.dir_path)
     conf_dict['lazy']=args.lazy
-    test_exp(conf_dict)
-    make_results(conf_dict)
-    print("Saved results at {}".format(conf_dict['result']))
-    best_frame(conf_dict['result'],conf_dict['best'])
-    print("Saved best results at {}".format(conf_dict['best']))
+    test_exp(conf_dict) 
