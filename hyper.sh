@@ -1,7 +1,6 @@
-
 conf_path='conf/ovo.cfg'
-data_dir='../small/json'
-main_dir='../small/keras'
+data_dir='../uci/json'
+main_dir='../uci/keras'
 n_splits=10
 batch_size=320
 
@@ -13,7 +12,7 @@ echo 'batch_size' ${batch_size}
 
 echo 'Optimisation of hyperparametrs';
 start_time="$(date -u +%s)"
-python hyper_keras.py --conf ${conf_path} --data_dir $data_dir \
+python3 hyper_keras.py --conf ${conf_path} --data_dir $data_dir \
 --main_dir $main_dir --batch_size $batch_size --n_splits $n_splits
 
 end_time="$(date -u +%s)"
