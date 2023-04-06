@@ -23,10 +23,10 @@ def multi_exp(conf_dict):
         format='%(process)d-%(levelname)s-%(message)s')
     @utils.dir_map(depth=1)
     def helper(in_path,out_path):
-        single_inter(in_path,out_path,conf_dict,get_hyper)
+        single_iter(in_path,out_path,conf_dict,get_hyper)
     helper(conf_dict['data_dir'],conf_dict['model']) 
 
-def single_inter(in_path,out_path,conf_dict,get_hyper):
+def single_iter(in_path,out_path,conf_dict,get_hyper):
     raw_data=data.read_data(in_path)
     data.make_dir(out_path)
     hyperparams=get_hyper(in_path)
@@ -93,6 +93,7 @@ def parse_args(default_conf='conf/l1.cfg'):
     parser.add_argument("--batch_size",type=int)
     parser.add_argument("--default",action='store_true')
     parser.add_argument("--lazy",action='store_true')
+    parser.add_argument("--datasets",type=str,default='-')
     args = parser.parse_args()
     return args
 
@@ -108,13 +109,10 @@ if __name__ == "__main__":
     conf_dict['n_splits']=args.n_splits
     conf_dict['lazy']=args.lazy
     conf.GLOBAL['batch_size']=args.batch_size
-
+    if(args.datasets!='-'):
+        datasets=args.datasets.strip().split(',')
+        datasets=[ '{}/{}'.format(conf_dict['data_dir'],data_i) 
+                for data_i in datasets]
+        conf_dict['data_dir']=datasets
     print(conf_dict)
-    multi_exp(conf_dict )
-#    args = conf.parse_args(default_conf='conf/small.cfg')
-#    conf_train=conf.read_conf(args.conf,
-#        ['clf','dir','hyper'],args.dir_path)
-
-#    if(args.default):
-#        conf_train['hyper']=default_hyper(conf_train)        
-#    multi_exp(conf_train )
+    multi_exp(conf_dict)

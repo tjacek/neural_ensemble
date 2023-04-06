@@ -180,7 +180,10 @@ def make_dir(path):
         os.mkdir(path)
 
 def top_files(path):
-    paths=[ path+'/'+file_i for file_i in os.listdir(path)]
+    if(type(path)==str):
+        paths=[ path+'/'+file_i for file_i in os.listdir(path)]
+    else:
+        paths=path
     paths=sorted(paths)#,key=natural_keys)
     return paths
 
