@@ -1,5 +1,5 @@
 from multiprocessing import Pool, get_context
-import learn
+import learn,data
 
 class EnsFeatures(object):
     def __init__(self,common,binary):
@@ -72,11 +72,35 @@ class NoEnsemble(object):
     def __str__(self):
         return 'common'
 
+class PCAEnsemble(object):
+    def __init__(self,common,binary):
+        self.common=common
+        self.binary=binary
+        self.pca=None
+
+    def __call__(self,clf_type='LR'):
+        if(self.pca is None):
+            self.pca=data.transform_data(self.common)
+        full=[self.pca.concat(binary_i) 
+                for binary_i in self.binary]
+        results=[]
+        for full_i in full:
+            result_i=learn.fit_clf(full_i,clf_type)
+            results.append(result_i)
+        results=[result_i.split()[1] 
+            for result_i in results]
+        return learn.voting(results)      
+
+    def __str__(self):
+        return 'pca'
+
 def get_ensemble(ens_type):
     if(ens_type=='binary'):
         return BinaryEnsemble
     if(ens_type=='common'):
         return NoEnsemble
+    if(ens_type=='pca'):
+        return PCAEnsemble
     if(ens_type=='para'):
         return ParallelEnsemble
     return EnsFeatures

@@ -169,6 +169,13 @@ def read_data(in_path):
             for name_i,data_i in data_dict.items()}
         return DataDict(data_dict)
 
+def transform_data(data_dict):
+    from sklearn.decomposition import PCA
+    X,y,names=data_dict.as_dataset()
+    pca = PCA(n_components=None)
+    X_pca=pca.fit_transform(X)
+    return from_names(X_pca,names)
+
 def from_names(X,names):
     data_dict=DataDict()
     for name_i,x_i in zip(names,X):
