@@ -7,7 +7,7 @@ from sklearn.metrics import accuracy_score,f1_score,recall_score,precision_score
 from itertools import product
 import shutil
 import collections
-import data,learn,utils
+import data,learn,utils,output.cf,output.plot
 
 class Metrics(object):
     def __init__(self):
@@ -74,7 +74,6 @@ def best_frame(result_path,out_path=None):
 def parse_args(default_conf='conf/l1.cfg'):
     parser = argparse.ArgumentParser()
     parser.add_argument("--conf",type=str,default=default_conf)
-#    parser.add_argument("--data_dir",type=str)
     parser.add_argument("--main_dir",type=str)
     args = parser.parse_args()
     return args    
@@ -88,3 +87,7 @@ if __name__ == "__main__":
     print("Saved results at {}".format(conf_dict['result']))
     best_frame(conf_dict['result'],conf_dict['best'])
     print("Saved best results at {}".format(conf_dict['best']))
+    output.cf.gen_cf(conf_dict ,sep='_')
+    print("Saved confusion matrix at {}".format(conf_dict['cf']))
+    output.plot.box_gen(conf_dict)
+    print("Saved box plot at {}".format(conf_dict['box']))

@@ -2,7 +2,7 @@ conf_path='conf/ova.cfg'
 data_dir='../uci/json'
 main_dir='../uci/keras'
 batch_size=320
-gen_output=false
+gen_output=true
 
 echo 'conf path' ${conf_path}
 echo 'data_dir' ${data_dir}
@@ -20,4 +20,4 @@ fi
 end_time="$(date -u +%s)"
 elapsed="$(($end_time-$start_time))"  
 echo "Elapsed" ${elapsed}
-python3 results.py --conf ${conf_path} --main_dir $main_dir
+python3 evaluate.py --conf ${conf_path} --main_dir $main_dir

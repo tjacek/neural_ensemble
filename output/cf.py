@@ -6,12 +6,12 @@ conf.silence_warnings()
 import argparse
 import numpy as np
 import pandas as pd 
-import conf,data,learn,plot
+import conf,data,learn,output.plot
 
 def gen_cf(conf ,sep='_'):
     df=pd.read_csv(conf['best'])
     data.make_dir(conf['cf'])
-    result_dict=plot.read_results(conf['output'])
+    result_dict=output.plot.read_results(conf['output'])
     for i,row_i in df.iterrows():
         print(row_i.to_list())
         data_i=row_i['dataset']
@@ -21,7 +21,7 @@ def gen_cf(conf ,sep='_'):
               for result_j in results] 
         median=np.argsort(acc)[len(acc)//2]
         cf_i=results[median].get_cf()
-        out_i="{}/{}".format(conf['cf'],alg_i)
+        out_i="{}/{}".format(conf['cf'],f'{data_i}_{alg_i}')
         np.savetxt(out_i,cf_i)       
         print(f'Saved conf matrix at {out_i}')
 
