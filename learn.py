@@ -1,5 +1,6 @@
 import numpy as np
-from sklearn.metrics import classification_report,accuracy_score,f1_score
+from sklearn.metrics import classification_report
+from sklearn.metrics import accuracy_score,f1_score,recall_score,precision_score
 from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import confusion_matrix
@@ -49,7 +50,6 @@ def get_label(vote_i):
 def read_result(in_path):
     with open(in_path, 'r') as f:        
         json_str = f.read()                      
-#        json_str = json_bytes.decode('utf-8')           
         raw_dict = json.loads(json_str)
         raw_dict= {data.Name(name_i):value_i
             for name_i,value_i in raw_dict.items()}
@@ -76,6 +76,21 @@ def voting(results):
         cat_i=np.argmax(count_i)
         pairs.append((name_i,cat_i))    
     return Result(pairs)
+
+def acc_metric(result):
+    return result.get_acc()
+
+def f1_metric(result):
+    y_pred,y_true=result.get_pred()            
+    return f1_score(y_pred,y_true,average='macro')
+
+def recall_metric(result):
+    y_pred,y_true=result.get_pred()            
+    return recall_score(y_pred,y_true,average='macro')
+
+def precision_metric(result):
+    y_pred,y_true=result.get_pred()            
+    return precision_score(y_pred,y_true,average='macro')
 
 def fit_clf(data_dict_i,clf_type=None,balance=False):
     data_dict_i.norm()

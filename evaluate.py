@@ -3,7 +3,6 @@ conf.silence_warnings()
 import os,argparse
 import numpy as np
 import pandas as pd
-from sklearn.metrics import accuracy_score,f1_score,recall_score,precision_score
 from itertools import product
 import shutil
 import collections
@@ -11,8 +10,8 @@ import data,learn,utils,output.cf,output.plot
 
 class Metrics(object):
     def __init__(self):
-        metrics=[('acc',accuracy_score),('f1',f1_score),
-                ('recall',recall_score),('precision',precision_score)]
+        metrics=[('acc',learn.acc_metric),('precision',learn.precision_metric),
+                ('recall',learn.recall_metric), ('f1',learn.f1_metric)]
         stats=[('mean',np.mean),('std',np.std)]#,('max',np.amax)]
         self.metrics_dict= collections.OrderedDict(metrics)
         self.stats_dict= collections.OrderedDict(stats)
@@ -29,11 +28,7 @@ class Metrics(object):
         for id_i,metric_i in self.metrics_dict.items():
             values=[]
             for result_k in results:
-                y_pred,y_true=result_k.get_pred()
-                if(id_i!='acc'):
-                    values.append(metric_i(y_pred,y_true,average='macro'))
-                else:
-                    values.append(metric_i(y_pred,y_true))
+                values.append(metric_i(result_k))
             for id_j,stats_j in self.stats_dict.items():
                 line_i.append(f'{stats_j(values):.4f}')
         return ','.join(line_i)
