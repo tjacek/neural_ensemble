@@ -9,12 +9,7 @@ class EnsFeatures(object):
     def __call__(self,clf_type='LR'):
         full=[ self.common.concat(binary_i) 
                 for binary_i in self.binary]
-        results=[]
-        for full_i in full:
-            result_i=learn.fit_clf(full_i,clf_type)
-            results.append(result_i)
-        results=[result_i.split()[1] 
-            for result_i in results]
+        results=fit_clf(full,clf_type)
         return learn.voting(results)
 
     def __str__(self):
@@ -51,10 +46,7 @@ class BinaryEnsemble(object):
         self.binary=binary 
 
     def __call__(self,clf_type='LR'):
-        results=[]
-        for binary_i in self.binary:
-            result_i=learn.fit_clf(binary_i,clf_type)
-            results.append(result_i.split()[1])
+        results=fit_clf(self.binary,clf_type)
         return learn.voting(results)
       
     def __str__(self):
@@ -83,16 +75,54 @@ class PCAEnsemble(object):
             self.pca=data.transform_data(self.common)
         full=[self.pca.concat(binary_i) 
                 for binary_i in self.binary]
-        results=[]
-        for full_i in full:
-            result_i=learn.fit_clf(full_i,clf_type)
-            results.append(result_i)
-        results=[result_i.split()[1] 
-            for result_i in results]
+        results=fit_clf(full,clf_type)
         return learn.voting(results)      
 
     def __str__(self):
         return 'pca'
+
+class PCAMixed(object):
+    def __init__(self,common,binary):
+        self.common=common
+        self.binary=binary
+        self.pca=None
+
+    def __call__(self,clf_type='LR'):
+        if(self.pca is None):
+            self.pca=data.transform_data(self.common)
+        raw_feats=[self.binary.concat(binary_i) 
+                    for binary_i in self.binary]
+        pca_feats=[self.pca.concat(binary_i) 
+                    for binary_i in self.binary]
+        results=fit_clf(raw_feats+pca_feats,clf_type)
+        return learn.voting(results)      
+
+    def __str__(self):
+        return 'pca-mixed'
+
+class PCANoEnsemble(object):
+    def __init__(self,common,binary):
+        self.common=common
+        self.pca=None
+
+    def __call__(self,clf_type='LR'):
+        if(self.pca is None):
+            self.pca=data.transform_data(self.common)
+        result_i=learn.fit_clf(self.pca,clf_type)
+        result_i=result_i.split()[1]
+        return learn.voting(results)      
+
+    def __str__(self):
+        return 'pca-only'
+
+def fit_clf(full_data,clf_type):
+    results=[]
+    for full_i in full_data:
+        result_i=learn.fit_clf(full_i,clf_type)
+        results.append(result_i)
+    results=[result_i.split()[1] 
+        for result_i in results]    
+    return results
 
 def get_ensemble(ens_type):
     if(ens_type=='binary'):
@@ -101,6 +131,10 @@ def get_ensemble(ens_type):
         return NoEnsemble
     if(ens_type=='pca'):
         return PCAEnsemble
+    if(ens_type=='pca-only'):
+        return PCANoEnsemble
+    if(ens_type=='pca-mixed'):
+        return PCAMixed    
     if(ens_type=='para'):
         return ParallelEnsemble
     return EnsFeatures
