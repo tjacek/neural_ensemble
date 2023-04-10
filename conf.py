@@ -36,20 +36,6 @@ def add_dir_paths(conf_dict,data_dir,main_dir):
     conf_dict['main_dir']=main_dir
     return conf_dict
 
-#def parse_dir(config_obj,dir_path=None):
-#    raw_dict= config_obj['DIR']
-#    if(dir_path is None):
-#        dir_path=raw_dict['main_dict']
-#    paths={'json':raw_dict['json'],
-#            'main_dict':dir_path}
-#    for key_i in raw_dict:
-#        if(key_i!='main_dict' and key_i!='json'):
-#            paths[key_i]=f'{dir_path}/{raw_dict[key_i]}'
-#    for name_i,value_i in DEFAULT_DIR.items():
-#        if(not name_i in paths):
-#            paths[name_i]=f'{dir_path}/{value_i}'
-#    return paths
-
 def parse_hyper(config_obj):
     raw_dict= config_obj['HYPER']
     hyper= raw_dict['hyperparams'].split(',')
@@ -74,26 +60,6 @@ def parse_list(raw_str):
         else:
             list_i.append(item)
     return list_i
-
-
-#def parse_args(default_conf='conf/l1.cfg'):
-#    parser = argparse.ArgumentParser()
-#    parser.add_argument("--n_split", type=int, default=10)
-#    parser.add_argument("--n_iters", type=int, default=10)
-#    parser.add_argument("--conf",type=str,default=default_conf)
-#    parser.add_argument("--dir_path",type=str)
-#    parser.add_argument("--lazy",action='store_true')
-#    parser.add_argument("--default",action='store_true')
-#    parser.add_argument('--optim_type',
-#        choices=[ 'bayes', 'grid','conf'],default='conf')
-#    parser.add_argument("--clf_jobs", type=int, default=5)
-#    parser.add_argument("--hyper_jobs", type=int, default=1)
-#    parser.add_argument("--batch_ratio", type=float, default=0.5)
-#    args = parser.parse_args()
-#    GLOBAL['clf_jobs']=args.clf_jobs
-#    if(not (args.batch_ratio is None)):
-#        GLOBAL['batch_ratio']= args.batch_ratio
-#    return args
 
 def silence_warnings():
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'

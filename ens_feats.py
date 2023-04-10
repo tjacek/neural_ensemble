@@ -90,7 +90,7 @@ class PCAMixed(object):
     def __call__(self,clf_type='LR'):
         if(self.pca is None):
             self.pca=data.transform_data(self.common)
-        raw_feats=[self.binary.concat(binary_i) 
+        raw_feats=[self.common.concat(binary_i) 
                     for binary_i in self.binary]
         pca_feats=[self.pca.concat(binary_i) 
                     for binary_i in self.binary]
@@ -110,7 +110,7 @@ class PCANoEnsemble(object):
             self.pca=data.transform_data(self.common)
         result_i=learn.fit_clf(self.pca,clf_type)
         result_i=result_i.split()[1]
-        return learn.voting(results)      
+        return result_i      
 
     def __str__(self):
         return 'pca-only'
