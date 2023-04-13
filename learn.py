@@ -120,6 +120,8 @@ def get_clf(name_i):
         return MLPClassifier()
     if(name_i=='MLP-TF'):
         return nn.NNFacade()
+    if(name_i=='MLP-EFF'):
+        return nn.MulticlassNN()
     if(name_i=="SVC"):
         return SVC(probability=True)
     return LogisticRegression(solver='liblinear')#,n_jobs=5)

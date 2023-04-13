@@ -69,7 +69,7 @@ class NNFacade(BaseEstimator, ClassifierMixin):
     def fit(self,X,targets):
         n_cats=max(targets)+1
         n_hidden= int(self.ratio*X.shape[1])
-        batch_size= int(conf.GLOBAL['batch_ratio']* X.shape[0])
+        batch_size= conf.GLOBAL['batch_size']#int(conf.GLOBAL['batch_ratio']* X.shape[0])
         earlystopping = callbacks.EarlyStopping(monitor="accuracy",
                 mode="min", patience=5,restore_best_weights=True)
         nn_params={'dims':X.shape[1],'n_cats':n_cats}
@@ -85,7 +85,6 @@ class NNFacade(BaseEstimator, ClassifierMixin):
         prob=self.model.predict(X)
         return np.argmax(prob,axis=1)
 
-
 class MulticlassNN(BaseEstimator, ClassifierMixin):
     def __init__(self,ratio=0.33):
         self.ratio=ratio
@@ -94,10 +93,18 @@ class MulticlassNN(BaseEstimator, ClassifierMixin):
     def fit(self,X,targets):
         n_cats=max(targets)+1
         n_hidden= int(self.ratio*X.shape[1])   
-        batch_size= int(conf.GLOBAL['batch_ratio']* X.shape[0])
+        batch_size= conf.GLOBAL['batch_size']#int(conf.GLOBAL['batch_ratio']* X.shape[0])
+        params={'n_cats':n_cats,'dims':X.shape[1],'n_hidden':20}
+        model=self.build_model(params)
 
     def build_model(self,params):
         model = Sequential()
         input_dim=params['n_cats']*params['dims']
-        model.add(Dense(self.n_hidden, input_dim=input_dim, activation='relu',name="hidden",
-            kernel_regularizer=reg))
+        dims=params['dims']
+        input_layer=tensorflow.keras.layers.Input(shape=input_dim) #tensorflow.keras.layers.InputLayer(input_shape=input_dim)
+        sub_in=[]
+        for i in range(params['n_cats']):
+            input_i = input_layer[(i*dims):(i+1)*dims]
+        x=Dense(params['n_hidden'], activation='relu',name="hidden")(input_layer)
+#            ,kernel_regularizer=reg))
+        return model
