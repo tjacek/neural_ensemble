@@ -105,6 +105,11 @@ def fit_clf(data_dict_i,clf_type=None,balance=False):
     y_pred=clf_i.predict_proba(X_test)
     return make_result(names,y_pred)
 
+def is_one_model(name_i):
+    if(name_i=='MLP-EFF'):
+        return True
+    return False
+
 def get_clf(name_i):        
     if(name_i=="RF"):
         n_jobs=conf.GLOBAL['clf_jobs']

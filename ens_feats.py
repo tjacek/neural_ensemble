@@ -9,8 +9,9 @@ class EnsFeatures(object):
     def __call__(self,clf_type='LR'):
         full=[ self.common.concat(binary_i) 
                 for binary_i in self.binary]
-        results=fit_clf(full,clf_type)
-        return learn.voting(results)
+        return gen_result(full,clf_type)
+#        results=fit_clf(full,clf_type)
+#        return learn.voting(results)
 
     def __str__(self):
         return 'NECSCF'
@@ -20,8 +21,9 @@ class BinaryEnsemble(object):
         self.binary=binary 
 
     def __call__(self,clf_type='LR'):
-        results=fit_clf(self.binary,clf_type)
-        return learn.voting(results)
+        return gen_result(self.binary,clf_type)
+#        results=fit_clf(self.binary,clf_type)
+#        return learn.voting(results)
       
     def __str__(self):
         return 'binary'
@@ -46,6 +48,14 @@ def fit_clf(full_data,clf_type):
     results=[result_i.split()[1] 
         for result_i in results]    
     return results
+
+def gen_result(datasets,clf_type):
+    if(learn.is_one_model(clf_type)):
+        model=learn.get_clf(clf_type)
+        results=model(datasets)
+    else:
+        results=fit_clf(datasets,clf_type)
+    return learn.voting(results)
 
 #class ParallelEnsemble(object):
 #    def __init__(self,common,binary):

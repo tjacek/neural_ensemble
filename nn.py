@@ -90,21 +90,53 @@ class MulticlassNN(BaseEstimator, ClassifierMixin):
         self.ratio=ratio
         self.model=None
 
-    def fit(self,X,targets):
-        n_cats=max(targets)+1
+    def __call__(self,datasets):
+        sample_dataset=datasets[0]
+        train,test=sample_dataset.split()
+        train_names=train.keys()
+        X,y,n_cats=[],[],len(datasets)
+        for name_i in train_names:
+            x_i=[data_j[name_i] for data_j in datasets]
+            cat_i=name_i.get_cat()
+            y_i=[one_hot(cat_i,n_cats) for j in range(n_cats)]
+            x_i=np.concatenate(x_i,axis=0)
+            y_i=np.concatenate(y_i,axis=0)
+            X.append(x_i)
+            y.append(y_i)
+        X,y=np.array(X),np.array(y)
+        self.fit(X,y,n_cats)
+        raise Exception(y.shape)
+
+    def fit(self,X,targets,n_cats):
+#        n_cats=max(targets)+1
         n_hidden= int(self.ratio*X.shape[1])   
         batch_size= conf.GLOBAL['batch_size']#int(conf.GLOBAL['batch_ratio']* X.shape[0])
-        params={'n_cats':n_cats,'dims':X.shape[1],'n_hidden':20}
-        model=self.build_model(params)
+        params={'n_cats':n_cats,'dims':int(X.shape[1]/n_cats),
+            'n_hidden':n_hidden}
+        self.model=self.build_model(params)
+        self.model.summary()
+        earlystopping = callbacks.EarlyStopping(monitor="accuracy",
+                mode="min", patience=5,restore_best_weights=True)
+        self.model.fit(X,targets,epochs=500,batch_size=batch_size,
+            verbose = 1,callbacks=earlystopping)
 
     def build_model(self,params):
         model = Sequential()
-        input_dim=params['n_cats']*params['dims']
         dims=params['dims']
+
+        input_dim=params['n_cats']*params['dims']
         input_layer=tensorflow.keras.layers.Input(shape=input_dim) #tensorflow.keras.layers.InputLayer(input_shape=input_dim)
-        sub_in=[]
+        prob_layers=[]
         for i in range(params['n_cats']):
             input_i = input_layer[(i*dims):(i+1)*dims]
-        x=Dense(params['n_hidden'], activation='relu',name="hidden")(input_layer)
-#            ,kernel_regularizer=reg))
+            x_i=Dense(params['n_hidden'],activation='relu',name=f"hidden{i}",
+                kernel_regularizer=None)(input_i)
+            x_i=BatchNormalization()(x_i)
+            x_i=Dense(params['n_cats'], activation='softmax')(x_i)        
+            prob_layers.append(x_i)
+        concat_layer = Concatenate()(prob_layers)
+        model= Model(inputs=input_layer, outputs=concat_layer)
+        optim=optimizers.RMSprop(learning_rate=0.00001)
+        model.compile(loss='categorical_crossentropy',
+            optimizer=optim,metrics=['accuracy'])
         return model

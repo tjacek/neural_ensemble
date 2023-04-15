@@ -42,7 +42,6 @@ class NeuralEnsemble(BaseEstimator, ClassifierMixin):
             self.extractors.append(extractor_i)           
             binary_i=extractor_i.predict(X)
             clf_i=learn.get_clf(self.multi_clf)#'LR')
-            print(str(clf_i))
             full_i=np.concatenate([X,binary_i],axis=1)
             clf_i.fit(full_i,targets)
             self.models.append(clf_i)

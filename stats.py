@@ -6,8 +6,8 @@ from collections import defaultdict
 import test,utils,data,ens_feats,output.plot
 
 def variant_time(data_path,model_path):
-    clf_types=['MLP-TF','RF']#,'LR','LR-imb',]
-    ens_types=['base','binary','common']
+    clf_types=['MLP-EFF']#'MLP-TF','SVC','RF']
+    ens_types=['pca','binary']
     raw_data=data.read_data(data_path)
     common,binary= test.gen_feats(raw_data,model_path)
     lines=[]
@@ -19,7 +19,6 @@ def variant_time(data_path,model_path):
             ens_inst(clf_j)
             lines.append(f'{id_ij},{(time.time()-st):.4f}s')
             print(lines[-1])
-#    print('\n'.join(lines))
 
 def full_time(in_path):
     time_dict= parse_time(in_path,'info_train.log','Save')
