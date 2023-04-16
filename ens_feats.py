@@ -52,7 +52,7 @@ def fit_clf(full_data,clf_type):
 def gen_result(datasets,clf_type):
     if(learn.is_one_model(clf_type)):
         model=learn.get_clf(clf_type)
-        results=model(datasets)
+        return model(datasets)
     else:
         results=fit_clf(datasets,clf_type)
     return learn.voting(results)

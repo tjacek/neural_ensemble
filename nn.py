@@ -10,7 +10,7 @@ from tensorflow.keras import Input, Model
 from keras import callbacks
 from tensorflow import one_hot
 from sklearn.base import BaseEstimator, ClassifierMixin
-import conf
+import conf,learn
 
 class BinaryEnsemble(object):
     def __init__(self,n_hidden=10,l1=0.001):
@@ -86,6 +86,19 @@ class NNFacade(BaseEstimator, ClassifierMixin):
         prob=self.model.predict(X)
         return np.argmax(prob,axis=1)
 
+def unified_binary(train_names,datasets):
+    X,y,n_cats=[],[],len(datasets)
+    for name_i in train_names:
+        x_i=[data_j[name_i] for data_j in datasets]
+        cat_i=name_i.get_cat()
+        y_i=[one_hot(cat_i,n_cats) for j in range(n_cats)]
+        x_i=np.concatenate(x_i,axis=0)
+        y_i=np.concatenate(y_i,axis=0)
+        X.append(x_i)
+        y.append(y_i)
+    X,y=np.array(X),np.array(y)
+    return X,y
+
 class MulticlassNN(BaseEstimator, ClassifierMixin):
     def __init__(self,ratio=0.33):
         self.ratio=ratio
@@ -94,18 +107,18 @@ class MulticlassNN(BaseEstimator, ClassifierMixin):
     def __call__(self,datasets):
         sample_dataset=datasets[0]
         train,test=sample_dataset.split()
-        train_names=train.keys()
-        X,y,n_cats=[],[],len(datasets)
-        for name_i in train_names:
-            x_i=[data_j[name_i] for data_j in datasets]
-            cat_i=name_i.get_cat()
-            y_i=[one_hot(cat_i,n_cats) for j in range(n_cats)]
-            x_i=np.concatenate(x_i,axis=0)
-            y_i=np.concatenate(y_i,axis=0)
-            X.append(x_i)
-            y.append(y_i)
-        X,y=np.array(X),np.array(y)
-        self.fit(X,y,n_cats)
+        train_names,test_names=train.keys(),test.keys()
+        X_train,y_train=unified_binary(train_names,datasets)
+        n_cats=len(datasets)
+        self.fit(X_train,y_train,n_cats)
+        X_test,y_test=unified_binary(test_names,datasets)
+        raw_pred=self.model.predict(X_test)
+        
+        raw_pred= np.array(np.split(raw_pred, n_cats, axis=1))
+        votes=np.sum(raw_pred,axis=0)
+        y_pred=np.argmax(votes,axis=1)
+        return learn.make_result(test_names,y_pred)
+#        raise Exception(y_pred.shape)
 
     def fit(self,X,targets,n_cats):
 #        n_cats=max(targets)+1
@@ -118,7 +131,7 @@ class MulticlassNN(BaseEstimator, ClassifierMixin):
         earlystopping = callbacks.EarlyStopping(monitor="accuracy",
                 mode="min", patience=5,restore_best_weights=True)
         self.model.fit(X,targets,epochs=500,batch_size=batch_size,
-            verbose = 1,callbacks=earlystopping)
+            verbose = 0,callbacks=earlystopping)
 
     def build_model(self,params):
         model = Sequential()
@@ -136,17 +149,6 @@ class MulticlassNN(BaseEstimator, ClassifierMixin):
             x_i=BatchNormalization()(x_i)
             x_i=Dense(params['n_cats'], activation='softmax')(x_i)        
             prob_layers.append(x_i)
-
-#        prob_layers=[]
-#        for i in range(params['n_cats']):
-#            print(input_layer.shape)
-#            input_i = input_layer[(i*dims):(i+1)*dims]
-#            raise Exception(input_i.shape)
-#            x_i=Dense(params['n_hidden'],activation='relu',name=f"hidden{i}",
-#                kernel_regularizer=None)(input_i)
-#            x_i=BatchNormalization()(x_i)
-#            x_i=Dense(params['n_cats'], activation='softmax')(x_i)        
-#            prob_layers.append(x_i)
         concat_layer = Concatenate()(prob_layers)
         model= Model(inputs=input_layer, outputs=concat_layer)
         optim=optimizers.RMSprop(learning_rate=0.00001)
