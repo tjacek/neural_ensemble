@@ -100,7 +100,7 @@ def unified_binary(train_names,datasets):
     return X,y
 
 class MulticlassNN(BaseEstimator, ClassifierMixin):
-    def __init__(self,ratio=0.33):
+    def __init__(self,ratio=0.10):
         self.ratio=ratio
         self.model=None
 
@@ -118,16 +118,15 @@ class MulticlassNN(BaseEstimator, ClassifierMixin):
         votes=np.sum(raw_pred,axis=0)
         y_pred=np.argmax(votes,axis=1)
         return learn.make_result(test_names,y_pred)
-#        raise Exception(y_pred.shape)
 
-    def fit(self,X,targets,n_cats):
+    def fit(self,X,targets,n_cats=10):
 #        n_cats=max(targets)+1
         n_hidden= int(self.ratio*X.shape[1])   
         batch_size=X.shape[0] #conf.GLOBAL['batch_size']
         params={'n_cats':n_cats,'dims':int(X.shape[1]/n_cats),
             'n_hidden':n_hidden}
         self.model=self.build_model(params)
-        self.model.summary()
+#        self.model.summary()
         earlystopping = callbacks.EarlyStopping(monitor="accuracy",
                 mode="min", patience=5,restore_best_weights=True)
         self.model.fit(X,targets,epochs=500,batch_size=batch_size,
@@ -138,7 +137,7 @@ class MulticlassNN(BaseEstimator, ClassifierMixin):
         dims=params['dims']
 
         input_dim=params['n_cats']*params['dims']
-        input_layer=tensorflow.keras.layers.Input(shape=input_dim) #tensorflow.keras.layers.InputLayer(input_shape=input_dim)
+        input_layer=tensorflow.keras.layers.Input(shape=input_dim)
         
         layer_splits=tf.split(input_layer, 
             num_or_size_splits=params['n_cats'], axis=1)

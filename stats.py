@@ -1,3 +1,5 @@
+import conf
+conf.silence_warnings()
 import  numpy as np
 import os
 from tensorflow import keras
@@ -6,8 +8,8 @@ from collections import defaultdict
 import test,utils,data,ens_feats,output.plot
 
 def variant_time(data_path,model_path):
-    clf_types=['MLP-EFF']#'MLP-TF','SVC','RF']
-    ens_types=['pca','binary']
+    clf_types=['SVC','RF','MLP-TF','MLP-EFF']
+    ens_types=['NESCF','binary']#'common']
     raw_data=data.read_data(data_path)
     common,binary= test.gen_feats(raw_data,model_path)
     lines=[]
@@ -16,8 +18,9 @@ def variant_time(data_path,model_path):
             st=time.time()
             ens_inst=ens_feats.get_ensemble(ens_i)(common,binary)
             id_ij=f'{str(ens_inst)},{clf_j}'
-            ens_inst(clf_j)
-            lines.append(f'{id_ij},{(time.time()-st):.4f}s')
+            result_i=ens_inst(clf_j)
+            line_i=f'{id_ij},{(time.time()-st):.4f}s'
+            lines.append(f'{line_i},{result_i.get_acc()}')
             print(lines[-1])
 
 def full_time(in_path):

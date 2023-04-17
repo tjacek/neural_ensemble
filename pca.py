@@ -11,8 +11,7 @@ class PCAEnsemble(object):
             self.pca=data.transform_data(self.common)
         full=[self.pca.concat(binary_i) 
                 for binary_i in self.binary]
-        results=ens_feats.fit_clf(full,clf_type)
-        return learn.voting(results)      
+        return ens_feats.gen_result(full,clf_type)
 
     def __str__(self):
         return 'pca'
@@ -30,8 +29,7 @@ class PCAMixed(object):
                     for binary_i in self.binary]
         pca_feats=[self.pca.concat(binary_i) 
                     for binary_i in self.binary]
-        results=ens_feats.fit_clf(raw_feats+pca_feats,clf_type)
-        return learn.voting(results)      
+        return ens_feats.gen_result(raw_feats+pca_feats,clf_type)
 
     def __str__(self):
         return 'pca-mixed'

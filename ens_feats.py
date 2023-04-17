@@ -10,8 +10,6 @@ class EnsFeatures(object):
         full=[ self.common.concat(binary_i) 
                 for binary_i in self.binary]
         return gen_result(full,clf_type)
-#        results=fit_clf(full,clf_type)
-#        return learn.voting(results)
 
     def __str__(self):
         return 'NECSCF'
@@ -22,8 +20,6 @@ class BinaryEnsemble(object):
 
     def __call__(self,clf_type='LR'):
         return gen_result(self.binary,clf_type)
-#        results=fit_clf(self.binary,clf_type)
-#        return learn.voting(results)
       
     def __str__(self):
         return 'binary'
