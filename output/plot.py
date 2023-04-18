@@ -1,24 +1,17 @@
 import sys
 from pathlib import Path
-sys.path.append(str(Path('.').absolute()))#.parent))
+sys.path.append(str(Path('.').absolute()))
 import conf
 conf.silence_warnings()
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-import conf,data,learn,utils
+import conf,data,learn,utils,tools
 
-def read_results(output):
-    @utils.dir_fun(as_dict=True)
-    @utils.dir_fun(as_dict=True)
-    def helper(path_i):
-        return [ learn.read_result(path_j)
-            for path_j in data.top_files(path_i)]
-    return helper(output)
 
 def box_gen(conf):
-    result_dict=read_results(conf['output'])
+    result_dict=tools.read_results(conf['output'])
     dataset=list(result_dict.keys())
     ens_types=result_dict[dataset[0]].keys()
     data.make_dir(conf['box'])

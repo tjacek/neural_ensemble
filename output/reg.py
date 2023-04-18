@@ -4,7 +4,7 @@ from sklearn import linear_model
 from scipy import stats
 import statsmodels.api as sma
 from sklearn import preprocessing
-import plot
+import tools
 
 def reg_eval(result,stats):
     df=reg_frame(result,stats)
@@ -49,7 +49,10 @@ def p_value(df):
     return output.summary2().tables[1]['P>|t|']
 
 
-
-result_path='diff.csv'
-stats_path='stats.csv'
-reg_eval(result_path,stats_path)
+if __name__ == "__main__":
+    in_path='../uci/ova_hyper/output'
+    result_dict=tools.read_results(in_path)
+    print(result_dict.keys())
+#result_path='diff.csv'
+#stats_path='stats.csv'
+#reg_eval(result_path,stats_path)
