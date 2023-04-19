@@ -6,6 +6,13 @@ import statsmodels.api as sma
 from sklearn import preprocessing
 import tools
 
+def reg_exp(in_path,base='common'):
+    result_dict=tools.get_variant_results(in_path)
+    result_dict.to_diff(base)
+    rows=result_dict.as_rows()
+    df=pd.DataFrame(rows[1:],columns=rows[0])
+    print(df)
+    
 def reg_eval(result,stats):
     df=reg_frame(result,stats)
     features=['classes','samples','features','gini']
@@ -51,8 +58,8 @@ def p_value(df):
 
 if __name__ == "__main__":
     in_path='../uci/ova_hyper/output'
-    result_dict=tools.read_results(in_path)
-    print(result_dict.keys())
+    reg_exp(in_path)
+#    reg_exp(result_dict)
 #result_path='diff.csv'
 #stats_path='stats.csv'
 #reg_eval(result_path,stats_path)
