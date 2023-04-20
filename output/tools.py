@@ -61,4 +61,5 @@ def get_variant_results(output):
     return VariantResults(raw_dict)
 
 def get_acc(results):
-    return [result_j.get_acc() for result_j in results]
+    return np.array([result_j.get_acc() 
+              for result_j in results])

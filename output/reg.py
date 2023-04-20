@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd 
 from sklearn import linear_model
 from scipy import stats
-import statsmodels.api as sma
+#import statsmodels.api as sma
 from sklearn import preprocessing
 import tools
 
@@ -50,10 +50,21 @@ def linear_reg(df,indep_var,dep_var ,robust=False):
     clf.fit(X,y)
     return clf.coef_/np.sum(np.abs(clf.coef_))
  
-def p_value_exp(in_path):
+def p_value_exp(in_path,base='common'):
     result_dict=tools.get_variant_results(in_path)
-    for data_i,clf_j,dict_j in self.iter():
-        print(dict_i)
+    variants=result_dict.variant_names()
+    print('variant,dataset,clf,diff,p_value,sig')
+    for var_i in variants:
+        for data_j,clf_j,dict_j in result_dict.iter():
+            base_acc= dict_j[base]
+            acc_j=dict_j[var_i]
+            diff_i=np.mean(acc_j)-np.mean(base_acc)
+            if(diff_i>0):
+                r=stats.ttest_ind(base_acc, acc_j, equal_var=False)
+                p_value=r[1]
+                id_i=f'{var_i},{data_j},{clf_j}'
+                print(f'{id_i},{diff_i:4f},{p_value:4f},{p_value<0.05}')
+
 #def p_value(df):
 #    X=df[['classes','samples','features','gini']].to_numpy()
 #    y=df['diff'].to_numpy()
