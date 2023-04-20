@@ -50,21 +50,34 @@ def linear_reg(df,indep_var,dep_var ,robust=False):
     clf.fit(X,y)
     return clf.coef_/np.sum(np.abs(clf.coef_))
  
-def p_value_exp(in_path,base='common'):
+def pvalue_exp(in_path,base='common'):
     result_dict=tools.get_variant_results(in_path)
     variants=result_dict.variant_names()
-    print('variant,dataset,clf,diff,p_value,sig')
+    lines=[]
+    cols=['variant','dataset','clf','diff','p_value','sig']
     for var_i in variants:
+        if(var_i=='common'):
+            continue
         for data_j,clf_j,dict_j in result_dict.iter():
             base_acc= dict_j[base]
             acc_j=dict_j[var_i]
             diff_i=np.mean(acc_j)-np.mean(base_acc)
-            if(diff_i>0):
-                r=stats.ttest_ind(base_acc, acc_j, equal_var=False)
-                p_value=r[1]
-                id_i=f'{var_i},{data_j},{clf_j}'
-                print(f'{id_i},{diff_i:4f},{p_value:4f},{p_value<0.05}')
+            r=stats.ttest_ind(base_acc, acc_j, equal_var=False)
+            p_value=r[1]
+            line_i=[var_i,data_j,clf_j,diff_i,p_value,p_value<0.05]
+            lines.append(line_i)
+    df=pd.DataFrame(lines,columns=cols)
+    return df
 
+def pvalue_summary(df):
+    var=df['variant'].unique()
+    for var_i in var:
+        df_i=df[df['variant']==var_i]
+        better= df_i[(df['diff']>0) & (df['sig']== True)]
+        neutral=df_i[ df['sig']== False]
+        worse= df_i[(df['diff']<0) & (df['sig']== True)]
+        print(f'{var_i},{len(better)},{len(neutral)},{len(worse)}')
+        
 #def p_value(df):
 #    X=df[['classes','samples','features','gini']].to_numpy()
 #    y=df['diff'].to_numpy()
@@ -78,9 +91,5 @@ def p_value_exp(in_path,base='common'):
 if __name__ == "__main__":
     in_path='../uci/ova_hyper/output'
     stats_path='../uci/stats.csv'
-#    reg_exp(in_path,stats_path)
-    p_value_exp(in_path)
-#    reg_exp(result_dict)
-#result_path='diff.csv'
-#stats_path='stats.csv'
-#reg_eval(result_path,stats_path)
+    df=pvalue_exp(in_path)
+    pvalue_summary(df)
