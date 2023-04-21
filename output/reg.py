@@ -3,6 +3,7 @@ import pandas as pd
 from sklearn import linear_model
 from scipy import stats
 #import statsmodels.api as sma
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn import preprocessing
 import tools
 
@@ -16,17 +17,28 @@ def reg_exp(in_path,stats_path,base='common'):
     variants=result_dict.variant_names()
     reg_eval(full_df,variants)
 
-def reg_eval(full_df,variants):
-    features=['classes','samples','features','gini']
-    print( ','.join(['dataset','clf']+features))
-    for var_i in variants:
-        for clf_j in ['RF','NN-TF']:
-            df_j=full_df[full_df.clf==clf_j]
-            coff=linear_reg(df_j,features,var_i,robust=False)
-            line_ij=[var_i,clf_j]+[f'{c:.4f}' for c in coff]
-            print(','.join(line_ij))
+#def reg_eval(full_df,variants):
+#    features=['classes','samples','features','gini']
+#    print( ','.join(['dataset','clf']+features))
+#    for var_i in variants:
+#        for clf_j in ['RF','NN-TF']:
+#            df_j=full_df[full_df.clf==clf_j]
+#            coff=linear_reg(df_j,features,var_i,robust=False)
+#            line_ij=[var_i,clf_j]+[f'{c:.4f}' for c in coff]
+#            print(','.join(line_ij))
 
-def reg_frame(result,stats):
+def linear_reg(df,indep_var,dep_var ,robust=False):
+    if(robust):
+        clf=linear_model.HuberRegressor()
+    else:
+        clf=linear_model.LinearRegression()
+    X=df[indep_var].to_numpy()
+    y=df[dep_var].to_numpy()
+    X=preprocessing.normalize(X,axis=0)
+    clf.fit(X,y)
+    return clf.coef_/np.sum(np.abs(clf.coef_))
+
+def stats_frame(result,stats):
     if(type(result)==str):
         result=pd.read_csv(result)
     if(type(stats)==str):
@@ -39,16 +51,6 @@ def reg_frame(result,stats):
     result['samples']=result['samples'].apply(lambda x:np.log(x))
     return result
 
-def linear_reg(df,indep_var,dep_var ,robust=False):
-    if(robust):
-        clf=linear_model.HuberRegressor()
-    else:
-        clf=linear_model.LinearRegression()
-    X=df[indep_var].to_numpy()
-    y=df[dep_var].to_numpy()
-    X=preprocessing.normalize(X,axis=0)
-    clf.fit(X,y)
-    return clf.coef_/np.sum(np.abs(clf.coef_))
  
 def pvalue_exp(in_path,base='common'):
     result_dict=tools.get_variant_results(in_path)
@@ -76,20 +78,30 @@ def pvalue_summary(df):
         better= df_i[(df['diff']>0) & (df['sig']== True)]
         neutral=df_i[ df['sig']== False]
         worse= df_i[(df['diff']<0) & (df['sig']== True)]
-        print(f'{var_i},{len(better)},{len(neutral)},{len(worse)}')
-        
-#def p_value(df):
-#    X=df[['classes','samples','features','gini']].to_numpy()
-#    y=df['diff'].to_numpy()
-#    X=preprocessing.normalize(X,axis=0)
-#    est  = sma.OLS(y, X)
-#    output  = est.fit()
-#    print(f'pvalue:{output.f_pvalue}')
-#    return output.summary2().tables[1]['P>|t|']
+        print(f'{var_i},{len(better)},{len(worse)},{len(neutral)}')
 
+def lda_exp(p_df,stats_path):
+    full_df=stats_frame(p_df,stats_path)
+#    def helper(row_i):
+#       return int(row_i['clf']=='RF')
+#    full_df['clf']=full_df.apply(func=helper,axis=1)
+    def helper(row_i):
+        diff=int(row_i['diff']>0)
+        sign=int(row_i['sig'])
+        return sign*(diff+1)
+    full_df['y']=full_df.apply(func=helper,axis=1)
+    features=['classes','samples','features','gini']
+    y=full_df['y'].to_numpy()
+    X=full_df[features].to_numpy()
+    clf = LinearDiscriminantAnalysis()
+    clf.fit(X, y)
+    print(features)
+    print(clf.coef_)
 
 if __name__ == "__main__":
     in_path='../uci/ova_hyper/output'
     stats_path='../uci/stats.csv'
     df=pvalue_exp(in_path)
     pvalue_summary(df)
+    df_i= df[df['variant']=='NECSCF']
+#    lda_exp(df_i,stats_path)
