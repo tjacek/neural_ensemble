@@ -12,25 +12,24 @@ class NeuralEnsembleGPU(BaseEstimator, ClassifierMixin):
         self.binary_model=None
         self.multi_model=None
 
-    def fit(self,X,targets):
+    def fit(self,X,targets,verbose=True):
         data_params=get_dataset_params(X,targets)
-#        raise Exception(data_params)
         binary_full=self.binary_builder(data_params)
-#        binary_full.summary()
         y_binary=binarize(targets)
         history=train_model(X,y_binary,binary_full,data_params)
-        print(history.history['loss'])
+        if(verbose):
+            show_history(history)        
         self.binary_model=Extractor(binary_full,data_params['n_cats'])
         binary=self.binary_model.predict(X)
-        print('binary')
         self.multi_model=self.multi_builder(data_params)
         y=one_hot(targets,data_params['n_cats'])
-
+        
         X_multi=[X]+binary
         y_multi=[y for i in range(data_params['n_cats'])]
         history=train_model(X_multi,y_multi,self.multi_model,data_params)
-        print(history.history['loss'])
-        print('multiclass')
+        if(verbose):
+            show_history(history)        
+
         return self
 
     def predict_proba(self,X):
@@ -39,12 +38,18 @@ class NeuralEnsembleGPU(BaseEstimator, ClassifierMixin):
         y=self.multi_model.predict(X_multi,verbose=0)
         y=np.array(y)
         prob=np.sum(y,axis=0)
-#        raise Exception(prob)
         return prob
 
     def predict(self,X):
         prob=self.predict_proba(X)
         return np.argmax(prob,axis=1)
+
+def show_history(history):
+    msg=''
+    for key_i,value_i in history.history.items():
+        if('accuracy' in key_i):
+            msg+=f'{key_i}:{value_i[-1]:.2f} '
+    print(msg)
 
 class Extractor(object):
     def __init__(self,full_model,n_cats=3):
@@ -66,7 +71,7 @@ def train_model(X,y,model,params):
     earlystopping = callbacks.EarlyStopping(monitor="accuracy",
                 mode="min", patience=5,restore_best_weights=True)
     return model.fit(X,y,epochs=50,batch_size=params['batch_size'],
-        verbose = 2,callbacks=earlystopping)
+        verbose = 0,callbacks=earlystopping)
 
 class BinaryBuilder(object):
     def __init__(self,first=1.0,second=1.0):
@@ -86,7 +91,6 @@ class BinaryBuilder(object):
 #            x_i=BatchNormalization(name=f'batch{i}')(x_i)
             x_i=Dense(2, activation='softmax',name=f'binary{i}')(x_i)
             outputs.append(x_i)
-#        concat_layer = Concatenate()(models)
         loss={f'binary{i}' :'categorical_crossentropy' 
                 for i in range(params['n_cats'])}
         metrics={f'binary{i}' :'accuracy' 
@@ -106,7 +110,7 @@ def binarize(labels):
     return binary_labels
 
 class MultiInputBuilder(object):
-    def __init__(self,first=1.0,second=1.0):
+    def __init__(self,first=1.5,second=1.0):
         self.first=first
         self.second=second
 
@@ -127,8 +131,6 @@ class MultiInputBuilder(object):
             x_i=Dense(params['n_cats'], activation='softmax',
                 name=f'multi{i}')(x_i)
             outputs.append(x_i)
-#        concat_layer = Concatenate()(outputs)
-#        tmp=Dense(params['n_cats'], activation='softmax')(concat_layer)
         loss={f'multi{i}' :'categorical_crossentropy' 
                 for i in range(params['n_cats'])}
         metrics={f'multi{i}' :'accuracy' 
