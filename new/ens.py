@@ -1,5 +1,7 @@
+import numpy as np
 from tensorflow.keras.layers import Dense,BatchNormalization,Concatenate
 from tensorflow.keras import Input, Model
+from keras import callbacks
 from sklearn.base import BaseEstimator, ClassifierMixin
 
 class NeuralEnsembleGPU(BaseEstimator, ClassifierMixin):
@@ -11,7 +13,13 @@ class NeuralEnsembleGPU(BaseEstimator, ClassifierMixin):
 
     def fit(self,X,targets):
         data_params=get_dataset_params(X,targets)
-        self.binary_model=self.binary_builder(data_params)
+        binary_full=self.binary_builder(data_params)
+#        binary_full.summary()
+        y_binary=binarize(targets)
+        train_model(X,y_binary,binary_full,data_params)
+        self.binary_model=Extractor(binary_full,data_params['n_cats'])
+        binary=self.binary_model.predict(X)
+        print(len(binary))
         raise NotImplementedError
 
     def predict_proba(self,X):
@@ -21,9 +29,27 @@ class NeuralEnsembleGPU(BaseEstimator, ClassifierMixin):
         prob=self.predict_proba(X)
         return np.argmax(prob,axis=1)
 
+class Extractor(object):
+    def __init__(self,full_model,n_cats=3):
+        self.extractors=[]
+        for i in range(n_cats):
+            extractor_i=Model(inputs=full_model.input,
+                outputs=full_model.get_layer(f'hidden{i}').output)
+            self.extractors.append(extractor_i)
+
+    def predict(self,X):
+        return [extractor_i.predict(X,verbose=0) 
+            for extractor_i in self.extractors]
+
 def get_dataset_params(X,y):
     return {'n_cats':max(y)+1,'dims':X.shape[1],
         'batch_size':X.shape[0]}
+
+def train_model(X,y,model,params):
+    earlystopping = callbacks.EarlyStopping(monitor="accuracy",
+                mode="min", patience=5,restore_best_weights=True)
+    model.fit(X,y,epochs=100,batch_size=params['batch_size'],
+        verbose = 0,callbacks=earlystopping)
 
 class BinaryModel(object):
     def __init__(self,first=1.0,second=1):
@@ -48,3 +74,16 @@ class BinaryModel(object):
         model.compile(loss='categorical_crossentropy',
             optimizer='adam',metrics=['accuracy'])
         return model
+
+def binarize(labels):
+    n_cats=max(labels)+1
+    y=[]
+    for l_i in labels:
+        vector_i=[]
+        for j in range(n_cats):
+            if(j==l_i):
+                vector_i+=[1,0]
+            else:
+                vector_i+=[0,1]
+        y.append(vector_i)
+    return np.array(y)
