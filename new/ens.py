@@ -4,6 +4,8 @@ from tensorflow.keras import Input, Model
 from keras import callbacks
 from tensorflow import one_hot
 from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn import preprocessing
+import learn
 
 class NeuralEnsembleGPU(BaseEstimator, ClassifierMixin):
     def __init__(self):
@@ -44,6 +46,43 @@ class NeuralEnsembleGPU(BaseEstimator, ClassifierMixin):
         prob=self.predict_proba(X)
         return np.argmax(prob,axis=1)
 
+class NeuralEnsembleCPU(BaseEstimator, ClassifierMixin):
+    def __init__(self,multi_clf):
+        self.binary_builder=BinaryBuilder()
+        self.multi_clf=multi_clf
+        self.clfs=[]
+
+    def fit(self,X,targets,verbose=True):
+        data_params=get_dataset_params(X,targets)
+        binary_full=self.binary_builder(data_params)
+        y_binary=binarize(targets)
+        history=train_model(X,y_binary,binary_full,data_params)
+        if(verbose):
+            show_history(history)        
+        self.binary_model=Extractor(binary_full,data_params['n_cats'])
+        binary=self.binary_model.predict(X)
+        for binary_i in binary:
+            multi_i=np.concatenate([X,binary_i],axis=1)
+            clf_i =learn.get_clf(self.multi_clf)
+            clf_i.fit(multi_i,targets)
+            self.clfs.append(clf_i)
+        return self
+
+    def predict_proba(self,X):
+        binary=self.binary_model.predict(X)
+        votes=[]
+        for i,binary_i in enumerate(binary):
+            multi_i=np.concatenate([X,binary_i],axis=1)
+            vote_i= self.clfs[i].predict_proba(multi_i)
+            votes.append(vote_i)
+        votes=np.array(votes)
+        prob=np.sum(votes,axis=0)
+        return prob
+    
+    def predict(self,X):
+        prob=self.predict_proba(X)
+        return np.argmax(prob,axis=1)
+
 def show_history(history):
     msg=''
     for key_i,value_i in history.history.items():
@@ -58,10 +97,17 @@ class Extractor(object):
             extractor_i=Model(inputs=full_model.input,
                 outputs=full_model.get_layer(f'hidden{i}').output)
             self.extractors.append(extractor_i)
+    
+#    def binary_dim(self):
+
 
     def predict(self,X):
-        return [extractor_i.predict(X,verbose=0) 
-            for extractor_i in self.extractors]
+        binary=[]
+        for extractor_i in self.extractors:
+            binary_i=extractor_i.predict(X,verbose=0) 
+            binary_i=preprocessing.scale(binary_i)
+            binary.append(binary_i)
+        return binary
 
 def get_dataset_params(X,y):
     return {'n_cats':max(y)+1,'dims':X.shape[1],
@@ -74,7 +120,7 @@ def train_model(X,y,model,params):
         verbose = 0,callbacks=earlystopping)
 
 class BinaryBuilder(object):
-    def __init__(self,first=1.0,second=1.0):
+    def __init__(self,first=1.0,second=0.5):
         self.first=first
         self.second=second
 
@@ -110,7 +156,7 @@ def binarize(labels):
     return binary_labels
 
 class MultiInputBuilder(object):
-    def __init__(self,first=1.5,second=1.0):
+    def __init__(self,first=1.0,second=1.0):
         self.first=first
         self.second=second
 
