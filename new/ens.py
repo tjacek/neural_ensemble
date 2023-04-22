@@ -26,16 +26,21 @@ class NeuralEnsembleGPU(BaseEstimator, ClassifierMixin):
         self.multi_model=self.multi_builder(data_params)
         y=one_hot(targets,data_params['n_cats'])
 
-#        full=[X]+binary
-        history=train_model(binary,y,self.multi_model,data_params)
+        X_multi=[X]+binary
+        y_multi=[y for i in range(data_params['n_cats'])]
+        history=train_model(X_multi,y_multi,self.multi_model,data_params)
         print(history.history['loss'])
         print('multiclass')
         return self
 
     def predict_proba(self,X):
         binary=self.binary_model.predict(X)
-        y=self.multi_model.predict(binary,verbose=0)
-        return y
+        X_multi=[X]+binary
+        y=self.multi_model.predict(X_multi,verbose=0)
+        y=np.array(y)
+        prob=np.sum(y,axis=0)
+#        raise Exception(prob)
+        return prob
 
     def predict(self,X):
         prob=self.predict_proba(X)
@@ -108,22 +113,28 @@ class MultiInputBuilder(object):
     def __call__(self,params):
         first_hidden=int(self.first*params['dims'])
         second_hidden=int(self.second*params['dims'])
-#        common= Input(shape=(params['dims']))
-        inputs,outputs=[],[]
+        common= Input(shape=(params['dims']))
+        inputs,outputs=[common],[]
         for i in range(params['n_cats']):
             input_i = Input(shape=(params['dims']))
             inputs.append(input_i)
-#            concat_i=
+            concat_i=Concatenate()([common,input_i])
             x_i=Dense(first_hidden,activation='relu',
-                name=f"first{i}")(input_i)
+                name=f"first{i}")(concat_i)
             x_i=Dense(second_hidden,activation='relu',
                 name=f"hidden{i}")(x_i)
 #            x_i=BatchNormalization(name=f'batch{i}')(x_i)
-#            x_i=Dense(params['n_cats'], activation='softmax')(x_i)
+            x_i=Dense(params['n_cats'], activation='softmax',
+                name=f'multi{i}')(x_i)
             outputs.append(x_i)
-        concat_layer = Concatenate()(outputs)
-        tmp=Dense(params['n_cats'], activation='softmax')(concat_layer)
-        model= Model(inputs=inputs, outputs=tmp)
-        model.compile(loss='categorical_crossentropy',
-            optimizer='adam',metrics=['accuracy'])
+#        concat_layer = Concatenate()(outputs)
+#        tmp=Dense(params['n_cats'], activation='softmax')(concat_layer)
+        loss={f'multi{i}' :'categorical_crossentropy' 
+                for i in range(params['n_cats'])}
+        metrics={f'multi{i}' :'accuracy' 
+                for i in range(params['n_cats'])}
+
+        model= Model(inputs=inputs, outputs=outputs)
+        model.compile(loss=loss,
+            optimizer='adam',metrics=metrics)
         return model
