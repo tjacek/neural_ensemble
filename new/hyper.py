@@ -40,25 +40,30 @@ def single_exp(data_path,hyper_path,n_split,n_iter,ens_types):
 #    ens_types=[clfs.GPUClf_2_2() ,clfs.CPUClf_2()]
     with open(hyper_path,"a") as f:
         f.write(f'data:{data_path},{bayes_optim.get_setting()}\n')
-        for ens_type_i in ens_types:
-            ens_i= clfs.get_ens(ens_type_i)
-            search_i={hyper_i:[0.5,1.0,2.0] 
+        
+    for ens_type_i in ens_types:
+        ens_i= clfs.get_ens(ens_type_i)
+        search_i={hyper_i:[0.5,1.0,2.0] 
                 for hyper_i in ens_i.params_names()}
-            if(clfs.is_cpu(ens_i)):
-                search_i['multi_clf']=['RF']	
-            param_dict=bayes_optim(X,y,ens_i,search_i)
-            print(param_dict)
-            ens_name=ens_i.__class__.__name__
+        if(clfs.is_cpu(ens_i)):
+            search_i['multi_clf']=['RF']	
+        param_dict=bayes_optim(X,y,ens_i,search_i)
+        print(param_dict)
+        ens_name=ens_i.__class__.__name__
+        with open(hyper_path,"a") as f:
             f.write(f'{ens_name},{str(param_dict)}\n') 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type=str, default='csv/wine-quality-red')
+    parser.add_argument("--data", type=str, default='uci/wine-quality-red')
     parser.add_argument("--hyper", type=str, default='hyper.txt')
     parser.add_argument("--n_split", type=int, default=3)
     parser.add_argument("--n_iter", type=int, default=5)
-
-    clf_types=clfs.CLFS_NAMES
+    parser.add_argument("--clfs", type=str, default='GPUClf_2_2,CPUClf_2')
     args = parser.parse_args()
+    if(args.clfs=='all'):
+        clf_types=clfs.CLFS_NAMES
+    else:
+    	clf_types= args.clfs.split(',')
     single_exp(args.data,args.hyper,args.n_split,
     	args.n_iter,clf_types)    

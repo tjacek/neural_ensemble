@@ -63,7 +63,7 @@ class NeuralEnsembleCPU(BaseEstimator, ClassifierMixin):
         self.multi_clf=multi_clf
         self.clfs=[]
 
-    def fit(self,X,targets,verbose=True):
+    def fit(self,X,targets,verbose=False):
         data_params=get_dataset_params(X,targets)
         binary_full=self.binary_builder(data_params)
         y_binary=binarize(targets)
@@ -95,8 +95,8 @@ class NeuralEnsembleCPU(BaseEstimator, ClassifierMixin):
         return np.argmax(prob,axis=1)
 
     def __str__(self):
-
-        return f'NeuralEnsembleCPU({self.multi_clf})'
+        params=f'binary:{self.binary_builder},multi:{self.multi_clf}'
+        return f'NeuralEnsembleCPU({params})'
 
 def show_history(history):
     msg=''
