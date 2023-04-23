@@ -3,7 +3,6 @@ from sklearn.model_selection import RepeatedStratifiedKFold
 from skopt import BayesSearchCV
 import pandas as pd
 import test,clfs
-#test.silence_warnings()
 
 class BayesOptim(object):
     def __init__(self,verbosity=True,n_iter=5,n_split=3):
@@ -37,15 +36,19 @@ class BayesCallback(object):
 def single_exp(data_path,hyper_path,n_split):
     df=pd.read_csv(data_path) 
     X,y=test.prepare_data(df)
-    ensemble=clfs.LargeGPUClf()
-    search_spaces={hyper_i:[0.5,1.0,2.0] 
-            for hyper_i in ensemble.params_names()}
     bayes_optim=BayesOptim( n_split=n_split )
+    ens_types=[clfs.GPUClf_2_2() ,clfs.CPUClf_2()]
     with open(hyper_path,"a") as f:
         f.write(f'data:{data_path},{bayes_optim.get_setting()}\n')
-        param_dict=bayes_optim(X,y,ensemble,search_spaces)
-        print(param_dict)
-        f.write(str(param_dict)+'\n') 
+        for ens_i in ens_types:
+            search_i={hyper_i:[0.5,1.0,2.0] 
+                for hyper_i in ens_i.params_names()}
+            if(ens_i.is_cpu()):
+                search_i['multi_clf']=['RF']	
+            param_dict=bayes_optim(X,y,ens_i,search_i)
+            print(param_dict)
+            ens_name=ens_i.__class__.__name__
+            f.write(f'{ens_name},{str(param_dict)}\n') 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
