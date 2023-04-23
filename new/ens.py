@@ -19,7 +19,7 @@ class NeuralEnsembleGPU(BaseEstimator, ClassifierMixin):
         self.binary_model=None
         self.multi_model=None
 
-    def fit(self,X,targets,verbose=True):
+    def fit(self,X,targets,verbose=False):
         data_params=get_dataset_params(X,targets)
         binary_full=self.binary_builder(data_params)
         y_binary=binarize(targets)
@@ -30,14 +30,13 @@ class NeuralEnsembleGPU(BaseEstimator, ClassifierMixin):
         data_params['binary_dims']=self.binary_model.binary_dim()
         binary=self.binary_model.predict(X)
         self.multi_model=self.multi_builder(data_params)
-        y=targets#one_hot(targets,data_params['n_cats'])
+        y=one_hot(targets,data_params['n_cats'])
         
         X_multi=[X]+binary
         y_multi=[y for i in range(data_params['n_cats'])]
         history=train_model(X_multi,y_multi,self.multi_model,data_params)
         if(verbose):
             show_history(history)        
-
         return self
 
     def predict_proba(self,X):
@@ -53,7 +52,8 @@ class NeuralEnsembleGPU(BaseEstimator, ClassifierMixin):
         return np.argmax(prob,axis=1)
 
     def __str__(self):
-        return f'NeuralEnsembleGPU'
+        params=f'binary:{self.binary_builder},multi:{self.multi_builder}'
+        return f'NeuralEnsembleGPU({params})'
 
 class NeuralEnsembleCPU(BaseEstimator, ClassifierMixin):
     def __init__(self,binary=None,multi_clf='RF'):
@@ -95,6 +95,7 @@ class NeuralEnsembleCPU(BaseEstimator, ClassifierMixin):
         return np.argmax(prob,axis=1)
 
     def __str__(self):
+
         return f'NeuralEnsembleCPU({self.multi_clf})'
 
 def show_history(history):
@@ -103,6 +104,10 @@ def show_history(history):
         if('accuracy' in key_i):
             msg+=f'{key_i}:{value_i[-1]:.2f} '
     print(msg)
+
+def is_neural_ensemble(clf):
+    return (isinstance(clf,NeuralEnsembleGPU) or 
+               isinstance(clf,NeuralEnsembleCPU))
 
 class Extractor(object):
     def __init__(self,full_model,n_cats=3):
@@ -163,6 +168,9 @@ class BinaryBuilder(object):
             return f'hidden{i}'
         return f'{i}_{j}'
 
+    def __str__(self):
+        return '_'.join([str(h) for h in self.hidden])
+
 def binarize(labels):
     n_cats=max(labels)+1
     binary_labels=[]
@@ -177,8 +185,6 @@ class MultiInputBuilder(object):
         self.hidden=hidden
 
     def __call__(self,params):
-#        first_hidden=int(self.first*params['dims'])
-#        second_hidden=int(self.second*params['dims'])
         common= Input(shape=(params['dims']))
         inputs,outputs=[common],[]
         for i in range(params['n_cats']):
@@ -193,7 +199,7 @@ class MultiInputBuilder(object):
             x_i=Dense(params['n_cats'], activation='softmax',
                 name=f'multi{i}')(x_i)
             outputs.append(x_i)
-        loss={f'multi{i}' :'sparse_categorical_crossentropy' 
+        loss={f'multi{i}' :'categorical_crossentropy' 
                 for i in range(params['n_cats'])}
         metrics={f'multi{i}' :'accuracy' 
                 for i in range(params['n_cats'])}
@@ -204,3 +210,6 @@ class MultiInputBuilder(object):
         model.compile(loss=loss,
             optimizer=optim,metrics=metrics)
         return model
+
+    def __str__(self):
+        return '_'.join([str(h) for h in self.hidden])

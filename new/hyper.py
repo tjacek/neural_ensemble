@@ -33,17 +33,18 @@ class BayesCallback(object):
         print(f'Score {optimal_result.fun}')
         self.count+=1
 
-def single_exp(data_path,hyper_path,n_split):
+def single_exp(data_path,hyper_path,n_split,n_iter,ens_types):
     df=pd.read_csv(data_path) 
     X,y=test.prepare_data(df)
-    bayes_optim=BayesOptim( n_split=n_split )
-    ens_types=[clfs.GPUClf_2_2() ,clfs.CPUClf_2()]
+    bayes_optim=BayesOptim( n_split=n_split,n_iter=n_iter)
+#    ens_types=[clfs.GPUClf_2_2() ,clfs.CPUClf_2()]
     with open(hyper_path,"a") as f:
         f.write(f'data:{data_path},{bayes_optim.get_setting()}\n')
-        for ens_i in ens_types:
+        for ens_type_i in ens_types:
+            ens_i= clfs.get_ens(ens_type_i)
             search_i={hyper_i:[0.5,1.0,2.0] 
                 for hyper_i in ens_i.params_names()}
-            if(ens_i.is_cpu()):
+            if(clfs.is_cpu(ens_i)):
                 search_i['multi_clf']=['RF']	
             param_dict=bayes_optim(X,y,ens_i,search_i)
             print(param_dict)
@@ -55,5 +56,9 @@ if __name__ == "__main__":
     parser.add_argument("--data", type=str, default='csv/wine-quality-red')
     parser.add_argument("--hyper", type=str, default='hyper.txt')
     parser.add_argument("--n_split", type=int, default=3)
+    parser.add_argument("--n_iter", type=int, default=5)
+
+    clf_types=clfs.CLFS_NAMES
     args = parser.parse_args()
-    single_exp(args.data,args.hyper,args.n_split)    
+    single_exp(args.data,args.hyper,args.n_split,
+    	args.n_iter,clf_types)    
