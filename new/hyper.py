@@ -6,43 +6,51 @@ import test,clfs
 #test.silence_warnings()
 
 class BayesOptim(object):
-    def __init__(self,verbosity=True,n_iter=20,n_jobs=1):
+    def __init__(self,verbosity=True,n_iter=5,n_split=3):
         self.verbosity=verbosity
         self.n_iter=n_iter
-        self.n_jobs=n_jobs
-
-    def __call__(self,X,y,clf,search_spaces,n_splits):
-        cv_gen=RepeatedStratifiedKFold(n_splits=n_splits, 
+        self.n_split=n_split
+    
+    def __call__(self,X,y,clf,search_spaces):
+        cv_gen=RepeatedStratifiedKFold(n_splits=self.n_split, 
                     n_repeats=1, random_state=1)
         search = BayesSearchCV(estimator=clf,verbose=0,n_iter=self.n_iter,
-                    search_spaces=search_spaces,n_jobs=self.n_jobs,cv=cv_gen)
-        search.fit(X,y,callback=self.get_callback()) 
-        return search
+                    search_spaces=search_spaces,n_jobs=1,cv=cv_gen)
+        callback=BayesCallback() if(self.verbosity) else None
+        search.fit(X,y,callback=callback) 
+        best_estm=search.best_estimator_
+        return best_estm.get_params(deep=True)
 
-    def get_callback(self):
-        if(self.verbosity):
-            count=0
-            def callback(optimal_result):
-                nonlocal count
-                print(f"Iteration {count}")
-                print(f"Best params so far {optimal_result.x}")
-                count+=1
-            return callback
-        return None
+    def get_setting(self):
+        return f'bayes_iter:{self.n_iter},n_split:{self.n_split}' 
 
+class BayesCallback(object):
+    def __init__(self):
+        self.count=0
 
-def single_exp(data_path,n_splits):
+    def __call__(self,optimal_result):
+        print(f"Iteration {self.count}")
+        print(f"Best params so far {optimal_result.x}")
+        print(f'Score {optimal_result.fun}')
+        self.count+=1
+
+def single_exp(data_path,hyper_path,n_split):
     df=pd.read_csv(data_path) 
     X,y=test.prepare_data(df)
     ensemble=clfs.LargeGPUClf()
     search_spaces={hyper_i:[0.5,1.0,2.0] 
             for hyper_i in ensemble.params_names()}
-    bayes_optim=BayesOptim()
-    bayes_optim(X,y,ensemble,search_spaces,n_splits)
+    bayes_optim=BayesOptim( n_split=n_split )
+    with open(hyper_path,"a") as f:
+        f.write(f'data:{data_path},{bayes_optim.get_setting()}\n')
+        param_dict=bayes_optim(X,y,ensemble,search_spaces)
+        print(param_dict)
+        f.write(str(param_dict)+'\n') 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", type=str, default='csv/wine-quality-red')
-    parser.add_argument("--n_splits", type=int, default=3)
+    parser.add_argument("--hyper", type=str, default='hyper.txt')
+    parser.add_argument("--n_split", type=int, default=3)
     args = parser.parse_args()
-    single_exp(args.data,args.n_splits)    
+    single_exp(args.data,args.hyper,args.n_split)    
