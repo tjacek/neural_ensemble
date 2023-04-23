@@ -1,4 +1,5 @@
 import numpy as np
+import tensorflow as tf
 from tensorflow.keras.layers import Dense,BatchNormalization,Concatenate
 from tensorflow.keras import Input, Model
 from keras import callbacks
@@ -8,9 +9,13 @@ from sklearn import preprocessing
 import learn
 
 class NeuralEnsembleGPU(BaseEstimator, ClassifierMixin):
-    def __init__(self):
-        self.binary_builder=BinaryBuilder()
-        self.multi_builder=MultiInputBuilder()
+    def __init__(self,binary=None,multi=None):
+        if(binary is None):
+            binary=BinaryBuilder()
+        if(multi is None):
+            multi=MultiInputBuilder()
+        self.binary_builder=binary
+        self.multi_builder=multi
         self.binary_model=None
         self.multi_model=None
 
@@ -22,9 +27,10 @@ class NeuralEnsembleGPU(BaseEstimator, ClassifierMixin):
         if(verbose):
             show_history(history)        
         self.binary_model=Extractor(binary_full,data_params['n_cats'])
+        data_params['binary_dims']=self.binary_model.binary_dim()
         binary=self.binary_model.predict(X)
         self.multi_model=self.multi_builder(data_params)
-        y=one_hot(targets,data_params['n_cats'])
+        y=targets#one_hot(targets,data_params['n_cats'])
         
         X_multi=[X]+binary
         y_multi=[y for i in range(data_params['n_cats'])]
@@ -46,9 +52,14 @@ class NeuralEnsembleGPU(BaseEstimator, ClassifierMixin):
         prob=self.predict_proba(X)
         return np.argmax(prob,axis=1)
 
+    def __str__(self):
+        return f'NeuralEnsembleGPU'
+
 class NeuralEnsembleCPU(BaseEstimator, ClassifierMixin):
-    def __init__(self,multi_clf):
-        self.binary_builder=BinaryBuilder()
+    def __init__(self,binary=None,multi_clf='RF'):
+        if(binary is None):
+            binary=BinaryBuilder()
+        self.binary_builder=binary #BinaryBuilder()
         self.multi_clf=multi_clf
         self.clfs=[]
 
@@ -83,6 +94,9 @@ class NeuralEnsembleCPU(BaseEstimator, ClassifierMixin):
         prob=self.predict_proba(X)
         return np.argmax(prob,axis=1)
 
+    def __str__(self):
+        return f'NeuralEnsembleCPU({self.multi_clf})'
+
 def show_history(history):
     msg=''
     for key_i,value_i in history.history.items():
@@ -98,8 +112,8 @@ class Extractor(object):
                 outputs=full_model.get_layer(f'hidden{i}').output)
             self.extractors.append(extractor_i)
     
-#    def binary_dim(self):
-
+    def binary_dim(self):
+        return self.extractors[-1].output.shape[1]
 
     def predict(self,X):
         binary=[]
@@ -117,24 +131,22 @@ def train_model(X,y,model,params):
     earlystopping = callbacks.EarlyStopping(monitor="accuracy",
                 mode="min", patience=5,restore_best_weights=True)
     return model.fit(X,y,epochs=50,batch_size=params['batch_size'],
-        verbose = 0,callbacks=earlystopping)
+        verbose = 0,callbacks=None)#earlystopping)
 
 class BinaryBuilder(object):
-    def __init__(self,first=1.0,second=0.5):
-        self.first=first
-        self.second=second
+    def __init__(self,hidden=(1,0.5)):
+        self.hidden=hidden
 
     def __call__(self,params):
-        first_hidden=int(self.first*params['dims'])
-        second_hidden=int(self.second*params['dims'])
         input_layer = Input(shape=(params['dims']))
         outputs=[]
+        x_i=input_layer
         for i in range(params['n_cats']):
-            x_i=Dense(first_hidden,activation='relu',
-            	name=f"first{i}")(input_layer)
-            x_i=Dense(second_hidden,activation='relu',
-            	name=f"hidden{i}")(x_i)
-#            x_i=BatchNormalization(name=f'batch{i}')(x_i)
+            for j,hidden_j in enumerate(self.hidden):
+                hidden_j=int(hidden_j*params['dims'])
+                name_j=self.layer_name(i,j)
+                x_i=Dense(hidden_j,activation='relu',
+                    name=name_j)(x_i)
             x_i=Dense(2, activation='softmax',name=f'binary{i}')(x_i)
             outputs.append(x_i)
         loss={f'binary{i}' :'categorical_crossentropy' 
@@ -146,6 +158,11 @@ class BinaryBuilder(object):
             optimizer='adam',metrics=metrics)
         return model
 
+    def layer_name(self,i,j):
+        if(j==(len(self.hidden)-1)):
+            return f'hidden{i}'
+        return f'{i}_{j}'
+
 def binarize(labels):
     n_cats=max(labels)+1
     binary_labels=[]
@@ -156,33 +173,34 @@ def binarize(labels):
     return binary_labels
 
 class MultiInputBuilder(object):
-    def __init__(self,first=1.0,second=1.0):
-        self.first=first
-        self.second=second
+    def __init__(self,hidden=(1,1)):#first=1.5,second=0.33):
+        self.hidden=hidden
 
     def __call__(self,params):
-        first_hidden=int(self.first*params['dims'])
-        second_hidden=int(self.second*params['dims'])
+#        first_hidden=int(self.first*params['dims'])
+#        second_hidden=int(self.second*params['dims'])
         common= Input(shape=(params['dims']))
         inputs,outputs=[common],[]
         for i in range(params['n_cats']):
-            input_i = Input(shape=(params['dims']))
+            input_i = Input(shape=(params['binary_dims']))
             inputs.append(input_i)
-            concat_i=Concatenate()([common,input_i])
-            x_i=Dense(first_hidden,activation='relu',
-                name=f"first{i}")(concat_i)
-            x_i=Dense(second_hidden,activation='relu',
-                name=f"hidden{i}")(x_i)
+            x_i=Concatenate()([common,input_i])
+            for j,hidden_j in enumerate(self.hidden):
+                hidden_j=int(hidden_j*params['dims'])
+                x_i=Dense(hidden_j,activation='relu',
+                    name=f"{i}_{j}")(x_i)
 #            x_i=BatchNormalization(name=f'batch{i}')(x_i)
             x_i=Dense(params['n_cats'], activation='softmax',
                 name=f'multi{i}')(x_i)
             outputs.append(x_i)
-        loss={f'multi{i}' :'categorical_crossentropy' 
+        loss={f'multi{i}' :'sparse_categorical_crossentropy' 
                 for i in range(params['n_cats'])}
         metrics={f'multi{i}' :'accuracy' 
                 for i in range(params['n_cats'])}
 
         model= Model(inputs=inputs, outputs=outputs)
+        optim=tf.keras.optimizers.Adam(learning_rate=0.1)
+#        optim=tf.keras.optimizers.RMSprop(learning_rate=0.00001)
         model.compile(loss=loss,
-            optimizer='adam',metrics=metrics)
+            optimizer=optim,metrics=metrics)
         return model
