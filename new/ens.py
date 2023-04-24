@@ -75,13 +75,16 @@ class NeuralEnsembleCPU(BaseEstimator, ClassifierMixin):
     def __init__(self,binary=None,multi_clf='RF'):
         if(binary is None):
             binary=BinaryBuilder()
-        self.binary_builder=binary #BinaryBuilder()
+        self.binary_builder=binary
+        self.binary_model=None
         self.multi_clf=multi_clf
         self.clfs=[]
         self.train_data=None
+        self.data_params=None
 
     def fit(self,X,targets,verbose=False):
         data_params=get_dataset_params(X,targets)
+        self.data_params=data_params
         binary_full=self.binary_builder(data_params)
         y_binary=binarize(targets)
         history=train_model(X,y_binary,binary_full,data_params)
@@ -91,8 +94,8 @@ class NeuralEnsembleCPU(BaseEstimator, ClassifierMixin):
         self.train_data=(X,targets)
         return self
 
-    def train_clfs(self):
-        X,targets=self.train_data
+    def train_clfs(self,train_data):
+        X,targets=train_data
         binary=self.binary_model.predict(X)
         for binary_i in binary:
             multi_i=np.concatenate([X,binary_i],axis=1)
@@ -102,7 +105,7 @@ class NeuralEnsembleCPU(BaseEstimator, ClassifierMixin):
 
     def predict_proba(self,X):
         if(len(self.clfs)==0):
-            self.train_clfs()
+            self.train_clfs(self.train_data)
             self.train_data=None
         binary=self.binary_model.predict(X)
         votes=[]
@@ -117,6 +120,17 @@ class NeuralEnsembleCPU(BaseEstimator, ClassifierMixin):
     def predict(self,X):
         prob=self.predict_proba(X)
         return np.argmax(prob,axis=1)
+    
+    def empty_model(self):
+        binary_full=self.binary_builder(self.data_params)
+        self.binary_model=Extractor(binary_full,self.data_params['n_cats'])
+
+    def load_weights(self,in_path):
+        self.binary_model.load_weights(f'{in_path}/binary')
+
+    def save_weights(self,out_path):
+        tools.make_dir(out_path)
+        self.binary_model.save_weights(f'{out_path}/binary')
 
     def __str__(self):
         params=f'binary:{self.binary_builder},multi:{self.multi_clf}'
