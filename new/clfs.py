@@ -59,11 +59,24 @@ def is_cpu(clf_i):
     ens_name=clf_i.__class__.__name__
     return ('CPU' in ens_name)
 
+def read_clf(in_path):
+    with open(f'{in_path}/desc', 'r') as f:        
+        json_bytes = f.read()                      
+        json_str = json_bytes#.decode('utf-8')           
+        desc = json.loads(json_str)
+        clf_i=get_ens(desc['name'],desc['hyper'])
+        clf_i.data_params={key_i:int(value_i)
+            for key_i,value_i in desc['data'].items()}
+        clf_i.empty_model()
+        clf_i.load_weights(in_path)
+        print(str(clf_i))
+        return clf_i
+
 def save_clf(clf_i,out_path):
     clf_i.save_weights(out_path) 
-    desc=get_desc(clf_i) 
+    desc=get_desc(clf_i)
     with open(f'{out_path}/desc', 'wb') as f:
-        json_str = json.dumps(desc)         
+        json_str = json.dumps(desc, default=str)         
         json_bytes = json_str.encode('utf-8') 
         f.write(json_bytes)
 
@@ -75,7 +88,9 @@ def get_desc(clf_i):
     clf_name=str(clf_i.__class__.__name__)
     hyper={ name_i:getattr(clf_i, name_i) 
         for name_i in params_names(clf_i)}
-    return {'name_i':clf_name,'hyper':hyper}
+    
+    return {'name':clf_name,'hyper':hyper,
+        'data':clf_i.data_params}
 
 def get_ens(name_i,hyper=None):
     if(name_i=='GPUClf_2_2'):

@@ -18,9 +18,11 @@ class NeuralEnsembleGPU(BaseEstimator, ClassifierMixin):
         self.multi_builder=multi
         self.binary_model=None
         self.multi_model=None
+        self.data_params=None
 
     def fit(self,X,targets,verbose=False):
         data_params=get_dataset_params(X,targets)
+        self.data_params=data_params
         binary_full=self.binary_builder(data_params)
         y_binary=binarize(targets)
         history=train_model(X,y_binary,binary_full,data_params)
@@ -51,11 +53,20 @@ class NeuralEnsembleGPU(BaseEstimator, ClassifierMixin):
         prob=self.predict_proba(X)
         return np.argmax(prob,axis=1)
 
+    def empty_model(self):
+        binary_full=self.binary_builder(self.data_params)
+        self.binary_model=Extractor(binary_full,self.data_params['n_cats'])
+        self.multi_model=self.multi_builder(self.data_params)
+
+    def load_weights(self,in_path):
+        self.binary_model.load_weights(f'{in_path}/binary')
+        self.multi_model.load_weights(f'{in_path}/multi.h5')
+
     def save_weights(self,out_path):
         tools.make_dir(out_path)
         self.binary_model.save_weights(f'{out_path}/binary')
         self.multi_model.save_weights(f'{out_path}/multi.h5')
-    
+
     def __str__(self):
         params=f'binary:{self.binary_builder},multi:{self.multi_builder}'
         return f'NeuralEnsembleGPU({params})'
@@ -136,11 +147,14 @@ class Extractor(object):
     def predict(self,X):
         binary=[]
         for extractor_i in self.extractors:
-#            raise Exception(dir(extractor_i))
             binary_i=extractor_i.predict(X,verbose=0) 
             binary_i=preprocessing.scale(binary_i)
             binary.append(binary_i)
         return binary
+    
+    def load_weights(self,in_path):
+        for i,path_i in enumerate(tools.top_files(in_path)):
+            self.extractors[i].load_weights(path_i)
 
     def save_weights(self,out_path):
         tools.make_dir(out_path)
