@@ -37,14 +37,13 @@ def single_exp(data_path,hyper_path,n_split,n_iter,ens_types):
     df=pd.read_csv(data_path) 
     X,y=test.prepare_data(df)
     bayes_optim=BayesOptim( n_split=n_split,n_iter=n_iter)
-#    ens_types=[clfs.GPUClf_2_2() ,clfs.CPUClf_2()]
     with open(hyper_path,"a") as f:
         f.write(f'data:{data_path},{bayes_optim.get_setting()}\n')
         
     for ens_type_i in ens_types:
         ens_i= clfs.get_ens(ens_type_i)
         search_i={hyper_i:[0.5,1.0,2.0] 
-                for hyper_i in ens_i.params_names()}
+                for hyper_i in clfs.params_names(ens_i)}
         if(clfs.is_cpu(ens_i)):
             search_i['multi_clf']=['RF']	
         param_dict=bayes_optim(X,y,ens_i,search_i)
