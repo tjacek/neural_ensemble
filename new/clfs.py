@@ -1,5 +1,5 @@
-import inspect
-import ens
+import inspect,json
+import ens,tools
 
 CLFS_NAMES=['GPUClf_2_2','GPUClf_2_1','GPUClf_1_2','GPUClf_1_1',
             'CPUClf_2','CPUClf_1']
@@ -59,11 +59,23 @@ def is_cpu(clf_i):
     ens_name=clf_i.__class__.__name__
     return ('CPU' in ens_name)
 
+def save_clf(clf_i,out_path):
+    clf_i.save_weights(out_path) 
+    desc=get_desc(clf_i) 
+    with open(f'{out_path}/desc', 'wb') as f:
+        json_str = json.dumps(desc)         
+        json_bytes = json_str.encode('utf-8') 
+        f.write(json_bytes)
+
 def params_names(clf_i):
     sig_i=inspect.signature(clf_i.__init__)
     return list(sig_i.parameters.keys())
 
-#def get_desc()
+def get_desc(clf_i):
+    clf_name=str(clf_i.__class__.__name__)
+    hyper={ name_i:getattr(clf_i, name_i) 
+        for name_i in params_names(clf_i)}
+    return {'name_i':clf_name,'hyper':hyper}
 
 def get_ens(name_i,hyper=None):
     if(name_i=='GPUClf_2_2'):

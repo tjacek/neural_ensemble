@@ -6,7 +6,7 @@ from keras import callbacks
 from tensorflow import one_hot
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn import preprocessing
-import learn
+import learn,tools
 
 class NeuralEnsembleGPU(BaseEstimator, ClassifierMixin):
     def __init__(self,binary=None,multi=None):
@@ -51,6 +51,11 @@ class NeuralEnsembleGPU(BaseEstimator, ClassifierMixin):
         prob=self.predict_proba(X)
         return np.argmax(prob,axis=1)
 
+    def save_weights(self,out_path):
+        tools.make_dir(out_path)
+        self.binary_model.save_weights(f'{out_path}/binary')
+        self.multi_model.save_weights(f'{out_path}/multi.h5')
+    
     def __str__(self):
         params=f'binary:{self.binary_builder},multi:{self.multi_builder}'
         return f'NeuralEnsembleGPU({params})'
@@ -131,10 +136,16 @@ class Extractor(object):
     def predict(self,X):
         binary=[]
         for extractor_i in self.extractors:
+#            raise Exception(dir(extractor_i))
             binary_i=extractor_i.predict(X,verbose=0) 
             binary_i=preprocessing.scale(binary_i)
             binary.append(binary_i)
         return binary
+
+    def save_weights(self,out_path):
+        tools.make_dir(out_path)
+        for i,extr_i in enumerate(self.extractors):
+            extr_i.save_weights(f'{out_path}/{i}.h5') 
 
 def get_dataset_params(X,y):
     return {'n_cats':max(y)+1,'dims':X.shape[1],
