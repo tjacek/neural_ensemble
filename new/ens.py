@@ -62,6 +62,7 @@ class NeuralEnsembleCPU(BaseEstimator, ClassifierMixin):
         self.binary_builder=binary #BinaryBuilder()
         self.multi_clf=multi_clf
         self.clfs=[]
+        self.train_data=None
 
     def fit(self,X,targets,verbose=False):
         data_params=get_dataset_params(X,targets)
@@ -71,15 +72,22 @@ class NeuralEnsembleCPU(BaseEstimator, ClassifierMixin):
         if(verbose):
             show_history(history)        
         self.binary_model=Extractor(binary_full,data_params['n_cats'])
+        self.train_data=(X,targets)
+        return self
+
+    def train_clfs(self):
+        X,targets=self.train_data
         binary=self.binary_model.predict(X)
         for binary_i in binary:
             multi_i=np.concatenate([X,binary_i],axis=1)
             clf_i =learn.get_clf(self.multi_clf)
             clf_i.fit(multi_i,targets)
             self.clfs.append(clf_i)
-        return self
 
     def predict_proba(self,X):
+        if(len(self.clfs)==0):
+            self.train_clfs()
+            self.train_data=None
         binary=self.binary_model.predict(X)
         votes=[]
         for i,binary_i in enumerate(binary):
