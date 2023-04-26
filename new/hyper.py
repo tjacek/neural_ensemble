@@ -1,8 +1,9 @@
 import argparse
 from sklearn.model_selection import RepeatedStratifiedKFold
 from skopt import BayesSearchCV
+from skopt.space import Real, Categorical, Integer
 import pandas as pd
-import test,clfs
+import test,clfs,tools
 
 class BayesOptim(object):
     def __init__(self,verbosity=True,n_iter=5,n_split=3):
@@ -18,7 +19,8 @@ class BayesOptim(object):
         callback=BayesCallback() if(self.verbosity) else None
         search.fit(X,y,callback=callback) 
         best_estm=search.best_estimator_
-        return best_estm.get_params(deep=True)
+        best_score=search.best_score_
+        return best_estm.get_params(deep=True),best_score
 
     def get_setting(self):
         return f'bayes_iter:{self.n_iter},n_split:{self.n_split}' 
@@ -35,22 +37,22 @@ class BayesCallback(object):
 
 def single_exp(data_path,hyper_path,n_split,n_iter,ens_types):
     df=pd.read_csv(data_path) 
-    X,y=test.prepare_data(df)
+    X,y=tools.prepare_data(df)
     bayes_optim=BayesOptim( n_split=n_split,n_iter=n_iter)
     with open(hyper_path,"a") as f:
         f.write(f'data:{data_path},{bayes_optim.get_setting()}\n')
         
     for ens_type_i in ens_types:
         ens_i= clfs.get_ens(ens_type_i)
-        search_i={hyper_i:[0.5,1.0,2.0] 
+        search_i={hyper_i: Real(0.5, 5.0, prior='log-uniform')#[0.5,1.0,2.0] 
                 for hyper_i in clfs.params_names(ens_i)}
         if(clfs.is_cpu(ens_i)):
             search_i['multi_clf']=['RF']	
-        param_dict=bayes_optim(X,y,ens_i,search_i)
+        param_dict,best_score=bayes_optim(X,y,ens_i,search_i)
         print(param_dict)
         ens_name=ens_i.__class__.__name__
         with open(hyper_path,"a") as f:
-            f.write(f'{ens_name},{str(param_dict)}\n') 
+            f.write(f'{ens_name},{str(param_dict)},{best_score}\n') 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
