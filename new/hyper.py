@@ -19,7 +19,7 @@ class BayesOptim(object):
         callback=BayesCallback() if(self.verbosity) else None
         search.fit(X,y,callback=callback) 
         best_estm=search.best_estimator_
-        best_score=search.best_score_
+        best_score=round(search.best_score_,4)
         return best_estm.get_params(deep=True),best_score
 
     def get_setting(self):
@@ -32,7 +32,7 @@ class BayesCallback(object):
     def __call__(self,optimal_result):
         print(f"Iteration {self.count}")
         print(f"Best params so far {optimal_result.x}")
-        print(f'Score {optimal_result.fun}')
+        print(f'Score {round(optimal_result.fun,4)}')
         self.count+=1
 
 def single_exp(data_path,hyper_path,n_split,n_iter,ens_types):
@@ -41,18 +41,24 @@ def single_exp(data_path,hyper_path,n_split,n_iter,ens_types):
     bayes_optim=BayesOptim( n_split=n_split,n_iter=n_iter)
     with open(hyper_path,"a") as f:
         f.write(f'data:{data_path},{bayes_optim.get_setting()}\n')
-        
     for ens_type_i in ens_types:
         ens_i= clfs.get_ens(ens_type_i)
-        search_i={hyper_i: Real(0.25, 5.0, prior='log-uniform')#[0.5,1.0,2.0] 
+        search_i={hyper_i: Real(0.25, 5.0, prior='log-uniform') 
                 for hyper_i in clfs.params_names(ens_i)}
         if(clfs.is_cpu(ens_i)):
             search_i['multi_clf']=['RF']	
         param_dict,best_score=bayes_optim(X,y,ens_i,search_i)
+        param_dict={ key_i:round_hype(hyper_i) 
+            for key_i,hyper_i in param_dict.items()}
         print(param_dict)
         ens_name=ens_i.__class__.__name__
         with open(hyper_path,"a") as f:
             f.write(f'{ens_name},{str(param_dict)},{best_score}\n') 
+
+def round_hype(hyper_i):
+    if(type(hyper_i)==float):
+        return round(hyper_i,4)
+    return hyper_i
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

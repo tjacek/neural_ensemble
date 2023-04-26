@@ -4,6 +4,7 @@ from tensorflow.keras.layers import Dense,BatchNormalization,Concatenate
 from tensorflow.keras import Input, Model
 from keras import callbacks
 from tensorflow import one_hot
+from sklearn.utils import class_weight
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn import preprocessing
 import learn,tools
@@ -179,11 +180,16 @@ def get_dataset_params(X,y):
     return {'n_cats':max(y)+1,'dims':X.shape[1],
         'batch_size': int(1.0*X.shape[0])}
 
-def train_model(X,y,model,params):
+def train_model(X,y,model,params,imb=False):
+#    if(imb):
+#        weights = class_weight.compute_class_weight('balanced', 
+#            np.unique(y),y)
+#    else:
+#        weights=None
     earlystopping = callbacks.EarlyStopping(monitor="accuracy",
                 mode="min", patience=5,restore_best_weights=True)
     return model.fit(X,y,epochs=50,batch_size=params['batch_size'],
-        verbose = 0,callbacks=None)#earlystopping)
+        verbose = 0,callbacks=earlystopping)#,class_weight=weights)
 
 class BinaryBuilder(object):
     def __init__(self,hidden=(1,0.5)):
