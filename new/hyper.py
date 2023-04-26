@@ -44,7 +44,7 @@ def single_exp(data_path,hyper_path,n_split,n_iter,ens_types):
         
     for ens_type_i in ens_types:
         ens_i= clfs.get_ens(ens_type_i)
-        search_i={hyper_i: Real(0.5, 5.0, prior='log-uniform')#[0.5,1.0,2.0] 
+        search_i={hyper_i: Real(0.25, 5.0, prior='log-uniform')#[0.5,1.0,2.0] 
                 for hyper_i in clfs.params_names(ens_i)}
         if(clfs.is_cpu(ens_i)):
             search_i['multi_clf']=['RF']	
