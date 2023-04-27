@@ -14,6 +14,7 @@ def single_exp(data_path,n_splits,n_repeats,ens_type,
         ens_type=list(hyper_dict.keys())[0]
     else:
         hyper_dict=parse_hyper(hyper_path,False)
+#    raise Exception(hyper_dict)
     df=pd.read_csv(data_path) 
     X,y=tools.prepare_data(df)
     cv = RepeatedStratifiedKFold(n_splits=n_splits, 
@@ -43,6 +44,8 @@ def parse_hyper(hyper_path,best=False):
         with open(hyper_path) as f:
             lines = f.readlines()[1:]
             for line_i in lines:
+                if('data' in line_i):
+                    continue
                 raw= line_i.split(',')
                 yield raw[0],raw[1:-1],float(raw[-1])
     if(best):

@@ -66,7 +66,7 @@ if __name__ == "__main__":
     parser.add_argument("--data", type=str, default='uci/wine-quality-red')
     parser.add_argument("--hyper", type=str, default='hyper.txt')
     parser.add_argument("--n_split", type=int, default=3)
-    parser.add_argument("--n_iter", type=int, default=5)
+    parser.add_argument("--n_iter", type=int, default=2)
     parser.add_argument("--clfs", type=str, default='GPUClf_2_2,CPUClf_2')
     parser.add_argument("--log_path", type=str, default='log.time')
 

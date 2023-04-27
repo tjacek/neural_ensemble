@@ -3,8 +3,9 @@ tools.silence_warnings()
 import argparse
 import numpy as np
 import pandas as pd
+from time import time
 from sklearn.metrics import accuracy_score,f1_score,balanced_accuracy_score
-import clfs,models,tools,learn
+import clfs,models,learn
 from collections import defaultdict
 
 def single_exp(data_path,model_path,result_path):
@@ -42,9 +43,13 @@ def parse_args():
     parser.add_argument("--data", type=str, default='uci/cmc')
     parser.add_argument("--models", type=str, default='uci_out/models/cmc')
     parser.add_argument("--results", type=str, default='uci_out/results/cmc')
+    parser.add_argument("--log_path", type=str, default='log.time')
     args = parser.parse_args()
     return args
 
 if __name__ == '__main__':
     args=parse_args()
+    tools.start_log(args.log_path)
+    start=time()
     single_exp(args.data,args.models,args.results)
+    tools.log_time(f'EVAL:{args.data}',start) 
