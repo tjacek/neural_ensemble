@@ -58,12 +58,13 @@ def parse_hyper(hyper_path,best=False):
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", type=str, default='uci/wine-quality-red')
-    parser.add_argument("--hyper", type=str, default='hyper.txt')
+    parser.add_argument("--hyper", type=str, default='-')
     parser.add_argument("--ens", type=str, default='CPUClf_1')
     parser.add_argument("--out", type=str, default='out')
     parser.add_argument("--n_splits", type=int, default=3)
     parser.add_argument("--n_repeats", type=int, default=3)
     parser.add_argument("--verbose",action='store_true')
+    parser.add_argument("--log_path", type=str, default='log.time')
 
     args = parser.parse_args()
     if(args.hyper=='-'):
@@ -72,5 +73,10 @@ def parse_args():
 
 if __name__ == '__main__':
     args=parse_args()
+    if(args.hyper=='-'):
+        args.hyper=None
+    tools.start_log(args.log_path)
+    start=time()
     single_exp(args.data,args.n_splits,args.n_repeats,ens_type=args.ens,
-        hyper_path=args.hyper,out_path=args.out,verbose=args.verbose)
+        hyper_path=args.hyper,out_path=args.out,verbose=args.verbose) 
+    tools.log_time(f'TRAIN:{args.data}',start) 

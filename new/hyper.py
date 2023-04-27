@@ -2,6 +2,7 @@ import argparse
 from sklearn.model_selection import RepeatedStratifiedKFold
 from skopt import BayesSearchCV
 from skopt.space import Real, Categorical, Integer
+from time import time
 import pandas as pd
 import test,clfs,tools
 
@@ -67,10 +68,15 @@ if __name__ == "__main__":
     parser.add_argument("--n_split", type=int, default=3)
     parser.add_argument("--n_iter", type=int, default=5)
     parser.add_argument("--clfs", type=str, default='GPUClf_2_2,CPUClf_2')
+    parser.add_argument("--log_path", type=str, default='log.time')
+
     args = parser.parse_args()
     if(args.clfs=='all'):
         clf_types=clfs.CLFS_NAMES
     else:
     	clf_types= args.clfs.split(',')
+    tools.start_log(args.log_path)
+    start=time()
     single_exp(args.data,args.hyper,args.n_split,
-    	args.n_iter,clf_types)    
+    	args.n_iter,clf_types)
+    tools.log_time(f'HYPER:{args.data}',start) 

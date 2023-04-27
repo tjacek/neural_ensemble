@@ -4,7 +4,7 @@ import argparse
 import numpy as np
 import pandas as pd
 from sklearn.metrics import accuracy_score,f1_score,balanced_accuracy_score
-import models,tools,learn
+import clfs,models,tools,learn
 from collections import defaultdict
 
 def single_exp(data_path,model_path,result_path):
@@ -21,6 +21,8 @@ def single_exp(data_path,model_path,result_path):
             clf_j.fit(X_train,y_train)
             y_pred= clf_j.predict(X_test)
             acc_dict[clf_type_j].append((y_test,y_pred)) #accuracy_score(y_test,y_pred))
+        if(clfs.is_cpu(model_i)):
+            model_i.train_clfs((X_train,y_train))
         y_pred=model_i.predict(X_test)
         acc_dict['NECSCF'].append((y_test,y_pred))#accuracy_score(y_test,y_pred))
     metrics=[accuracy_score,balanced_accuracy_score]#,f1_score]
