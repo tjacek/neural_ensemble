@@ -25,8 +25,11 @@ class BinaryKTBuilder(object):
         x_i=input_layer
         p=[]
         for j,(min_j,max_j) in enumerate(self.hidden):
-            p_j=hp.Int(f'n_hidden{j}', min_value= int(self.params['dims']*min_j), 
-                    max_value=int(self.params['dims']*max_j), step=32)
+            p_j=hp.Int(f'n_hidden{j}', 
+                min_value= int(self.params['dims']*min_j), 
+                max_value=int(self.params['dims']*max_j), 
+                sampling="log",
+                step=2)
             p.append(p_j)
         for i in range(self.params['n_cats']):
             for j,(min_j,max_j) in enumerate(self.hidden):
@@ -50,7 +53,7 @@ class BinaryKTBuilder(object):
             return f'hidden{i}'
         return f'{i}_{j}'
  
-def single_exp(data_path,hyper_path,n_split,n_iter):#,ens_types):
+def single_exp(data_path,hyper_path,n_split,n_iter,n_bayes=20):#,ens_types):
     df=pd.read_csv(data_path) 
     X,y=tools.prepare_data(df)
     data_params=ens.get_dataset_params(X,y)
@@ -59,16 +62,17 @@ def single_exp(data_path,hyper_path,n_split,n_iter):#,ens_types):
 
     tuner=kt.BayesianOptimization(model_builder,
                 objective='val_loss', #'accuracy']
-                max_trials=20,
+                max_trials=n_bayes,
                 overwrite=True)
     binary_y=ens.binarize(y)
+    validation_split= 1.0/n_split
     stop_early = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5)
-    tuner.search(X, binary_y, epochs=150, validation_split=0.25,
-       verbose=0,callbacks=[stop_early])
-    tuner.results_summary()
+    tuner.search(X, binary_y, epochs=150, validation_split=validation_split,
+       verbose=1,callbacks=[stop_early])
+#    tuner.results_summary()
     best_hps=tuner.get_best_hyperparameters(num_trials=10)[0]
 #    raise Exception(best_hps)
-    best={ name_j:best_hps.get(name_j) 
+    best={ name_j: (best_hps.get(name_j)/ data_params['dims'])
            for name_j in model_builder.get_params_names()}
     print(best)
     return best
@@ -77,7 +81,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", type=str, default='uci/wine-quality-red')
     parser.add_argument("--hyper", type=str, default='hyper.txt')
-    parser.add_argument("--n_split", type=int, default=3)
+    parser.add_argument("--n_split", type=int, default=10)
     parser.add_argument("--n_iter", type=int, default=2)
 #    parser.add_argument("--clfs", type=str, default='GPUClf_2_2,CPUClf_2')
     parser.add_argument("--log_path", type=str, default='log.time')
