@@ -53,7 +53,7 @@ class BinaryKTBuilder(object):
             return f'hidden{i}'
         return f'{i}_{j}'
  
-def single_exp(data_path,hyper_path,n_split,n_iter,n_bayes=20):#,ens_types):
+def single_exp(data_path,hyper_path,n_split,n_iter):
     df=pd.read_csv(data_path) 
     X,y=tools.prepare_data(df)
     data_params=ens.get_dataset_params(X,y)
@@ -61,8 +61,8 @@ def single_exp(data_path,hyper_path,n_split,n_iter,n_bayes=20):#,ens_types):
     model_builder= BinaryKTBuilder(data_params) 
 
     tuner=kt.BayesianOptimization(model_builder,
-                objective='val_loss', #'accuracy']
-                max_trials=n_bayes,
+                objective='val_loss',
+                max_trials=n_iter,
                 overwrite=True)
     binary_y=ens.binarize(y)
     validation_split= 1.0/n_split
@@ -71,10 +71,11 @@ def single_exp(data_path,hyper_path,n_split,n_iter,n_bayes=20):#,ens_types):
        verbose=1,callbacks=[stop_early])
 #    tuner.results_summary()
     best_hps=tuner.get_best_hyperparameters(num_trials=10)[0]
-#    raise Exception(best_hps)
     best={ name_j: (best_hps.get(name_j)/ data_params['dims'])
            for name_j in model_builder.get_params_names()}
     print(best)
+    with open(hyper_path,"a") as f:
+        f.write(f'{str(best)}\n') 
     return best
 
 if __name__ == "__main__":
