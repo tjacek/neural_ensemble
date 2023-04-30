@@ -14,17 +14,15 @@ def single_exp(data_path,n_splits,n_repeats,ens_type,
         ens_type=list(hyper_dict.keys())[0]
     else:
         hyper_dict=parse_hyper(hyper_path,False)
-#    raise Exception(hyper_dict)
     df=pd.read_csv(data_path) 
     X,y=tools.prepare_data(df)
     cv = RepeatedStratifiedKFold(n_splits=n_splits, 
         n_repeats=n_repeats, random_state=4)
-    clf=clfs.get_ens(ens_type,hyper=hyper_dict[ens_type])
     models_io=models.ModelIO(out_path)
-    for i,(train_i,test_i) in enumerate(cv.split(X,y)):
-        X_train,y_train=X[train_i],y[train_i]
-        clf_i= train_model(X_train,y_train,clf,verbose)
-        models_io.save(clf_i,i,(train_i,test_i))
+    for i,split_i,train_i,test_i in models.split_iterator(cv,X,y):
+        clf=clfs.get_ens(ens_type,hyper=hyper_dict[ens_type])
+        clf_i= train_model(train_i[0],train_i[1],clf,verbose)
+        models_io.save(clf_i,i,split_i)
     
 def train_model(X_i,y_i,clf_i,verbose=True):
     start=time()
