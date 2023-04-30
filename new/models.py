@@ -18,3 +18,11 @@ class ModelIO(object):
         clfs.save_clf(clf_i,out_i)
         np.save(f'{out_i}/train',split_i[0])
         np.save(f'{out_i}/test',split_i[1])
+
+#    def save_pred(self,clf_i,):
+
+def split_iterator(cv,X,y):
+    for i,(train_i,test_i) in enumerate(cv.split(X,y)):
+        X_train,y_train=X[train_i],y[train_i]
+        X_test,y_test=X[test_i],y[test_i]
+        yield i,(train_i,test_i),(X_train,y_train),(X_test,y_test)
