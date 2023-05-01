@@ -95,12 +95,14 @@ class NeuralEnsembleCPU(BaseEstimator, ClassifierMixin):
         self.train_data=(X,targets)
         return self
 
-    def train_clfs(self,train_data):
+    def train_clfs(self,train_data,multi_clf=None):
+        if(multi_clf is None):
+            multi_clf=self.multi_clf
         X,targets=train_data
         binary=self.binary_model.predict(X)
         for binary_i in binary:
             multi_i=np.concatenate([X,binary_i],axis=1)
-            clf_i =learn.get_clf(self.multi_clf)
+            clf_i =learn.get_clf(multi_clf)
             clf_i.fit(multi_i,targets)
             self.clfs.append(clf_i)
 
@@ -180,7 +182,7 @@ def get_dataset_params(X,y):
     return {'n_cats':max(y)+1,'dims':X.shape[1],
         'batch_size': int(1.0*X.shape[0])}
 
-def train_model(X,y,model,params,imb=False):
+def train_model(X,y,model,params,imb=True):
 #    if(imb):
 #        weights = class_weight.compute_class_weight('balanced', 
 #            np.unique(y),y)
