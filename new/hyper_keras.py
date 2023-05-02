@@ -58,6 +58,13 @@ def single_exp(data_path,hyper_path,n_split,n_iter):
     X,y=tools.prepare_data(df)
     data_params=ens.get_dataset_params(X,y)
     print(data_params)
+    best=bayes_optim(X,y,data_params,n_split,n_iter)
+    print(best)
+    with open(hyper_path,"a") as f:
+        f.write(f'{str(best)}\n') 
+    return best
+
+def bayes_optim(X,y,data_params,n_split,n_iter):
     model_builder= BinaryKTBuilder(data_params) 
 
     tuner=kt.BayesianOptimization(model_builder,
@@ -73,9 +80,6 @@ def single_exp(data_path,hyper_path,n_split,n_iter):
     best_hps=tuner.get_best_hyperparameters(num_trials=10)[0]
     best={ name_j: (best_hps.get(name_j)/ data_params['dims'])
            for name_j in model_builder.get_params_names()}
-    print(best)
-    with open(hyper_path,"a") as f:
-        f.write(f'{str(best)}\n') 
     return best
 
 if __name__ == "__main__":
@@ -84,7 +88,7 @@ if __name__ == "__main__":
     parser.add_argument("--hyper", type=str, default='hyper.txt')
     parser.add_argument("--n_split", type=int, default=10)
     parser.add_argument("--n_iter", type=int, default=2)
-#    parser.add_argument("--clfs", type=str, default='GPUClf_2_2,CPUClf_2')
+    parser.add_argument("--clfs", type=str, default='GPUClf_2_2,CPUClf_2')
     parser.add_argument("--log_path", type=str, default='log.time')
 
     args = parser.parse_args()
