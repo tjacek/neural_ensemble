@@ -7,7 +7,7 @@ from time import time
 from sklearn.metrics import accuracy_score,f1_score,balanced_accuracy_score
 import clfs,models,learn
 from scipy import stats
-from collections import defaultdict
+from collections import defaultdict,OrderedDict
 
 def single_exp(data_path,model_path,result_path,p_value):
     df=pd.read_csv(data_path) 
@@ -16,18 +16,25 @@ def single_exp(data_path,model_path,result_path,p_value):
     get_results(acc_dict,result_path)
     get_pvalue(acc_dict,p_value)
 
-def get_results(acc_dict,result_path):
-    metrics=[accuracy_score,balanced_accuracy_score]
-    cols=['clf','acc_mean','acc_std','balan_acc_mean','balan_acc_std']
+def get_results(pred_dict,result_path):
+    metrics_dict={'acc':accuracy_score,
+                  'balanced_acc':balanced_accuracy_score,
+                  'f1':learn.f1_metric,
+                  'recall':learn.recall_metric,
+                  'precision':learn.precision_metric}
+    metrics_dict=OrderedDict(metrics_dict)
+    cols=['clf']
+    cols+=[ f'{key_i}_{stat_i}'
+                for key_i in metrics_dict
+                    for stat_i in ['mean','std'] ]
     lines=[]
-    for name_i,result_i in acc_dict.items():
+    for name_i,result_i in pred_dict.items():
         line_j=[name_i]
-        for metric_j in metrics:
-            stats_i=[metric_j(y_true,y_pred) for y_true,y_pred in result_i]
+        for metric_name_j,metric_j in metrics_dict.items():
+            stats_i=[metric_j(*pred) for pred in result_i]
             line_j+=[np.mean(stats_i),np.std(stats_i)]
-        lines.append(line_j)	
+        lines.append(line_j)
     df= pd.DataFrame(lines,columns=cols)
-    print(df)
     df.to_csv(result_path, index=False)
 
 def get_acc_dict(X,y,model_path):
@@ -43,7 +50,7 @@ def get_acc_dict(X,y,model_path):
             y_pred= clf_j.predict(X_test)
             acc_dict[clf_type_j].append((y_test,y_pred)) #accuracy_score(y_test,y_pred))
         if(clfs.is_cpu(model_i)):
-            model_i.train_clfs((X_train,y_train))
+            model_i.train_clfs((X_train,y_train))#,'LR-imb')
         y_pred=model_i.predict(X_test)
         acc_dict['NECSCF'].append((y_test,y_pred))
     return acc_dict
