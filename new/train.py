@@ -9,22 +9,27 @@ import clfs,ens,learn,models
 
 def single_exp(data_path,n_splits,n_repeats,ens_type,
         hyper_path,out_path='out',verbose=False):
-    if(ens_type in set(['best','CPU','GPU'])):
-        hyper_dict=parse_hyper(hyper_path,ens_type)
-        ens_type=list(hyper_dict.keys())[0]
-    else:
-        hyper_dict=parse_hyper(hyper_path,None)
+    clf_builder=get_clf_builder(ens_type,hyper_path)    
+   
     df=pd.read_csv(data_path) 
     X,y=tools.prepare_data(df)
     cv = RepeatedStratifiedKFold(n_splits=n_splits, 
         n_repeats=n_repeats, random_state=4)
-    models_io=models.ModelIO(out_path)
+    models_io=models.ManyClfs(out_path)
     for i,split_i,train_i,test_i in models.split_iterator(cv,X,y):
-        clf=clfs.get_ens(ens_type,hyper=hyper_dict[ens_type])
-        clf_i= train_model(train_i[0],train_i[1],clf,verbose)
-        models_io.save(clf_i,i,split_i)
+        clfs_dict=clf_builder()
+        for clf_j in clfs_dict.values():
+            train_model(train_i,clf_j,verbose)
+        models_io.save(clfs_dict,i,split_i)
+
+#    models_io=models.ModelIO(out_path)
+#    for i,split_i,train_i,test_i in models.split_iterator(cv,X,y):
+#        clf=clfs.get_ens(ens_type,hyper=hyper_dict[ens_type])
+#        clf_i= train_model(train_i[0],train_i[1],clf,verbose)
+#        models_io.save(clf_i,i,split_i)
     
-def train_model(X_i,y_i,clf_i,verbose=True):
+def train_model(train_i,clf_i,verbose=True):
+    X_i,y_i=train_i
     start=time()
     if(ens.is_neural_ensemble(clf_i)):
         clf_i= clf_i.fit(X_i,y_i,verbose)
@@ -33,6 +38,22 @@ def train_model(X_i,y_i,clf_i,verbose=True):
     end=time()
     print(f'Training time-{str(clf_i)}:{(end-start):.2f}s')
     return clf_i
+
+def get_clf_builder(ens_type,hyper_path):
+    find_best=set(['best','CPU','GPU'])
+    ens_dict={}
+    for ens_i in ens_type.split(','):
+        if(ens_i in find_best):
+            hyper_dict=parse_hyper(hyper_path,ens_i)
+            ens_type=list(hyper_dict.keys())[0]
+            ens_dict[ens_i]=(ens_type,hyper_dict[ens_type])
+        else:
+            hyper_dict=parse_hyper(hyper_path,None)
+            ens_dict[ens_i]=(ens_i,hyper_dict[ens_i])
+    def helper():
+        return { ens_id:clfs.get_ens(ens_type,hyper=hyper_i)
+            for ens_id,(ens_type,hyper_i) in ens_dict.items()}
+    return helper
 
 def parse_hyper(hyper_path,selection=None):
     if(hyper_path is None):
@@ -47,7 +68,7 @@ def parse_hyper(hyper_path,selection=None):
             raw= line_i.split(',')
             clf,hyper,score=raw[0],raw[1:-1],float(raw[-1])
             if(selection=='GPU' or selection=='CPU'):
-                if(selection in clf ):
+                if(not (selection in clf) ):
                     continue
             hyper_dict[clf]=eval(','.join(hyper))
             score_dict[clf]=score

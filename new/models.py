@@ -19,7 +19,18 @@ class ModelIO(object):
         np.save(f'{out_i}/train',split_i[0])
         np.save(f'{out_i}/test',split_i[1])
 
-#    def save_pred(self,clf_i,):
+class ManyClfs(object):
+    def __init__(self,dir_path):
+        tools.make_dir(dir_path)
+        self.dir_path=dir_path
+
+    def save(self,clfs_dict,i,split_i):
+        split_dir=f'{self.dir_path}/{i}'
+        tools.make_dir(split_dir)
+        np.save(f'{split_dir}/train',split_i[0])
+        np.save(f'{split_dir}/test',split_i[1])
+        for name_j,clf_j in clfs_dict.items():
+            clfs.save_clf(clf_j,f'{split_dir}/{name_j}')
 
 def split_iterator(cv,X,y):
     for i,(train_i,test_i) in enumerate(cv.split(X,y)):

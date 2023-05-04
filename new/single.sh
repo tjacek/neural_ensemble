@@ -26,8 +26,8 @@ mkdir ${name}
 #    --clfs 'all' --log_path ${log}
 #}
 
-train_model "GPU"
-train_model "CPU"
+train_model "GPU,CPU"
+#train_model "CPU"
 
 #python3 eval.py --data ${data} --models ${models} \
 #     --results ${results} --log_path  ${log} --p_value ${pvalue}
