@@ -9,11 +9,11 @@ import clfs,ens,learn,models
 
 def single_exp(data_path,n_splits,n_repeats,ens_type,
         hyper_path,out_path='out',verbose=False):
-    if(ens_type=='best'):
-        hyper_dict=parse_hyper(hyper_path,True)
+    if(ens_type in set(['best','CPU','GPU'])):
+        hyper_dict=parse_hyper(hyper_path,ens_type)
         ens_type=list(hyper_dict.keys())[0]
     else:
-        hyper_dict=parse_hyper(hyper_path,False)
+        hyper_dict=parse_hyper(hyper_path,None)
     df=pd.read_csv(data_path) 
     X,y=tools.prepare_data(df)
     cv = RepeatedStratifiedKFold(n_splits=n_splits, 
@@ -34,27 +34,29 @@ def train_model(X_i,y_i,clf_i,verbose=True):
     print(f'Training time-{str(clf_i)}:{(end-start):.2f}s')
     return clf_i
 
-def parse_hyper(hyper_path,best=False):
+def parse_hyper(hyper_path,selection=None):
     if(hyper_path is None):
         hyper_dict={clf_i:None for clf_i in clfs.CLFS_NAMES}
         return hyper_dict
-    def helper():
-        with open(hyper_path) as f:
-            lines = f.readlines()[1:]
-            for line_i in lines:
-                if('data' in line_i):
+    hyper_dict,score_dict={},{}
+    with open(hyper_path) as f:
+        lines = f.readlines()[1:]
+        for line_i in lines:
+            if('data' in line_i):
+                continue
+            raw= line_i.split(',')
+            clf,hyper,score=raw[0],raw[1:-1],float(raw[-1])
+            if(selection=='GPU' or selection=='CPU'):
+                if(selection in clf ):
                     continue
-                raw= line_i.split(',')
-                yield raw[0],raw[1:-1],float(raw[-1])
-    if(best):
-        clf,hyper,best= zip(*list(helper()))
-        i=np.argmax(best)
-        return {clf[i]:eval(','.join(hyper[i]))}  
-    else:
-        hyper_dict={}
-        for clf_i,hyper_i,best_i in helper():    
-            hyper_dict[clf_i]=eval(','.join(hyper_i))
-        return hyper_dict
+            hyper_dict[clf]=eval(','.join(hyper))
+            score_dict[clf]=score
+    if(not (selection is None)):
+       clf=list(hyper_dict.keys())
+       score=[score_dict[clf_i] for clf_i in clf]
+       best=clf[np.argmax(score)]
+       return {best:hyper_dict[best]}
+    return hyper_dict
 
 def parse_args():
     parser = argparse.ArgumentParser()
