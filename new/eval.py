@@ -13,8 +13,8 @@ def single_exp(data_path,model_path,result_path,p_value):
     df=pd.read_csv(data_path) 
     X,y=tools.prepare_data(df)
     acc_dict=get_pred_dict(X,y,model_path)
-    get_results(acc_dict,result_path)
-#    get_pvalue(acc_dict,p_value)
+#    get_results(acc_dict,result_path)
+    get_pvalue(acc_dict,p_value)
 
 def get_results(pred_dict,result_path):
     metrics_dict={'acc':accuracy_score,
@@ -64,19 +64,23 @@ def iter_clfs(train_i,clf_types,model_dict):
         else:
             yield 'NECSCF(NN-TF)',clf_j
 
-def get_pvalue(acc_dict,pvalue_path):
-    keys=[ key_i for key_i in acc_dict.keys()
-            if(key_i!='NECSCF')]
+def get_pvalue(pred_dict,pvalue_path):
     metric=accuracy_score
-    ens_i=[metric(*result_i) for result_i in acc_dict['NECSCF']]
-    cols=['base clf','p_value','sig']
+    ens_names,clf_names=[],[]
+    for key_i,pred_i in pred_dict.items():
+        acc_i=[metric(*result_j) for result_j in pred_i]
+        if('NECSCF' in key_i):
+            ens_names.append( (key_i,acc_i))
+        else:
+            clf_names.append( (key_i,acc_i))
+    cols=['ens','clf','p_value','sig']
     lines=[]
-    for key_i in keys:
-        acc_i=[metric(*result_i) for result_i in acc_dict[key_i]]
-        r=stats.ttest_ind(acc_i, ens_i, equal_var=False)
-        p_value=r[1]
-        line_i=[key_i,p_value,(p_value<0.05)]
-        lines.append(line_i)
+    for ens_i,acc_i in ens_names:
+        for clf_j,acc_j in clf_names:
+            r=stats.ttest_ind(acc_i, acc_j, equal_var=False)
+            p_value=round(r[1],4)
+            line_ij=[ens_i,clf_j,p_value,(p_value<0.05)]
+            lines.append(line_ij)
     df=pd.DataFrame(lines,columns=cols)
     print(df)
     df.to_csv(pvalue_path, index=False)
