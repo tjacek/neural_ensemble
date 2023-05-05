@@ -32,7 +32,8 @@ def get_results(pred_dict,result_path):
         line_j=[name_i]
         for metric_name_j,metric_j in metrics_dict.items():
             stats_i=[metric_j(*pred) for pred in result_i]
-            line_j+=[np.mean(stats_i),np.std(stats_i)]
+            line_j+=[ round(fun_k(stats_i),4)
+                for fun_k in [np.mean,np.std]]
         lines.append(line_j)
     df= pd.DataFrame(lines,columns=cols)
     print(df)
@@ -62,7 +63,6 @@ def iter_clfs(train_i,clf_types,model_dict):
                 yield f'NECSCF({clf_type_k})',clf_j
         else:
             yield 'NECSCF(NN-TF)',clf_j
-
 
 def get_pvalue(acc_dict,pvalue_path):
     keys=[ key_i for key_i in acc_dict.keys()
