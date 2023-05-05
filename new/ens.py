@@ -88,7 +88,13 @@ class NeuralEnsembleCPU(BaseEstimator, ClassifierMixin):
         self.data_params=data_params
         binary_full=self.binary_builder(data_params)
         y_binary=binarize(targets)
-        history=train_model(X,y_binary,binary_full,data_params)
+        weights = class_weight.compute_class_weight('balanced', 
+            classes=np.unique(targets), y=targets)
+        sample_weight=np.array([weights[c] for c in targets])
+        sample_weights={f'binary{i}':sample_weight 
+            for i in range(data_params['n_cats'])}
+#        raise Exception(sample_weights)
+        history=train_model(X,y_binary,binary_full,data_params, sample_weights)
         if(verbose):
             show_history(history)        
         self.binary_model=Extractor(binary_full,data_params['n_cats'])
@@ -98,11 +104,13 @@ class NeuralEnsembleCPU(BaseEstimator, ClassifierMixin):
     def train_clfs(self,train_data,multi_clf=None):
         if(multi_clf is None):
             multi_clf=self.multi_clf
+        self.clfs=[]
         X,targets=train_data
         binary=self.binary_model.predict(X)
         for binary_i in binary:
             multi_i=np.concatenate([X,binary_i],axis=1)
             clf_i =learn.get_clf(multi_clf)
+#            raise Exception(multi_clf)
             clf_i.fit(multi_i,targets)
             self.clfs.append(clf_i)
 
@@ -182,16 +190,18 @@ def get_dataset_params(X,y):
     return {'n_cats':max(y)+1,'dims':X.shape[1],
         'batch_size': int(1.0*X.shape[0])}
 
-def train_model(X,y,model,params,imb=True):
+def train_model(X,y,model,params,weights=None):
 #    if(imb):
+#        labels=np.argmax(y,axis=0)
+#        raise Exception(y[0].shape)
 #        weights = class_weight.compute_class_weight('balanced', 
-#            np.unique(y),y)
+#            classes=np.unique(y[0]), y=y[0])
 #    else:
 #        weights=None
     earlystopping = callbacks.EarlyStopping(monitor="accuracy",
                 mode="min", patience=5,restore_best_weights=True)
     return model.fit(X,y,epochs=50,batch_size=params['batch_size'],
-        verbose = 0,callbacks=earlystopping)#,class_weight=weights)
+        verbose = 0,callbacks=earlystopping,sample_weight=weights)
 
 class BinaryBuilder(object):
     def __init__(self,hidden=(1,0.5)):

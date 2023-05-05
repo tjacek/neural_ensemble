@@ -24,6 +24,15 @@ class ManyClfs(object):
         tools.make_dir(dir_path)
         self.dir_path=dir_path
 
+    def read(self):
+        for path_i in tools.top_files(self.dir_path):
+            clf_i= { 
+                model_path.split('/')[-1]:clfs.read_clf(model_path)
+                 for model_path in tools.get_dirs(path_i)}
+            train_i=np.load(f'{path_i}/train.npy')
+            test_i=np.load(f'{path_i}/test.npy')
+            yield clf_i,(train_i,test_i)
+
     def save(self,clfs_dict,i,split_i):
         split_dir=f'{self.dir_path}/{i}'
         tools.make_dir(split_dir)
