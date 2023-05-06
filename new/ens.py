@@ -33,11 +33,17 @@ class NeuralEnsembleGPU(BaseEstimator, ClassifierMixin):
         data_params['binary_dims']=self.binary_model.binary_dim()
         binary=self.binary_model.predict(X)
         self.multi_model=self.multi_builder(data_params)
-        y=one_hot(targets,data_params['n_cats'])
+        y=targets #one_hot(targets,data_params['n_cats'])
         
         X_multi=[X]+binary
         y_multi=[y for i in range(data_params['n_cats'])]
-        history=train_model(X_multi,y_multi,self.multi_model,data_params)
+#        weights = class_weight.compute_class_weight('balanced', 
+#            classes=np.unique(targets), y=targets)
+
+#        weights={f'multi{i}' :data_params['class_weights']
+#                for i in range(data_params['n_cats'])}
+        history=train_model(X_multi,y_multi,self.multi_model,data_params,
+           None)
         if(verbose):
             show_history(history)        
         return self
@@ -88,13 +94,12 @@ class NeuralEnsembleCPU(BaseEstimator, ClassifierMixin):
         self.data_params=data_params
         binary_full=self.binary_builder(data_params)
         y_binary=binarize(targets)
-        weights = class_weight.compute_class_weight('balanced', 
-            classes=np.unique(targets), y=targets)
-        sample_weight=np.array([weights[c] for c in targets])
-        sample_weights={f'binary{i}':sample_weight 
-            for i in range(data_params['n_cats'])}
-#        raise Exception(sample_weights)
-        history=train_model(X,y_binary,binary_full,data_params, sample_weights)
+#        weights = class_weight.compute_class_weight('balanced', 
+#            classes=np.unique(targets), y=targets)
+#        sample_weight=np.array([weights[c] for c in targets])
+#        sample_weights={f'binary{i}':sample_weight 
+#            for i in range(data_params['n_cats'])}
+        history=train_model(X,y_binary,binary_full,data_params)
         if(verbose):
             show_history(history)        
         self.binary_model=Extractor(binary_full,data_params['n_cats'])
@@ -110,7 +115,6 @@ class NeuralEnsembleCPU(BaseEstimator, ClassifierMixin):
         for binary_i in binary:
             multi_i=np.concatenate([X,binary_i],axis=1)
             clf_i =learn.get_clf(multi_clf)
-#            raise Exception(multi_clf)
             clf_i.fit(multi_i,targets)
             self.clfs.append(clf_i)
 
@@ -169,11 +173,12 @@ class Extractor(object):
     def binary_dim(self):
         return self.extractors[-1].output.shape[1]
 
-    def predict(self,X):
+    def predict(self,X,scale=True):
         binary=[]
         for extractor_i in self.extractors:
             binary_i=extractor_i.predict(X,verbose=0) 
-            binary_i=preprocessing.scale(binary_i)
+            if(scale):
+                binary_i=preprocessing.scale(binary_i)
             binary.append(binary_i)
         return binary
     
@@ -187,21 +192,28 @@ class Extractor(object):
             extr_i.save_weights(f'{out_path}/{i}.h5') 
 
 def get_dataset_params(X,y):
-    return {'n_cats':max(y)+1,'dims':X.shape[1],
+    param_dict={'n_cats':max(y)+1,'dims':X.shape[1],
         'batch_size': int(1.0*X.shape[0])}
+    class_weights={cat_i:0 for cat_i in range(param_dict['n_cats'])}
+    for i in y:
+        class_weights[i]+=1
+    param_dict['class_weights']={ key_i:(1.0/value_i) 
+        for key_i,value_i in class_weights.items()}
+    return param_dict
 
 def train_model(X,y,model,params,weights=None):
 #    if(imb):
 #        labels=np.argmax(y,axis=0)
 #        raise Exception(y[0].shape)
-#        weights = class_weight.compute_class_weight('balanced', 
-#            classes=np.unique(y[0]), y=y[0])
+#    if(not (weights is None)):
+#        raise Exception(weights)
 #    else:
 #        weights=None
+#    raise Exception(params['class_weights'])
     earlystopping = callbacks.EarlyStopping(monitor="accuracy",
                 mode="min", patience=5,restore_best_weights=True)
     return model.fit(X,y,epochs=50,batch_size=params['batch_size'],
-        verbose = 0,callbacks=earlystopping,sample_weight=weights)
+        verbose = 0,callbacks=earlystopping,class_weight=weights)
 
 class BinaryBuilder(object):
     def __init__(self,hidden=(1,0.5)):
@@ -264,7 +276,10 @@ class MultiInputBuilder(object):
             x_i=Dense(params['n_cats'], activation='softmax',
                 name=f'multi{i}')(x_i)
             outputs.append(x_i)
-        loss={f'multi{i}' :'categorical_crossentropy' 
+        
+        custom_loss= weighted_categorical_crossentropy(
+            list(params['class_weights'].values() ))
+        loss={f'multi{i}' : custom_loss #'categorical_crossentropy' 
                 for i in range(params['n_cats'])}
         metrics={f'multi{i}' :'accuracy' 
                 for i in range(params['n_cats'])}
@@ -278,3 +293,16 @@ class MultiInputBuilder(object):
 
     def __str__(self):
         return '_'.join([str(h) for h in self.hidden])
+
+def weighted_categorical_crossentropy(class_weight):
+    def loss(y_obs,y_pred):
+        print('eval_custom')
+        y_obs = tf.dtypes.cast(y_obs,tf.int32)
+        hothot = tf.one_hot(tf.reshape(y_obs,[-1]), depth=len(class_weight))
+        weight = tf.math.multiply(class_weight,hothot)
+        weight = tf.reduce_sum(weight,axis=-1)
+        losses = tf.compat.v1.losses.sparse_softmax_cross_entropy(
+            labels=y_obs, logits=y_pred,weights=weight
+        )
+        return losses
+    return loss
