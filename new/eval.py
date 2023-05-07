@@ -9,11 +9,29 @@ from scipy import stats
 from collections import defaultdict,OrderedDict
 import clfs,models,learn
 
+#class ClfIter(object):
+#    def __init__(self,clf_types=('RF','SVC')):
+#        self.clf_types=clf_types
+
+#    def __call__(self,train_i,model_dict):
+#        for clf_type_j in clf_types:
+#            clf_j=learn.get_clf(clf_type_j)
+#            clf_j.fit(*train_i)
+#            yield clf_type_j,clf_j  
+#        for clf_type_j,clf_j in model_dict.items():
+#            if(clfs.is_cpu(clf_j)):
+#                for clf_type_k in clf_types:
+#                    clf_j.train_clfs(train_i,clf_type_k)
+#                    yield f'NECSCF({clf_type_k})',clf_j
+#                else:
+#                    yield 'NECSCF(NN-TF)',clf_j
+
+
 def single_exp(data_path,model_path,result_path,p_value):
-    df=pd.read_csv(data_path) 
+    df=pd.read_csv(data_path,header=None) 
     X,y=tools.prepare_data(df)
     acc_dict=get_pred_dict(X,y,model_path)
-#    get_results(acc_dict,result_path)
+    get_results(acc_dict,result_path)
     get_pvalue(acc_dict,p_value)
 
 def get_results(pred_dict,result_path):

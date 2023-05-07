@@ -10,8 +10,7 @@ import clfs,ens,learn,models
 def single_exp(data_path,n_splits,n_repeats,ens_type,
         hyper_path,out_path='out',verbose=False):
     clf_builder=get_clf_builder(ens_type,hyper_path)    
-   
-    df=pd.read_csv(data_path) 
+    df=pd.read_csv(data_path,header=None) 
     X,y=tools.prepare_data(df)
     cv = RepeatedStratifiedKFold(n_splits=n_splits, 
         n_repeats=n_repeats, random_state=4)
@@ -21,12 +20,6 @@ def single_exp(data_path,n_splits,n_repeats,ens_type,
         for clf_j in clfs_dict.values():
             train_model(train_i,clf_j,verbose)
         models_io.save(clfs_dict,i,split_i)
-
-#    models_io=models.ModelIO(out_path)
-#    for i,split_i,train_i,test_i in models.split_iterator(cv,X,y):
-#        clf=clfs.get_ens(ens_type,hyper=hyper_dict[ens_type])
-#        clf_i= train_model(train_i[0],train_i[1],clf,verbose)
-#        models_io.save(clf_i,i,split_i)
     
 def train_model(train_i,clf_i,verbose=True):
     X_i,y_i=train_i
