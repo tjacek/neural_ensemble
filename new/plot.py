@@ -9,6 +9,7 @@ import models
 def plot_binary(data_path,model_path,out_path):
     binary_path=f'{model_path}/models/0'
     tools.make_dir(out_path)
+    colors = ['red', 'green', 'blue', 'orange', 'purple']
     for name_i,binary_i,y_test in binary_iter(data_path,binary_path):
         path_i=f'{out_path}/{name_i}'
         tools.make_dir(path_i)
@@ -21,10 +22,12 @@ def plot_binary(data_path,model_path,out_path):
                 n_iter=300,
             )
             low_dim= tsne_j.fit_transform(binary_j)
-            print(low_dim[0,:].shape)
-            plt.scatter(low_dim[:,0],low_dim[:,1])
+#            plt.scatter(low_dim[:,0],low_dim[:,1])
             for t, label in enumerate(y_test):
-                plt.annotate(label,(low_dim[t,0],low_dim[t,1]))
+#                plt.text(low_dim[t,0],low_dim[t,1],str(label))
+                x,y=low_dim[t,0],low_dim[t,1]
+                plt.scatter(x,y,color=colors[label])
+                plt.annotate(label, (x, y))
             plt.show()
 
 def binary_iter(data_path,binary_path):
