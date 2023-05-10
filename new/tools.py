@@ -38,14 +38,16 @@ def get_dirs(path):
     return [path_i for path_i in top_files(path)
             if(os.path.isdir(path_i))]
 
+def get_dataset(data_path):
+    df=pd.read_csv(data_path,header=None) 
+    return prepare_data(df)
+
 def prepare_data(df):
     X=df.iloc[:,:-1]
-#    X.head()
     X=X.to_numpy()
     X=preprocessing.scale(X) # data preprocessing
     y=df.iloc[:,-1]
     cats={ cat_i:i for i,cat_i in enumerate(y.unique())}
-#    y.head()    
     y=y.to_numpy()
     y=[cats[y_i] for y_i in y]
     return X,np.array(y)
