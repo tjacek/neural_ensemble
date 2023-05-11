@@ -8,7 +8,7 @@ from time import time
 import clfs,ens,learn,models
 
 def single_exp(data_path,n_splits,n_repeats,ens_type,
-        hyper_path,out_path='out',verbose=False):
+        hyper_path,out_path='out',verbose=False,acc_path='acc.txt'):
     clf_builder=get_clf_builder(ens_type,hyper_path)    
     df=pd.read_csv(data_path,header=None) 
     X,y=tools.prepare_data(df)
@@ -18,19 +18,21 @@ def single_exp(data_path,n_splits,n_repeats,ens_type,
     for i,split_i,train_i,test_i in models.split_iterator(cv,X,y):
         clfs_dict=clf_builder()
         for clf_j in clfs_dict.values():
-            train_model(train_i,clf_j,verbose)
+            acc_desc=train_model(train_i,clf_j,verbose)
+            with open(acc_path,"a") as f:
+                f.write(f'{i},{acc_desc}\n')
         models_io.save(clfs_dict,i,split_i)
     
 def train_model(train_i,clf_i,verbose=True):
     X_i,y_i=train_i
     start=time()
     if(ens.is_neural_ensemble(clf_i)):
-        clf_i= clf_i.fit(X_i,y_i,verbose)
+        acc_desc= clf_i.fit(X_i,y_i,verbose)
     else:
-        clf_i= clf_i.fit(X_i,y_i)
+        acc_desc= clf_i.fit(X_i,y_i)
     end=time()
     print(f'Training time-{str(clf_i)}:{(end-start):.2f}s')
-    return clf_i
+    return acc_desc
 
 def get_clf_builder(ens_type,hyper_path):
     find_best=set(['best','CPU','GPU'])
@@ -82,6 +84,7 @@ def parse_args():
     parser.add_argument("--n_repeats", type=int, default=3)
     parser.add_argument("--verbose",action='store_true')
     parser.add_argument("--log_path", type=str, default='log.time')
+    parser.add_argument("--acc_path", type=str, default='acc.txt')
 
     args = parser.parse_args()
     if(args.hyper=='-'):
@@ -95,5 +98,6 @@ if __name__ == '__main__':
     tools.start_log(args.log_path)
     start=time()
     single_exp(args.data,args.n_splits,args.n_repeats,ens_type=args.ens,
-        hyper_path=args.hyper,out_path=args.out,verbose=args.verbose) 
+        hyper_path=args.hyper,out_path=args.out,verbose=args.verbose,
+        acc_path=args.acc_path) 
     tools.log_time(f'TRAIN:{args.data}',start) 

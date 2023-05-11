@@ -27,26 +27,24 @@ class NeuralEnsembleGPU(BaseEstimator, ClassifierMixin):
         binary_full=self.binary_builder(data_params)
         y_binary=binarize(targets)
         history=train_model(X,y_binary,binary_full,data_params)
+        binary_acc= accuracy_desc(history)
         if(verbose):
             show_history(history)        
         self.binary_model=Extractor(binary_full,data_params['n_cats'])
         data_params['binary_dims']=self.binary_model.binary_dim()
         binary=self.binary_model.predict(X)
         self.multi_model=self.multi_builder(data_params)
-        y=targets #one_hot(targets,data_params['n_cats'])
+        y=targets 
         
         X_multi=[X]+binary
         y_multi=[y for i in range(data_params['n_cats'])]
-#        weights = class_weight.compute_class_weight('balanced', 
-#            classes=np.unique(targets), y=targets)
 
-#        weights={f'multi{i}' :data_params['class_weights']
-#                for i in range(data_params['n_cats'])}
         history=train_model(X_multi,y_multi,self.multi_model,data_params,
            None)
+        multi_acc= accuracy_desc(history)
         if(verbose):
             show_history(history)        
-        return self
+        return {**binary_acc,**multi_acc }
 
     def predict_proba(self,X):
         binary=self.binary_model.predict(X)
@@ -94,17 +92,12 @@ class NeuralEnsembleCPU(BaseEstimator, ClassifierMixin):
         self.data_params=data_params
         binary_full=self.binary_builder(data_params)
         y_binary=binarize(targets)
-#        weights = class_weight.compute_class_weight('balanced', 
-#            classes=np.unique(targets), y=targets)
-#        sample_weight=np.array([weights[c] for c in targets])
-#        sample_weights={f'binary{i}':sample_weight 
-#            for i in range(data_params['n_cats'])}
         history=train_model(X,y_binary,binary_full,data_params)
         if(verbose):
             show_history(history)        
         self.binary_model=Extractor(binary_full,data_params['n_cats'])
         self.train_data=(X,targets)
-        return self
+        return accuracy_desc(history)
 
     def train_clfs(self,train_data,multi_clf=None):
         if(multi_clf is None):
@@ -158,6 +151,14 @@ def show_history(history):
             msg+=f'{key_i}:{value_i[-1]:.2f} '
     print(msg)
 
+def accuracy_desc(history):
+    acc_desc={}
+    for key_i in history.history:
+        if('accuracy' in key_i):
+            acc_i=history.history[key_i][-1]
+            acc_desc[key_i]=round(acc_i,4)
+    return acc_desc
+
 def is_neural_ensemble(clf):
     return (isinstance(clf,NeuralEnsembleGPU) or 
                isinstance(clf,NeuralEnsembleCPU))
@@ -197,21 +198,12 @@ def get_dataset_params(X,y):
     class_weights={cat_i:1 for cat_i in range(param_dict['n_cats'])}
     for i in y:
         class_weights[i]+=1
-#    print(y)
     param_dict['class_weights']={ key_i:(1.0/value_i) 
         for key_i,value_i in class_weights.items()}
     return param_dict
 
 def train_model(X,y,model,params,weights=None):
-#    if(imb):
-#        labels=np.argmax(y,axis=0)
-#        raise Exception(y[0].shape)
-#    if(not (weights is None)):
-#        raise Exception(weights)
-#    else:
-#        weights=None
-#    raise Exception(params['class_weights'])
-    earlystopping = callbacks.EarlyStopping(monitor='loss',#"accuracy",
+    earlystopping = callbacks.EarlyStopping(monitor="accuracy",
                 mode="min", patience=5,restore_best_weights=True)
     return model.fit(X,y,epochs=50,batch_size=params['batch_size'],
         verbose = 0,callbacks=earlystopping,class_weight=weights)
@@ -230,15 +222,9 @@ class BinaryBuilder(object):
                 name_j=self.layer_name(i,j)
                 x_i=Dense(hidden_j,activation='relu',
                     name=name_j)(x_i)
-#            x_i=BatchNormalization(name=f'batch{i}')(x_i)
             x_i=Dense(2, activation='softmax',name=f'binary{i}')(x_i)
             outputs.append(x_i)
-      
-#        custom_loss= weighted_categorical_crossentropy(
-#            list(params['class_weights'].values() ))
-        custom_loss=weighted_categorical_crossentropy(
-            params['class_weights'])
-        loss={f'binary{i}':custom_loss   #'categorical_crossentropy' 
+        loss={f'binary{i}' :'categorical_crossentropy' 
                 for i in range(params['n_cats'])}
         metrics={f'binary{i}' :'accuracy' 
                 for i in range(params['n_cats'])}
@@ -260,13 +246,12 @@ def binarize(labels):
     binary_labels=[]
     for i in range(n_cats):
         y_i=[int(y_i==i) for y_i in labels]
-        y_i=np.array(y_i)
-#        y_i=one_hot(y_i,2)
+        y_i=one_hot(y_i,2)
         binary_labels.append(y_i)
     return binary_labels
 
 class MultiInputBuilder(object):
-    def __init__(self,hidden=(1,1)):
+    def __init__(self,hidden=(1,1)):#first=1.5,second=0.33):
         self.hidden=hidden
 
     def __call__(self,params):
@@ -280,15 +265,13 @@ class MultiInputBuilder(object):
                 hidden_j=int(hidden_j*params['dims'])
                 x_i=Dense(hidden_j,activation='relu',
                     name=f"{i}_{j}")(x_i)
-            x_i=BatchNormalization(name=f'batch{i}')(x_i)
+#            x_i=BatchNormalization(name=f'batch{i}')(x_i)
             x_i=Dense(params['n_cats'], activation='softmax',
                 name=f'multi{i}')(x_i)
             outputs.append(x_i)
         
-#        custom_loss= weighted_categorical_crossentropy(
-#            list(params['class_weights'].values() ))
-        custom_loss=weighted_categorical_crossentropy(
-            params['class_weights'])
+        custom_loss= weighted_categorical_crossentropy(
+            list(params['class_weights'].values() ))
         loss={f'multi{i}' : custom_loss #'categorical_crossentropy' 
                 for i in range(params['n_cats'])}
         metrics={f'multi{i}' :'accuracy' 
@@ -304,11 +287,7 @@ class MultiInputBuilder(object):
     def __str__(self):
         return '_'.join([str(h) for h in self.hidden])
 
-def weighted_categorical_crossentropy(weights_dict):  
-    keys= list(weights_dict.keys())
-    keys.sort()
-    class_weight=[ weights_dict[key_i] for key_i in keys] 
-
+def weighted_categorical_crossentropy(class_weight):
     def loss(y_obs,y_pred):
         y_obs = tf.dtypes.cast(y_obs,tf.int32)
         hothot = tf.one_hot(tf.reshape(y_obs,[-1]), depth=len(class_weight))
