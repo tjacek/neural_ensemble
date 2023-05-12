@@ -8,15 +8,9 @@ class Ensemble(object):
         self.test=test
         self.clfs=[]
 
-    def __call__(self,clf_type_i,variant_i='basic'):
-        clfs=[]
-        common_i =self.train.common
-        for binary_j in self.train.binary:
-            multi_i=np.concatenate([common_i,binary_j],axis=1)
-            clf_j =learn.get_clf(clf_type_i)
-            clf_j.fit(multi_i,self.train.targets)
-            clfs.append(clf_j)
-
+    def __call__(self,clf_type_i,variant_type_i='basic'):
+        variant_i=get_variant(variant_type_i)
+        clfs=variant_i(self,clf_type_i)
         votes=[]    
         common,binary=self.test.common,self.test.binary
         for j,clf_j in enumerate(clfs):
@@ -36,3 +30,17 @@ def make_ensemble(nn_i,train_i,test_i):
     binary_i=nn_i.binary_model.predict(X_test)
     test_data=Dataset(X_test,binary_i,y_test)
     return Ensemble(train_data,test_data)
+
+def get_variant(variant_type_i):
+    if(variant_type_i=='basic'):
+        return basic_variant
+
+def basic_variant(inst_i,clf_type_i):
+    clfs=[]
+    common_i =inst_i.train.common
+    for binary_j in inst_i.train.binary:
+        multi_i=np.concatenate([common_i,binary_j],axis=1)
+        clf_j =learn.get_clf(clf_type_i)
+        clf_j.fit(multi_i,inst_i.train.targets)
+        clfs.append(clf_j)
+    return clfs
