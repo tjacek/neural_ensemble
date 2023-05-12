@@ -4,18 +4,27 @@ import argparse
 import numpy as np
 from time import time
 from collections import defaultdict
-import clfs,models,variants
+import clfs,models,variants,learn
 
 class AllPreds(object):
     def __init__(self):
         self.pred={}#defaultdict(lambda :[])   
         self.true={}
 
+    def compute_metric(self,metric_type='acc'):
+        metric=learn.get_metric(metric_type)
+        metrict_dict=defaultdict(lambda :[])
+        for i,pred_dict in self.pred.items():
+            true_i=self.true[i]
+            for name_j,pred_j in pred_dict.items():
+                metrict_dict[name_j].append(metric(true_i,pred_j) )
+        return metrict_dict
 
 def single_exp(data_path,model_path,result_path,p_value):
     X,y=tools.get_dataset(data_path)
     pred_dict= get_pred_dict(X,y,model_path)
-    print(pred_dict.pred)
+    metric_dict=pred_dict.compute_metric()
+    stats(metric_dict)
 
 def get_pred_dict(X,y,model_path):
     clf_types=['RF','SVC']
@@ -44,17 +53,9 @@ def pred_iter(model_dict_i,train_i,test_i,
             pred_j=nn_j.predict(test_i[0])
             yield 'NECSCF(NN-TF)',pred_j
 
-#def pred_iter(train_i,nn_j,clf_types):
-#    for clf_type_j in clf_types:
-#        clf_j=learn.get_clf(clf_type_j)
-#        clf_j.fit(*train_i)
-#        yield clf_type_j,clf_j    
-#    if(clfs.is_cpu(nn_j)):
-#        X=train_i[0]	
-#        binary_j=nn_j.binary_model.predict(X)
-         
-#    else:
-#        yield 'NECSCF(NN-TF)',nn_j
+def stats(metric_dict):
+    for name_i,metric_i in metric_dict.items():
+        print(f'{name_i},{np.mean(metric_i):.4f},{np.std(metric_i):.4f}')
 
 def parse_args():
     parser = argparse.ArgumentParser()
