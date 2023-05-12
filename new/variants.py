@@ -6,20 +6,10 @@ class Ensemble(object):
     def __init__(self,train,test):
         self.train=train
         self.test=test
-        self.clfs=[]
 
     def __call__(self,clf_type_i,variant_type_i='basic'):
         variant_i=get_variant(variant_type_i)
-        clfs=variant_i(self,clf_type_i)
-        votes=[]    
-        common,binary=self.test.common,self.test.binary
-        for j,clf_j in enumerate(clfs):
-            multi_i=np.concatenate([common,binary[j]],axis=1)
-            vote_i= clf_j.predict_proba(multi_i)
-            votes.append(vote_i)
-        votes=np.array(votes)
-        prob=np.sum(votes,axis=0)
-        return np.argmax(prob,axis=1)
+        return variant_i(self,clf_type_i)
 
 def make_ensemble(nn_i,train_i,test_i):
     Dataset = namedtuple('Dataset','common binary targets')
@@ -32,8 +22,10 @@ def make_ensemble(nn_i,train_i,test_i):
     return Ensemble(train_data,test_data)
 
 def get_variant(variant_type_i):
-    if(variant_type_i=='basic'):
+    if(variant_type_i=='NECSCF'):
         return basic_variant
+    if(variant_type_i=='common'):
+        return common_variant
 
 def basic_variant(inst_i,clf_type_i):
     clfs=[]
@@ -43,4 +35,18 @@ def basic_variant(inst_i,clf_type_i):
         clf_j =learn.get_clf(clf_type_i)
         clf_j.fit(multi_i,inst_i.train.targets)
         clfs.append(clf_j)
-    return clfs
+    votes=[]    
+  
+    common,binary=inst_i.test.common,inst_i.test.binary
+    for j,clf_j in enumerate(clfs):
+        multi_i=np.concatenate([common,binary[j]],axis=1)
+        vote_i= clf_j.predict_proba(multi_i)
+        votes.append(vote_i)
+    votes=np.array(votes)
+    prob=np.sum(votes,axis=0)
+    return np.argmax(prob,axis=1)
+
+def common_variant(inst_i,clf_type_i):
+    clf_j =learn.get_clf(clf_type_i)
+    clf_j.fit(inst_i.train.common,inst_i.train.targets)
+    return clf_j.predict(inst_i.test.common)

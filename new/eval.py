@@ -2,106 +2,59 @@ import tools
 tools.silence_warnings()
 import argparse
 import numpy as np
-import pandas as pd
 from time import time
-from sklearn.metrics import accuracy_score,balanced_accuracy_score
-from scipy import stats
-from collections import defaultdict,OrderedDict
-import clfs,models,learn
+from collections import defaultdict
+import clfs,models,variants
 
-#class ClfIter(object):
-#    def __init__(self,clf_types=('RF','SVC')):
-#        self.clf_types=clf_types
-
-#    def __call__(self,train_i,model_dict):
-#        for clf_type_j in clf_types:
-#            clf_j=learn.get_clf(clf_type_j)
-#            clf_j.fit(*train_i)
-#            yield clf_type_j,clf_j  
-#        for clf_type_j,clf_j in model_dict.items():
-#            if(clfs.is_cpu(clf_j)):
-#                for clf_type_k in clf_types:
-#                    clf_j.train_clfs(train_i,clf_type_k)
-#                    yield f'NECSCF({clf_type_k})',clf_j
-#                else:
-#                    yield 'NECSCF(NN-TF)',clf_j
+class AllPreds(object):
+    def __init__(self):
+        self.pred={}#defaultdict(lambda :[])   
+        self.true={}
 
 
 def single_exp(data_path,model_path,result_path,p_value):
-    df=pd.read_csv(data_path,header=None) 
-    X,y=tools.prepare_data(df)
-    acc_dict=get_pred_dict(X,y,model_path)
-    get_results(acc_dict,result_path)
-    get_pvalue(acc_dict,p_value)
-
-def get_results(pred_dict,result_path):
-    metrics_dict={'acc':accuracy_score,
-                  'balanced_acc':balanced_accuracy_score,
-                  'f1':learn.f1_metric,
-                  'recall':learn.recall_metric,
-                  'precision':learn.precision_metric}
-    metrics_dict=OrderedDict(metrics_dict)
-    cols=['clf']
-    cols+=[ f'{key_i}_{stat_i}'
-                for key_i in metrics_dict
-                    for stat_i in ['mean','std'] ]
-    lines=[]
-    for name_i,result_i in pred_dict.items():
-        line_j=[name_i]
-        for metric_name_j,metric_j in metrics_dict.items():
-            stats_i=[metric_j(*pred) for pred in result_i]
-            line_j+=[ round(fun_k(stats_i),4)
-                for fun_k in [np.mean,np.std]]
-        lines.append(line_j)
-    df= pd.DataFrame(lines,columns=cols)
-    print(df)
-    df.to_csv(result_path, index=False)
+    X,y=tools.get_dataset(data_path)
+    pred_dict= get_pred_dict(X,y,model_path)
+    print(pred_dict.pred)
 
 def get_pred_dict(X,y,model_path):
-    clf=['RF','SVC']
+    clf_types=['RF','SVC']
+    variant_types=['NECSCF','common']
+    pred_dict=AllPreds() 
     model_reader=models.ManyClfs(model_path)
-    pred_dict=defaultdict(lambda :[])
-    for model_i,(train_i,test_i) in model_reader.read():
-        X_train,y_train=X[train_i],y[train_i]
-        X_test,y_test=X[test_i],y[test_i]
-        for name_j,clf_j in iter_clfs((X_train,y_train),clf,model_i):
-            y_pred=clf_j.predict(X_test)
-            pred_dict[name_j].append((y_test,y_pred))
+    for i,model_dict_i,train_i,test_i in model_reader.split(X,y):
+        pred_dict.true[i]=test_i[1]
+        pred_dict.pred[i]={}
+        for name_j,pred_j in pred_iter(model_dict_i,
+                                       train_i,test_i,
+                                       clf_types,variant_types):
+            pred_dict.pred[i][name_j]=pred_j
     return pred_dict
 
-def iter_clfs(train_i,clf_types,model_dict):
-    for clf_type_j in clf_types:
-        clf_j=learn.get_clf(clf_type_j)
-        clf_j.fit(*train_i)
-        yield clf_type_j,clf_j
-    for clf_type_j,clf_j in model_dict.items():
-        if(clfs.is_cpu(clf_j)):
-            for clf_type_k in clf_types:
-                clf_j.train_clfs(train_i,clf_type_k)
-                yield f'NECSCF({clf_type_k})',clf_j
+def pred_iter(model_dict_i,train_i,test_i,
+        clf_types,variant_types):
+    for name_j,nn_j in model_dict_i.items(): 
+        if(clfs.is_cpu(nn_j)):
+            ens_j=variants.make_ensemble(nn_j,train_i,test_i)
+            for variant in  variant_types:
+                for clf in clf_types:
+                    pred_j=ens_j(clf,variant)
+                    yield f'{variant}({clf})',pred_j
         else:
-            yield 'NECSCF(NN-TF)',clf_j
+            pred_j=nn_j.predict(test_i[0])
+            yield 'NECSCF(NN-TF)',pred_j
 
-def get_pvalue(pred_dict,pvalue_path):
-    metric=accuracy_score
-    ens_names,clf_names=[],[]
-    for key_i,pred_i in pred_dict.items():
-        acc_i=[metric(*result_j) for result_j in pred_i]
-        if('NECSCF' in key_i):
-            ens_names.append( (key_i,acc_i))
-        else:
-            clf_names.append( (key_i,acc_i))
-    cols=['ens','clf','p_value','sig']
-    lines=[]
-    for ens_i,acc_i in ens_names:
-        for clf_j,acc_j in clf_names:
-            r=stats.ttest_ind(acc_i, acc_j, equal_var=False)
-            p_value=round(r[1],4)
-            line_ij=[ens_i,clf_j,p_value,(p_value<0.05)]
-            lines.append(line_ij)
-    df=pd.DataFrame(lines,columns=cols)
-    print(df)
-    df.to_csv(pvalue_path, index=False)
+#def pred_iter(train_i,nn_j,clf_types):
+#    for clf_type_j in clf_types:
+#        clf_j=learn.get_clf(clf_type_j)
+#        clf_j.fit(*train_i)
+#        yield clf_type_j,clf_j    
+#    if(clfs.is_cpu(nn_j)):
+#        X=train_i[0]	
+#        binary_j=nn_j.binary_model.predict(X)
+         
+#    else:
+#        yield 'NECSCF(NN-TF)',nn_j
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -109,7 +62,6 @@ def parse_args():
     parser.add_argument("--models", type=str, default='vehicle/models')
     parser.add_argument("--results", type=str, default='vehicle/results2')
     parser.add_argument("--p_value", type=str, default='vehicle/p_value')
-
     parser.add_argument("--log_path", type=str, default='vehicle/log.time')
     args = parser.parse_args()
     return args
