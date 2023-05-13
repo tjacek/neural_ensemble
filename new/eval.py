@@ -4,11 +4,12 @@ import argparse
 import numpy as np
 from time import time
 from collections import defaultdict
+import json
 import clfs,models,variants,learn
 
 class AllPreds(object):
     def __init__(self):
-        self.pred={}#defaultdict(lambda :[])   
+        self.pred={}  
         self.true={}
 
     def compute_metric(self,metric_type='acc'):
@@ -20,11 +21,23 @@ class AllPreds(object):
                 metrict_dict[name_j].append(metric(true_i,pred_j) )
         return metrict_dict
 
+    def save(self,out_path):
+        raw_dict={'pred':self.pred,'true':self.true}
+        with open(out_path, 'w') as f:
+            json.dump(raw_dict, f,cls=NumpyEncoder)
+
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)
+
 def single_exp(data_path,model_path,result_path,p_value):
     X,y=tools.get_dataset(data_path)
     pred_dict= get_pred_dict(X,y,model_path)
     metric_dict=pred_dict.compute_metric()
     stats(metric_dict)
+    pred_dict.save(result_path)
 
 def get_pred_dict(X,y,model_path):
     clf_types=['RF','SVC']
