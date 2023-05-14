@@ -26,11 +26,37 @@ class AllPreds(object):
         with open(out_path, 'w') as f:
             json.dump(raw_dict, f,cls=NumpyEncoder)
 
+    def select(self,indexes):
+        if(type(indexes)==str):
+            indexes=select_acc(indexes)
+        all_pred=AllPreds()
+        all_pred.pred={i:self.pred[str(i)] for i in indexes}
+        all_pred.true={i:self.true[str(i)] for i in indexes}
+        return all_pred
+
 class NumpyEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.ndarray):
             return obj.tolist()
         return json.JSONEncoder.default(self, obj)
+
+def read_acc_dict(acc_path):
+    with open(acc_path, 'r') as f:
+        acc_dict={}
+        for line_i in f.readlines():
+            raw=line_i.split(',')
+            acc_dict[int(raw[0])]=eval(','.join(raw[1:]))
+        return acc_dict
+
+def select_acc(acc_dict):
+    if(type(acc_dict)==str ):
+        acc_dict=read_acc_dict(acc_dict)
+    def helper(dict_i):
+        values=list(dict_i.values())
+        return (np.mean(values)>0.75)
+    indexes=[i for i,dict_i in acc_dict.items()
+                if(helper(dict_i))]
+    return indexes
 
 def read_preds(in_path):
     with open(in_path, 'r') as f:
