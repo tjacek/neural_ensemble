@@ -1,3 +1,5 @@
+import tools
+tools.silence_warnings()
 import argparse
 from sklearn.model_selection import RepeatedStratifiedKFold
 from skopt import BayesSearchCV
@@ -14,9 +16,10 @@ class BayesOptim(object):
     
     def __call__(self,X,y,clf,search_spaces):
         cv_gen=RepeatedStratifiedKFold(n_splits=self.n_split, 
-                    n_repeats=1, random_state=1)
+                    n_repeats=3, random_state=1)
         search = BayesSearchCV(estimator=clf,verbose=0,n_iter=self.n_iter,
-                    search_spaces=search_spaces,n_jobs=1,cv=cv_gen)
+                search_spaces=search_spaces,n_jobs=1,cv=cv_gen,
+                scoring='balanced_accuracy')
         callback=BayesCallback() if(self.verbosity) else None
         search.fit(X,y,callback=callback) 
         best_estm=search.best_estimator_
@@ -63,12 +66,12 @@ def round_hype(hyper_i):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type=str, default='uci/wine-quality-red')
-    parser.add_argument("--hyper", type=str, default='hyper.txt')
-    parser.add_argument("--n_split", type=int, default=3)
-    parser.add_argument("--n_iter", type=int, default=2)
-    parser.add_argument("--clfs", type=str, default='GPUClf_2_2,CPUClf_2')
-    parser.add_argument("--log_path", type=str, default='log.time')
+    parser.add_argument("--data", type=str, default='uci/newthyroid')
+    parser.add_argument("--hyper", type=str, default='newthyroid/hyper.txt')
+    parser.add_argument("--n_split", type=int, default=10)
+    parser.add_argument("--n_iter", type=int, default=20)
+    parser.add_argument("--clfs", type=str, default='all')
+    parser.add_argument("--log_path", type=str, default='newthyroid/log.time')
 
     args = parser.parse_args()
     if(args.clfs=='all'):

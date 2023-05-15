@@ -10,6 +10,13 @@ class ManyClfs(object):
         for path_i in tools.top_files(self.dir_path):
             yield single_read(path_i)
 
+    def split(self,X,y):
+        for i,(model_i,split_i) in enumerate(self.read()):
+            train_i,test_i=split_i
+            X_train,y_train=X[train_i],y[train_i]
+            X_test,y_test=X[test_i],y[test_i]
+            yield i,model_i,(X_train,y_train),(X_test,y_test)
+
     def save(self,clfs_dict,i,split_i):
         split_dir=f'{self.dir_path}/{i}'
         tools.make_dir(split_dir)
