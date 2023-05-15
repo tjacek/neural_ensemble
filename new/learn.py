@@ -1,6 +1,7 @@
 import numpy as np
 import sklearn.metrics
 from sklearn.metrics import classification_report,accuracy_score,f1_score
+from sklearn.metrics import balanced_accuracy_score
 from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import confusion_matrix
@@ -55,8 +56,8 @@ def get_search_space(clf_type):
 def get_metric(metric_type):
     if(metric_type=='acc'):
         return accuracy_score
-#    if(metric_type=='balanced_acc'):
-#        return balance
+    if(metric_type=='balanced_acc'):
+        return balanced_accuracy_score
     if(metric_type=='f1'):
         return f1_metric
     if(metric_type=='recall'):

@@ -68,5 +68,5 @@ def parse_args():
 
 if __name__ == '__main__':
     args=parse_args()
-#    single_exp(args.pred,args.results,args.p_value)
-    select_exp(args.pred,args.results)
+    single_exp(args.pred,args.results,args.p_value)
+#    select_exp(args.pred,args.results)

@@ -45,6 +45,7 @@ def single_exp(data_path,hyper_path,n_split,n_iter,ens_types):
     bayes_optim=BayesOptim( n_split=n_split,n_iter=n_iter)
     with open(hyper_path,"a") as f:
         f.write(f'data:{data_path},{bayes_optim.get_setting()}\n')
+
     for ens_type_i in ens_types:
         ens_i= clfs.get_ens(ens_type_i)
         search_i={hyper_i: Real(0.25, 5.0, prior='log-uniform') 
@@ -74,10 +75,15 @@ if __name__ == "__main__":
     parser.add_argument("--log_path", type=str, default='newthyroid/log.time')
 
     args = parser.parse_args()
+#    print("@@@@@@@@@@@@@@@@@@")
+#    print(args.clfs)
+#    raise Exception(args.clfs)
+
     if(args.clfs=='all'):
         clf_types=clfs.CLFS_NAMES
     else:
     	clf_types= args.clfs.split(',')
+
     tools.start_log(args.log_path)
     start=time()
     single_exp(args.data,args.hyper,args.n_split,

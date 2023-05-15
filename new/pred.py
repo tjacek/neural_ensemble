@@ -71,7 +71,7 @@ def single_exp(data_path,model_path,out_path):
     pred_dict= get_pred_dict(X,y,model_path)
     metric_dict=pred_dict.compute_metric()
     stats(metric_dict)
-    pred_dict.save(result_path)
+    pred_dict.save(out_path)
 
 def get_pred_dict(X,y,model_path):
     clf_types=['RF','SVC']
