@@ -1,6 +1,7 @@
 import argparse
 import pandas as pd
-import tools
+import numpy as np
+import tools,pred
 
 def make_summary(dir_path,out_path,metric='acc_mean'):
     paths=tools.get_dirs(dir_path)
@@ -63,6 +64,16 @@ def best(dir_path,metric='balanced_acc_mean'):
     df= pd.DataFrame(lines,columns=cols)
     print(df)
 
+def acc_summary(dir_path):
+    for path_i in tools.get_dirs(dir_path):
+        print(path_i)
+        acc_path_i=f'{path_i}/acc.txt'
+        acc_dict=pred.read_acc_dict(acc_path_i)
+        for j,clf_j in acc_dict.items():
+            acc_j= list(clf_j.values())
+            stats_j=[f'{fun(acc_j):.2f}' for fun in [np.mean,np.median,np.max,np.min]]
+            print(','.join(stats_j))
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--dir", type=str, default='../../out')
@@ -70,10 +81,13 @@ if __name__ == '__main__':
 
     parser.add_argument("--out", type=str, default='../../out/summary.txt')
     parser.add_argument("--short",action='store_true')
+    parser.add_argument("--acc",action='store_true')
 
     args = parser.parse_args()
     if(args.short):
         short_summary(args.dir,args.out)
+    elif(args.acc):
+        acc_summary(args.dir)
     else:
         make_summary(args.dir,args.out,args.metric)
 #    best(args.dir)
