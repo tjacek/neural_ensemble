@@ -34,7 +34,7 @@ def get_results(pred_dict,result_path=None):
         for name_i,value_j in stats_dict.items()]
     df= pd.DataFrame(lines,columns=cols)
     print(df)
-    if(result_path is None):
+    if(not (result_path is None)):
         df.to_csv(result_path, index=False)
 
 def get_pvalue(pred_dict,pvalue_path=None,metric='balanced_acc'):
@@ -55,7 +55,7 @@ def get_pvalue(pred_dict,pvalue_path=None,metric='balanced_acc'):
             lines.append(line_ij)
     df=pd.DataFrame(lines,columns=['ens','clf','p_value','sig'])
     print(df)
-    if(pvalue_path is None):
+    if(not (pvalue_path is None)):
         df.to_csv(pvalue_path, index=False)
 
 def parse_args():

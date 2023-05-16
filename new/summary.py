@@ -65,15 +65,15 @@ def best(dir_path,metric='balanced_acc_mean'):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dir", type=str, default='../../imb_bacc')
+    parser.add_argument("--dir", type=str, default='../../out')
     parser.add_argument("--metric", type=str, default='balanced_acc_mean')
 
-    parser.add_argument("--out", type=str, default='../../imb_bacc/summary.txt')
+    parser.add_argument("--out", type=str, default='../../out/summary.txt')
     parser.add_argument("--short",action='store_true')
 
     args = parser.parse_args()
-#    if(args.short):
-#        short_summary(args.dir,args.out)
-#    else:
-#        make_summary(args.dir,args.out,args.metric)
-    best(args.dir)
+    if(args.short):
+        short_summary(args.dir,args.out)
+    else:
+        make_summary(args.dir,args.out,args.metric)
+#    best(args.dir)
