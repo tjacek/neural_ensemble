@@ -54,8 +54,9 @@ class BinaryKTBuilder(object):
         return f'{i}_{j}'
  
 def single_exp(data_path,hyper_path,n_split,n_iter):
-    df=pd.read_csv(data_path) 
-    X,y=tools.prepare_data(df)
+#    df=pd.read_csv(data_path) 
+#    X,y=tools.prepare_data(df)
+    X,y=tools.get_dataset(data_path)
     data_params=ens.get_dataset_params(X,y)
     print(data_params)
     best=bayes_optim(X,y,data_params,n_split,n_iter)
@@ -76,11 +77,26 @@ def bayes_optim(X,y,data_params,n_split,n_iter):
     stop_early = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5)
     tuner.search(X, binary_y, epochs=150, validation_split=validation_split,
        verbose=1,callbacks=[stop_early])
-#    tuner.results_summary()
+    
+
+    binary_stats=get_metric_value(tuner,X,binary_y)
+    raise Exception(binary_stats)
+    
+    tuner.results_summary()
     best_hps=tuner.get_best_hyperparameters(num_trials=10)[0]
     best={ name_j: (best_hps.get(name_j)/ data_params['dims'])
            for name_j in model_builder.get_params_names()}
     return best
+
+def get_metric_value(tuner,X,y):
+    best_model= tuner.get_best_models(1)[0]
+    metric_values= best_model.evaluate(X, y)
+    eval_metrics= list(zip(best_model.metrics_names ,metric_values))
+    acc=[]
+    for metric_i,value_i in eval_metrics:
+        if('accuracy' in metric_i):
+            acc.append(value_i)
+    return tools.basic_stats(acc)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

@@ -51,3 +51,6 @@ def prepare_data(df):
     y=y.to_numpy()
     y=[cats[y_i] for y_i in y]
     return X,np.array(y)
+
+def basic_stats(samples):
+    return [ fun_i(samples) for fun_i in [np.mean,np.median,np.min]]
