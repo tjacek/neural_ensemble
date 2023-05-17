@@ -7,6 +7,20 @@ from collections import namedtuple
 import pred,models,variants
 
 def single_exp(data_path,model_path,out_path):
+    clf_types=['RF','SVC']
+    variant_types=['NECSCF','common']
+    pred_dict=pred.AllPreds()
+    for i,type_j,ens_j in ens_iter(data_path,model_path):
+        pred_dict.true[i]=ens_j.get_true()
+        pred_dict.pred[i]={}
+        for variant in  variant_types:
+            for clf in clf_types:
+                pred_j=ens_j(clf,variant)
+                name_i=f"{variant}({clf})"
+                pred_dict.pred[i][name_i]=pred_j
+    pred_dict.save(out_path)
+
+def ens_iter(data_path,model_path):
     X,y=tools.get_dataset(data_path)
     dir_path= '/'.join(model_path.split('/')[:-1])
     acc_dict= pred.read_acc_dict(f'{dir_path}/acc.txt')
@@ -19,7 +33,7 @@ def single_exp(data_path,model_path,out_path):
             s_clf=[k for k,acc_k in enumerate(acc_dict[i].values())
                         if(acc_k>threshold_i)]
             ens_j=variants.make_ensemble(model_j,train_i,test_i,s_clf)
-            print(type(ens_j))        
+            yield i,name_j,ens_j
 
 if __name__ == '__main__':
     args=pred.parse_args()

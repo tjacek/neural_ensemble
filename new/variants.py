@@ -11,6 +11,9 @@ class Ensemble(object):
         variant_i=get_variant(variant_type_i)
         return variant_i(self,clf_type_i)
 
+    def get_true(self):
+        return self.test.targets
+
 def make_ensemble(nn_i,train_i,test_i,s_clf=None):
     Dataset = namedtuple('Dataset','common binary targets')
     X_train,y_train=train_i
@@ -42,6 +45,7 @@ def basic_variant(inst_i,clf_type_i):
     votes=[]    
   
     common,binary=inst_i.test.common,inst_i.test.binary
+    print(len(binary))
     for j,clf_j in enumerate(clfs):
         multi_i=np.concatenate([common,binary[j]],axis=1)
         vote_i= clf_j.predict_proba(multi_i)
