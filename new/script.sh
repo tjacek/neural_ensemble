@@ -1,8 +1,8 @@
-data_path='imb'
-out_path='../../imb'
-n_split=3
-n_repeats=3
-bayes_iter=2
+data_path='../../uci'
+out_path='../../acc_min'
+n_split=10
+n_repeats=10
+bayes_iter=20
 clfs="all" #'GPU,CPU'  
 log_path="${out_path}/time.log"
 
@@ -27,16 +27,16 @@ do
 #  python3 hyper_binary.py --data "${data_i}" --hyper "${hyper_i}" \
 #    --n_split ${n_split} --n_iter ${bayes_iter} --clfs ${clfs} --log_path ${log_path}
 
-  python3 train.py --data "${data_i}" --hyper "${hyper_i}" \
-        --out "${model_i}" --ens 'CPU' --n_splits "${n_split}" \
-        --n_repeats "${n_repeats}" --log_path ${log_path} --acc_path "${acc_i}"
+#  python3 train.py --data "${data_i}" --hyper "${hyper_i}" \
+#        --out "${model_i}" --ens 'CPU' --n_splits "${n_split}" \
+#        --n_repeats "${n_repeats}" --log_path ${log_path} --acc_path "${acc_i}"
 
-  python3 pred.py --data ${data_i} --models ${model_i} \
-     --out ${pred_i} --log_path ${log_path} 
+#  python3 pred.py --data ${data_i} --models ${model_i} \
+#     --out ${pred_i} --log_path ${log_path} 
 
-  python3 eval.py --pred ${pred_i} --results ${results_i} \
-     --p_value ${pvalue_i}
+#  python3 eval.py --pred ${pred_i} --results ${results_i} \
+#     --p_value ${pvalue_i}
 
-#  python3 eval.py --data ${data_i} --models ${model_i} \
+  python3 summary.py --dir ${out_path}  --metric 'acc_mean' --out "${out_path}/summary.txt"
 #        --results ${results_i} --p_value ${pvalue_i} --log_path ${log_path}
 done
