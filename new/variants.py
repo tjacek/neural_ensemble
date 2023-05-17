@@ -11,13 +11,17 @@ class Ensemble(object):
         variant_i=get_variant(variant_type_i)
         return variant_i(self,clf_type_i)
 
-def make_ensemble(nn_i,train_i,test_i):
+def make_ensemble(nn_i,train_i,test_i,s_clf=None):
     Dataset = namedtuple('Dataset','common binary targets')
     X_train,y_train=train_i
     binary_i=nn_i.binary_model.predict(X_train)
+    if(not (s_clf is None)):
+        binary_i=[ binary_i[k]  for k in s_clf ]
     train_data=Dataset(X_train,binary_i,y_train)
     X_test,y_test=test_i
     binary_i=nn_i.binary_model.predict(X_test)
+    if(not (s_clf is None)):
+        binary_i=[ binary_i[k]  for k in s_clf ]
     test_data=Dataset(X_test,binary_i,y_test)
     return Ensemble(train_data,test_data)
 
