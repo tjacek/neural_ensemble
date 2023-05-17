@@ -1,4 +1,4 @@
-name="cleveland"
+name="vehicle"
 data="uci/${name}"
 #name="../../cl/out/${name}"
 hyper="${name}/hyper.txt"
@@ -24,7 +24,7 @@ mkdir ${name}
 #    --n_split ${n_split} --n_repeats ${n_repeats} \
 #    --acc_path ${acc_path}
 
-#python3 pred.py --data ${data} --models ${models} \
-#    --out ${pred} --log_path ${log}
-python3 eval.py --pred ${pred} --results ${results} \
-  --p_value ${p_value}
+python3 prune.py --data ${data} --models ${models} \
+    --out ${pred} --log_path ${log}
+#python3 eval.py --pred ${pred} --results ${results} \
+#  --p_value ${p_value}
