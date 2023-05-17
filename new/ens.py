@@ -86,6 +86,7 @@ class NeuralEnsembleCPU(BaseEstimator, ClassifierMixin):
         self.clfs=[]
         self.train_data=None
         self.data_params=None
+        self.catch=None
 
     def fit(self,X,targets,verbose=False):
         data_params=get_dataset_params(X,targets)
@@ -97,7 +98,8 @@ class NeuralEnsembleCPU(BaseEstimator, ClassifierMixin):
             show_history(history)        
         self.binary_model=Extractor(binary_full,data_params['n_cats'])
         self.train_data=(X,targets)
-        return accuracy_desc(history)
+        self.catch= accuracy_desc(history)
+        return self.catch
 
     def train_clfs(self,train_data,multi_clf=None):
         if(multi_clf is None):

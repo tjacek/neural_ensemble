@@ -10,7 +10,7 @@ def single_exp(data_path,hyper_path,n_split,n_iter,ens_types):
         n_repeats=1,n_iter=n_iter)	
     with open(hyper_path,"a") as f:
         f.write(f'data:{data_path},{bayes_optim.get_setting()}\n')
-   for ens_type_i in ens_types:
+    for ens_type_i in ens_types:
 #        if(clfs.is_cpu(ens_type_i)):
         print(ens_type_i)
         ens_i= clfs.get_ens(ens_type_i)
