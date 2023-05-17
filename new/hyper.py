@@ -9,17 +9,18 @@ import pandas as pd
 import test,clfs,tools
 
 class BayesOptim(object):
-    def __init__(self,n_iter=5,n_split=3,
+    def __init__(self,n_iter=5,n_split=3,n_repeats=3,
                     scoring='balanced_accuracy',
                     verbosity=True):
         self.scoring=scoring
         self.n_iter=n_iter
         self.n_split=n_split
+        self.n_repeats=n_repeats
         self.verbosity=verbosity
     
     def __call__(self,X,y,clf,search_spaces):
         cv_gen=RepeatedStratifiedKFold(n_splits=self.n_split, 
-                    n_repeats=3, random_state=1)
+                n_repeats=self.n_repeats, random_state=1)
         search = BayesSearchCV(estimator=clf,verbose=0,n_iter=self.n_iter,
                 search_spaces=search_spaces,n_jobs=1,cv=cv_gen,
                 scoring=self.scoring)
@@ -43,8 +44,6 @@ class BayesCallback(object):
         self.count+=1
 
 def single_exp(data_path,hyper_path,n_split,n_iter,ens_types):
-#    df=pd.read_csv(data_path) 
-#    X,y=tools.prepare_data(df)
     X,y=tools.get_dataset(data_path)
     bayes_optim=BayesOptim( n_split=n_split,n_iter=n_iter)
     with open(hyper_path,"a") as f:

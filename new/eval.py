@@ -10,7 +10,7 @@ import pred
 def single_exp(pred_path,result_path,pvalue_path):
     pred_dict= pred.read_preds(pred_path)
     get_results(pred_dict,result_path)
-    get_pvalue(pred_dict,pvalue_path,metric='balanced_acc')
+    get_pvalue(pred_dict,pvalue_path,metric='acc')
 
 def select_exp(pred_path,acc_path):
     pred_dict= pred.read_preds(pred_path)

@@ -6,19 +6,29 @@ import clfs,hyper
 
 def single_exp(data_path,hyper_path,n_split,n_iter,ens_types):
     X,y=tools.get_dataset(data_path)
-    bayes_optim=hyper.BayesOptim(scoring=binary_minacc,n_split=n_split,n_iter=n_iter)	
-    for ens_type_i in ens_types:
+    bayes_optim=hyper.BayesOptim(scoring=binary_minacc,n_split=n_split,
+        n_repeats=1,n_iter=n_iter)	
+    with open(hyper_path,"a") as f:
+        f.write(f'data:{data_path},{bayes_optim.get_setting()}\n')
+   for ens_type_i in ens_types:
 #        if(clfs.is_cpu(ens_type_i)):
         print(ens_type_i)
         ens_i= clfs.get_ens(ens_type_i)
         search_i={hyper_i: Real(0.25, 5.0, prior='log-uniform') 
             for hyper_i in clfs.params_names(ens_i)}
         param_dict,best_score=bayes_optim(X,y,ens_i,search_i)
+        param_dict={ key_i:hyper.round_hype(hyper_i) 
+            for key_i,hyper_i in param_dict.items()}
+        print(param_dict)
+        ens_name=ens_i.__class__.__name__
+        with open(hyper_path,"a") as f:
+            f.write(f'{ens_name},{str(param_dict)},{best_score}\n')
 
 def binary_minacc(estimator, X, y):
-    print(X.shape)
-    raise Exception(X.shape)
-    
+    acc_desc=estimator.catch
+    acc_min= min(list(acc_desc.values()))  
+    return acc_min
+
 if __name__ == '__main__':
     args=hyper.parse_args()
     if(args.clfs=='all'):
