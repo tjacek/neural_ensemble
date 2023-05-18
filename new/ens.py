@@ -95,10 +95,10 @@ class NeuralEnsembleCPU(BaseEstimator, ClassifierMixin):
         y_binary=binarize(targets)
         history=train_model(X,y_binary,binary_full,data_params)
         if(verbose):
-            show_history(history)        
+            show_history(history,self.data_params)        
         self.binary_model=Extractor(binary_full,data_params['n_cats'])
         self.train_data=(X,targets)
-        self.catch= accuracy_desc(history)
+        self.catch= accuracy_desc(history,self.data_params)
         return self.catch
 
     def train_clfs(self,train_data,multi_clf=None):
@@ -146,17 +146,18 @@ class NeuralEnsembleCPU(BaseEstimator, ClassifierMixin):
         params=f'binary:{self.binary_builder},multi:{self.multi_clf}'
         return f'NeuralEnsembleCPU({params})'
 
-def show_history(history):
+def show_history(history,params):
     msg=''
     for key_i,value_i in history.history.items():
-        if('accuracy' in key_i):
+        print(key_i)
+        if(params['metric'].lower() in key_i):
             msg+=f'{key_i}:{value_i[-1]:.2f} '
     print(msg)
 
-def accuracy_desc(history):
+def accuracy_desc(history,params):
     acc_desc={}
     for key_i in history.history:
-        if('accuracy' in key_i):
+        if(params['metric'].lower() in key_i):
             acc_i=history.history[key_i][-1]
             acc_desc[key_i]=round(acc_i,4)
     return acc_desc
@@ -202,11 +203,12 @@ def get_dataset_params(X,y):
         class_weights[i]+=1
     param_dict['class_weights']={ key_i:(1.0/value_i) 
         for key_i,value_i in class_weights.items()}
+    param_dict['metric']='Precision'
     return param_dict
 
 def train_model(X,y,model,params,weights=None):
-    earlystopping = callbacks.EarlyStopping(monitor="accuracy",
-                mode="min", patience=5,restore_best_weights=True)
+    earlystopping = callbacks.EarlyStopping(monitor=params['metric'],
+                mode="max", patience=5,restore_best_weights=True)
     return model.fit(X,y,epochs=50,batch_size=params['batch_size'],
         verbose = 0,callbacks=earlystopping,class_weight=weights)
 
@@ -228,7 +230,7 @@ class BinaryBuilder(object):
             outputs.append(x_i)
         loss={f'binary{i}' :'categorical_crossentropy' 
                 for i in range(params['n_cats'])}
-        metrics={f'binary{i}' :'accuracy' 
+        metrics={f'binary{i}' : params['metric']  #'accuracy' 
                 for i in range(params['n_cats'])}
         model= Model(inputs=input_layer, outputs=outputs)#concat_layer)
         model.compile(loss=loss,  #'mean_squared_error',
@@ -276,7 +278,7 @@ class MultiInputBuilder(object):
             list(params['class_weights'].values() ))
         loss={f'multi{i}' : custom_loss #'categorical_crossentropy' 
                 for i in range(params['n_cats'])}
-        metrics={f'multi{i}' :'accuracy' 
+        metrics={f'multi{i}' : params['metric']#'accuracy' 
                 for i in range(params['n_cats'])}
 
         model= Model(inputs=inputs, outputs=outputs)
