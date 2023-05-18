@@ -65,12 +65,9 @@ def read_clf(in_path):
         json_str = json_bytes#.decode('utf-8')           
         desc = json.loads(json_str)
         clf_i=get_ens(desc['name'],desc['hyper'])
-#        clf_i.data_params={key_i:int(value_i)
-#            for key_i,value_i in desc['data'].items()
-#              if(key_i!='class_weights')}
         clf_i.data_params={}
         for key_i,value_i in desc['data'].items():
-            if(key_i!='class_weights'):
+            if(type(value_i)==str and value_i.isdigit()):#!='class_weights'):
                 value_i=int(value_i)
             clf_i.data_params[key_i]=value_i
         clf_i.empty_model()
