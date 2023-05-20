@@ -203,7 +203,7 @@ class BinaryBuilder(object):
         class_weight= list(params['class_weights'].values() )
         loss={f'binary{i}' : 'binary_crossentropy' 
                 for i in range(params['n_cats'])}
-        metrics={f'binary{i}' :  params['metric']()  #'accuracy'
+        metrics={f'binary{i}' :  get_metric(params['metric'])  #'accuracy'
                 for i in range(params['n_cats'])}
         model= Model(inputs=input_layer, outputs=outputs)
         model.compile(loss=loss, 
@@ -293,8 +293,13 @@ def get_dataset_params(X,y):
         class_weights[i]+=1
     param_dict['class_weights']={ key_i:(1.0/value_i) 
         for key_i,value_i in class_weights.items()}
-    param_dict['metric']= BalancedAccuracy #'Precision'
+    param_dict['metric']= 'balanced_accuracy' #'Precision'
     return param_dict
+
+def get_metric(name_i):
+    if(name_i=='balanced_accuracy'):
+        return BalancedAccuracy()
+    return name_i
 
 def train_model(X,y,model,params,weights=None):
     earlystopping = callbacks.EarlyStopping(monitor=params['metric'],
@@ -329,15 +334,20 @@ class BalancedAccuracy(keras.metrics.SparseCategoricalAccuracy):
         super().__init__(name, dtype=dtype)
 
     def update_state(self, y_true, y_pred, sample_weight=None):
+ #       raise Exception(y_true)
         y_flat = tf.argmax(y_true,axis=1)
-        y_pred= tf.argmax(y_pred,axis=1)
 
         y_true_int = tf.cast(y_flat, tf.int32)
 
         cls_counts = tf.math.bincount(y_true_int)
+        
+
         cls_counts = tf.math.reciprocal_no_nan(tf.cast(cls_counts, self.dtype))
+#        norm=  tf.cast(tf.size(cls_counts), self.dtype)
+#        cls_counts=  tf.math.multiply(norm,cls_counts)
         weight = tf.gather(cls_counts, y_true_int)
-        return super().update_state(y_true, y_pred, sample_weight=weight)
+#        y_pred=tf.argmax(y_pred,axis=1)
+        return super().update_state(y_flat, y_pred, sample_weight=weight)
 
 #    def __str__(self):
 #        return self.metric_name
