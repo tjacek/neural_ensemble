@@ -98,6 +98,6 @@ if __name__ == '__main__':
     tools.start_log(args.log_path)
     start=time()
     single_exp(args.data,args.n_splits,args.n_repeats,ens_type=args.ens,
-        hyper_path=args.hyper,out_path=args.out,verbose=args.verbose,
+        hyper_path=args.hyper,out_path=args.out,verbose=True,#args.verbose,
         acc_path=args.acc_path) 
     tools.log_time(f'TRAIN:{args.data}',start) 
