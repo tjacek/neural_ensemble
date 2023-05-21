@@ -45,10 +45,22 @@ class BayesCallback(object):
 
 def single_exp(data_path,hyper_path,n_split,n_iter,ens_types):
     X,y=tools.get_dataset(data_path)
-    bayes_optim=BayesOptim( n_split=n_split,n_iter=n_iter)
+#    bayes_optim=BayesOptim( n_split=n_split,n_iter=n_iter)
     with open(hyper_path,"a") as f:
-        f.write(f'data:{data_path},{bayes_optim.get_setting()}\n')
+        f.write(f'data:{data_path}')  
+#{bayes_optim.get_setting()}\n')
+    default_hyper(hyper_path, ens_types)
 
+def default_hyper(hyper_path, ens_types):
+    for ens_type_i in ens_types:
+        ens_i= clfs.get_ens(ens_type_i)
+        param_dict={hyper_i: 1.0 
+                for hyper_i in clfs.params_names(ens_i)}
+        ens_name=ens_i.__class__.__name__
+        with open(hyper_path,"a") as f:
+            f.write(f'{ens_name},{str(param_dict)},{1.0}\n') 
+
+def search(hyper_path, ens_types):
     for ens_type_i in ens_types:
         ens_i= clfs.get_ens(ens_type_i)
         search_i={hyper_i: Real(0.25, 5.0, prior='log-uniform') 
