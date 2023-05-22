@@ -3,18 +3,32 @@ import pandas as pd
 import numpy as np
 import tools,pred
 
-def make_summary(dir_path,out_path,metric='acc_mean'):
-    paths=tools.get_dirs(dir_path)
-    for path_i in paths:
+def make_summary(in_path,dir_path,out_path,metric='acc_mean'):
+    for path_i in tools.get_dirs(in_path):
         name_i=path_i.split('/')[-1]
-        result_i=f'{path_i}/results'
-        df=pd.read_csv(result_i) 
+        dir_i=f'{path_i}/{dir_path}'
+        df=pd.read_csv(f'{dir_i}/results')
         df=df.sort_values(by=metric,ascending=False)
-        df_pvalue=pd.read_csv(f'{path_i}/pvalue.txt') 
+        df_pvalue=pd.read_csv(f'{dir_i}/pvalue.txt')
         with open(out_path,"a") as f:
             f.write(f'{name_i}\n')
             f.write(df.to_csv())
             f.write(df_pvalue.to_csv())
+
+
+
+#def make_summary(dir_path,out_path,metric='acc_mean'):
+#    paths=tools.get_dirs(dir_path)
+#    for path_i in paths:
+#        name_i=path_i.split('/')[-1]
+#        result_i=f'{path_i}/results'
+#        df=pd.read_csv(result_i) 
+#        df=df.sort_values(by=metric,ascending=False)
+#        df_pvalue=pd.read_csv(f'{path_i}/pvalue.txt') 
+#        with open(out_path,"a") as f:
+#            f.write(f'{name_i}\n')
+#            f.write(df.to_csv())
+#            f.write(df_pvalue.to_csv())
 
 def short_summary(dir_path,out_path):
     paths=tools.get_dirs(dir_path)
@@ -76,18 +90,19 @@ def acc_summary(dir_path):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dir", type=str, default='../../out')
-    parser.add_argument("--metric", type=str, default='balanced_acc_mean')
-
-    parser.add_argument("--out", type=str, default='../../out/summary.txt')
-    parser.add_argument("--short",action='store_true')
-    parser.add_argument("--acc",action='store_true')
+    parser.add_argument("--in_path", type=str, default='../../balanced_default')
+#    parser.add_argument("--metric", type=str, default='balanced_acc_mean')
+    parser.add_argument("--dir", type=str, default='low')
+    parser.add_argument("--out_path", type=str, default='../../balanced_default/summary.txt')
+#    parser.add_argument("--short",action='store_true')
+#    parser.add_argument("--acc",action='store_true')
 
     args = parser.parse_args()
-    if(args.short):
-        short_summary(args.dir,args.out)
-    elif(args.acc):
-        acc_summary(args.dir)
-    else:
-        make_summary(args.dir,args.out,args.metric)
-#    best(args.dir)
+    print(args)
+    make_summary(args.in_path,args.dir,args.out_path)
+#    if(args.short):
+#        short_summary(args.dir,args.out)
+#    elif(args.acc):
+#        acc_summary(args.dir)
+#    else:
+#        make_summary(args.dir,args.out,args.metric)
