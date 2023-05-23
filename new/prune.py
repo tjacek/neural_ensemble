@@ -6,6 +6,14 @@ from collections import namedtuple
 
 import pred,models,variants
 
+class ThresholdCrit(object):
+    def __init__(self,threshold):
+        self.threshold=threshold
+
+    def __call__(self,acc_dict,i):
+        return [k for k,acc_k in enumerate(acc_dict[i].values())
+                    if(acc_k>self.threshold)]
+
 def single_exp(data_path,model_path,out_path):
     clf_types=['RF','SVC']
     variant_types=['NECSCF','common']
@@ -25,13 +33,15 @@ def ens_iter(data_path,model_path):
     dir_path= '/'.join(model_path.split('/')[:-1])
     acc_dict= pred.read_acc_dict(f'{dir_path}/acc.txt')
     modelsIO=models.ManyClfs(model_path)
+    crit=  ThresholdCrit(0.75)
     for i,clf_dict_i,train_i,test_i in modelsIO.split(X,y):             
         n_clf=len(acc_dict[i])
         for name_j,model_j in clf_dict_i.items():            
-#            binary= model_j.binary_model.predict(test_i[0])
-            threshold_i= 1.0 -(1/n_clf)
-            s_clf=[k for k,acc_k in enumerate(acc_dict[i].values())
-                        if(acc_k>threshold_i)]
+            s_clf=crit(acc_dict,i)
+            print(len(s_clf))
+#            if(len(s_clf)<3):
+#                s_clf=[]
+#            s_clf=None
             ens_j=variants.make_ensemble(model_j,train_i,test_i,s_clf)
             yield i,name_j,ens_j
 
