@@ -194,14 +194,8 @@ class BinaryBuilder(object):
             x_i=Dense(2, activation='softmax',name=f'binary{i}')(x_i)
             outputs.append(x_i)
 
-
-#        weights=list(params['class_weights'].values() )
-#        raise Exception(weights)
-
-#        custom_loss= weighted_categorical_crossentropy(
-#            list(params['class_weights'].values() ))
-        class_weight= list(params['class_weights'].values() )
-        loss={f'binary{i}' : 'binary_crossentropy' 
+#        class_weight= list(params['class_weights'].values() )
+        loss={f'binary{i}' : weighted_binary_loss(params['class_weights'],i)#'binary_crossentropy' 
                 for i in range(params['n_cats'])}
         metrics={f'binary{i}' :  get_metric(params['metric'])  #'accuracy'
                 for i in range(params['n_cats'])}
@@ -291,7 +285,7 @@ def get_dataset_params(X,y):
     class_weights={cat_i:1 for cat_i in range(param_dict['n_cats'])}
     for i in y:
         class_weights[i]+=1
-    param_dict['class_weights']={ key_i:(1.0/value_i) 
+    param_dict['class_weights']={ key_i:value_i#(1.0/value_i) 
         for key_i,value_i in class_weights.items()}
     param_dict['metric']= 'balanced_accuracy' #'Precision'
     return param_dict
@@ -323,10 +317,23 @@ def weighted_categorical_crossentropy(class_weight):
 #    class_weight=np.array([0.25,0.75],dtype=np.float32)
 #    return weighted_categorical_crossentropy(class_weight)
 
-def weighted_binary_loss( weights):
+def weighted_binary_loss( class_sizes,i):
+    rest= sum([value_j for j,value_j in class_sizes.items()
+                  if(j!=i)])
+    weights=[]
+    for k in class_sizes:
+        if(k==i):
+            weights.append( 1/class_sizes[k])
+        else:
+            weights.append(1/rest)
+    raise Exception(weights)
     def loss(y_obs,y_pred):
         weights = tf.constant(np.array(weights))
-        return tf.categorical_crossentropy(y_true, y_pred) * tf.sum((K.dot(y_true,weights) * y_pred), axis=1)
+        raise Exception(weights)
+        losses = tf.compat.v1.losses.sparse_softmax_cross_entropy(
+            labels=y_obs, logits=y_pred,weights=weight
+        )
+        return losses
     return loss
 
 class BalancedAccuracy(keras.metrics.SparseCategoricalAccuracy):
@@ -334,20 +341,9 @@ class BalancedAccuracy(keras.metrics.SparseCategoricalAccuracy):
         super().__init__(name, dtype=dtype)
 
     def update_state(self, y_true, y_pred, sample_weight=None):
- #       raise Exception(y_true)
         y_flat = tf.argmax(y_true,axis=1)
-
         y_true_int = tf.cast(y_flat, tf.int32)
-
         cls_counts = tf.math.bincount(y_true_int)
-        
-
         cls_counts = tf.math.reciprocal_no_nan(tf.cast(cls_counts, self.dtype))
-#        norm=  tf.cast(tf.size(cls_counts), self.dtype)
-#        cls_counts=  tf.math.multiply(norm,cls_counts)
         weight = tf.gather(cls_counts, y_true_int)
-#        y_pred=tf.argmax(y_pred,axis=1)
         return super().update_state(y_flat, y_pred, sample_weight=weight)
-
-#    def __str__(self):
-#        return self.metric_name
