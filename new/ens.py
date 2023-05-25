@@ -318,14 +318,7 @@ def weighted_categorical_crossentropy(class_weight):
 #    return weighted_categorical_crossentropy(class_weight)
 
 def weighted_binary_loss( class_sizes,i):
-    rest= sum([value_j for j,value_j in class_sizes.items()
-                  if(j!=i)])
-    weights=[]
-    for k in class_sizes:
-        if(k==i):
-            weights.append( 1/class_sizes[k])
-        else:
-            weights.append(1/rest)
+    weights= binary_weights(class_sizes,i)
     raise Exception(weights)
     def loss(y_obs,y_pred):
         weights = tf.constant(np.array(weights))
@@ -347,3 +340,17 @@ class BalancedAccuracy(keras.metrics.SparseCategoricalAccuracy):
         cls_counts = tf.math.reciprocal_no_nan(tf.cast(cls_counts, self.dtype))
         weight = tf.gather(cls_counts, y_true_int)
         return super().update_state(y_flat, y_pred, sample_weight=weight)
+
+def binary_weights(class_sizes,i,double=False ):
+    rest=[value_j for j,value_j in class_sizes.items()
+                  if(j!=i)]
+    if(double):
+        rest=[1/r for r in rest]
+    rest= sum(rest)
+    weights=[]
+    for k in class_sizes:
+        if(k==i):
+            weights.append( 1/class_sizes[k])
+        else:
+            weights.append(1/rest)
+    return np.array(weights)
