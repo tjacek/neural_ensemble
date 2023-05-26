@@ -213,7 +213,7 @@ class BinaryBuilder(object):
         return '_'.join([str(h) for h in self.hidden])
 
 class MultiInputBuilder(object):
-    def __init__(self,hidden=(1,1)):#first=1.5,second=0.33):
+    def __init__(self,hidden=(1,1)):
         self.hidden=hidden
 
     def __call__(self,params):
@@ -241,7 +241,6 @@ class MultiInputBuilder(object):
 
         model= Model(inputs=inputs, outputs=outputs)
         optim=tf.keras.optimizers.Adam(learning_rate=0.1)
-#        optim=tf.keras.optimizers.RMSprop(learning_rate=0.00001)
         model.compile(loss=loss,
             optimizer=optim,metrics=metrics)
         return model
@@ -313,16 +312,14 @@ def weighted_categorical_crossentropy(class_weight):
         return losses
     return loss
 
-#def weighted_binary_loss(class_weight):
-#    class_weight=np.array([0.25,0.75],dtype=np.float32)
-#    return weighted_categorical_crossentropy(class_weight)
-
 def weighted_binary_loss( class_sizes,i):
-    weights= binary_weights(class_sizes,i)
+    class_weights= binary_weights(class_sizes,i)
     raise Exception(weights)
     def loss(y_obs,y_pred):
-        weights = tf.constant(np.array(weights))
-        raise Exception(weights)
+        y_obs = tf.dtypes.cast(y_obs,tf.int32)
+        hothot = tf.one_hot(tf.reshape(y_obs,[-1]), depth=len(class_weight))
+        weight = tf.math.multiply(class_weight,hothot)
+        weight = tf.reduce_sum(weight,axis=-1)
         losses = tf.compat.v1.losses.sparse_softmax_cross_entropy(
             labels=y_obs, logits=y_pred,weights=weight
         )
