@@ -5,7 +5,7 @@ from tensorflow.keras.layers import Dense,BatchNormalization,Concatenate
 from tensorflow.keras import Input, Model
 from keras import callbacks
 from tensorflow import one_hot
-from sklearn.utils import class_weight
+#from sklearn.utils import class_weight
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn import preprocessing
 import learn,tools
@@ -314,11 +314,11 @@ def weighted_categorical_crossentropy(class_weight):
 
 def weighted_binary_loss( class_sizes,i):
     class_weights= binary_weights(class_sizes,i)
-    raise Exception(weights)
+#    raise Exception(weights)
     def loss(y_obs,y_pred):
         y_obs = tf.dtypes.cast(y_obs,tf.int32)
-        hothot = tf.one_hot(tf.reshape(y_obs,[-1]), depth=len(class_weight))
-        weight = tf.math.multiply(class_weight,hothot)
+        hothot = tf.one_hot(tf.reshape(y_obs,[-1]), depth=len(class_weights))
+        weight = tf.math.multiply(class_weights,hothot)
         weight = tf.reduce_sum(weight,axis=-1)
         losses = tf.compat.v1.losses.sparse_softmax_cross_entropy(
             labels=y_obs, logits=y_pred,weights=weight
@@ -350,4 +350,4 @@ def binary_weights(class_sizes,i,double=False ):
             weights.append( 1/class_sizes[k])
         else:
             weights.append(1/rest)
-    return np.array(weights)
+    return np.array(weights,dtype=np.float32)
