@@ -314,14 +314,18 @@ def weighted_categorical_crossentropy(class_weight):
 
 def weighted_binary_loss( class_sizes,i):
     class_weights= binary_weights(class_sizes,i)
-#    raise Exception(weights)
     def loss(y_obs,y_pred):
+#        print(y_pred)
+        print( (y_obs,y_pred))        
         y_obs = tf.dtypes.cast(y_obs,tf.int32)
         hothot = tf.one_hot(tf.reshape(y_obs,[-1]), depth=len(class_weights))
-        weight = tf.math.multiply(class_weights,hothot)
-        weight = tf.reduce_sum(weight,axis=-1)
+        weights = tf.math.multiply(class_weights,hothot)
+        weights = tf.reduce_sum(weights,axis=-1)
+        y_obs= tf.argmax(y_obs,axis=1)
+        print( (y_obs,y_pred,weights))        
+
         losses = tf.compat.v1.losses.sparse_softmax_cross_entropy(
-            labels=y_obs, logits=y_pred,weights=weight
+            labels=y_obs, logits=y_pred,weights=weights
         )
         return losses
     return loss
