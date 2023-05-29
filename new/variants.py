@@ -7,6 +7,9 @@ class Ensemble(object):
         self.train=train
         self.test=test
 
+    def __len__(self):
+        return len(self.train.binary)
+
     def __call__(self,clf_type_i,variant_type_i='basic'):
         variant_i=get_variant(variant_type_i)
         return variant_i(self,clf_type_i)
@@ -35,6 +38,8 @@ def get_variant(variant_type_i):
         return common_variant
 
 def basic_variant(inst_i,clf_type_i):
+    if(len(inst_i)==0):
+        return common_variant(inst_i,clf_type_i)
     clfs=[]
     common_i =inst_i.train.common
     for binary_j in inst_i.train.binary:
@@ -45,7 +50,7 @@ def basic_variant(inst_i,clf_type_i):
     votes=[]    
   
     common,binary=inst_i.test.common,inst_i.test.binary
-    print(len(binary))
+    print(f'binary:{len(binary)}')
     for j,clf_j in enumerate(clfs):
         multi_i=np.concatenate([common,binary[j]],axis=1)
         vote_i= clf_j.predict_proba(multi_i)

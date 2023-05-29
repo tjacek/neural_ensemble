@@ -70,6 +70,9 @@ def read_clf(in_path):
             if(type(value_i)==str and value_i.isdigit()):#!='class_weights'):
                 value_i=int(value_i)
             clf_i.data_params[key_i]=value_i
+        clf_i.data_params['class_weights']={
+             int(key_i):value_i
+           for key_i,value_i in clf_i.data_params['class_weights'].items()}
         clf_i.empty_model()
         clf_i.load_weights(in_path)
         print(str(clf_i))
