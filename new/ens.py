@@ -94,7 +94,6 @@ class NeuralEnsembleCPU(BaseEstimator, ClassifierMixin):
         self.data_params=data_params
         binary_full=self.binary_builder(data_params)
         y_binary=binarize(targets)
-#        raise Exception(y_binary[0].shape)
         history=train_model(X,y_binary,binary_full,data_params)
         if(verbose):
             show_history(history,self.data_params)        
@@ -314,15 +313,15 @@ def weighted_categorical_crossentropy(class_weight):
 
 def weighted_binary_loss( class_sizes,i):
     class_weights= binary_weights(class_sizes,i)
-    def loss(y_obs,y_pred):
-#        print(y_pred)
-        print( (y_obs,y_pred))        
+    def loss(y_obs,y_pred):        
         y_obs = tf.dtypes.cast(y_obs,tf.int32)
-        hothot = tf.one_hot(tf.reshape(y_obs,[-1]), depth=len(class_weights))
+#        hothot = tf.one_hot(tf.reshape(y_obs,[-1]), depth=len(class_weights))
+        hothot=  tf.dtypes.cast( y_obs,tf.float32)
+
         weights = tf.math.multiply(class_weights,hothot)
+
         weights = tf.reduce_sum(weights,axis=-1)
         y_obs= tf.argmax(y_obs,axis=1)
-        print( (y_obs,y_pred,weights))        
 
         losses = tf.compat.v1.losses.sparse_softmax_cross_entropy(
             labels=y_obs, logits=y_pred,weights=weights
@@ -345,13 +344,14 @@ class BalancedAccuracy(keras.metrics.SparseCategoricalAccuracy):
 def binary_weights(class_sizes,i,double=False ):
     rest=[value_j for j,value_j in class_sizes.items()
                   if(j!=i)]
-    if(double):
-        rest=[1/r for r in rest]
+#    if(double):
+#        rest=[1/r for r in rest]
     rest= sum(rest)
-    weights=[]
-    for k in class_sizes:
-        if(k==i):
-            weights.append( 1/class_sizes[k])
-        else:
-            weights.append(1/rest)
-    return np.array(weights,dtype=np.float32)
+    weights=[1/rest, 1/class_sizes[i]]
+#    weights=[]
+#    for k in class_sizes:
+#        if(k==i):
+#            weights.append( 1/class_sizes[k])
+#        else:
+#            weights.append(1/rest)
+    return np.array(weights,dtype=np.float32)/sum(weights)
