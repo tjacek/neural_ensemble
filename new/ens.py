@@ -283,7 +283,7 @@ def get_dataset_params(X,y):
     class_weights={cat_i:1 for cat_i in range(param_dict['n_cats'])}
     for i in y:
         class_weights[i]+=1
-    param_dict['class_weights']={ key_i:value_i#(1.0/value_i) 
+    param_dict['class_weights']={ int(key_i):value_i#(1.0/value_i) 
         for key_i,value_i in class_weights.items()}
     param_dict['metric']= 'balanced_accuracy' #'Precision'
     return param_dict

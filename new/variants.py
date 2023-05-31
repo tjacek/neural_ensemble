@@ -1,5 +1,6 @@
 import numpy as np
 from collections import namedtuple
+from sklearn.preprocessing import OneHotEncoder
 import learn
 
 class Ensemble(object):
@@ -39,22 +40,16 @@ def get_variant(variant_type_i):
 
 def basic_variant(inst_i,clf_type_i):
     if(len(inst_i)==0):
-        return common_variant(inst_i,clf_type_i)
-    clfs=[]
-    common_i =inst_i.train.common
-    for binary_j in inst_i.train.binary:
-        multi_i=np.concatenate([common_i,binary_j],axis=1)
-        clf_j =learn.get_clf(clf_type_i)
-        clf_j.fit(multi_i,inst_i.train.targets)
-        clfs.append(clf_j)
-    votes=[]    
-  
-    common,binary=inst_i.test.common,inst_i.test.binary
-    print(f'binary:{len(binary)}')
-    for j,clf_j in enumerate(clfs):
-        multi_i=np.concatenate([common,binary[j]],axis=1)
-        vote_i= clf_j.predict_proba(multi_i)
-        votes.append(vote_i)
+        return common_variant(inst_i,clf_type_i)  
+    clfs=train_clfs(clf_type_i,inst_i.train)
+
+    votes=eval_clfs(clfs,inst_i.test)
+#    one_hot= OneHotEncoder()
+#    base_vote= one_hot.fit_transform(  common_variant(inst_i,clf_type_i))
+    raw=common_variant(inst_i,clf_type_i)
+    base_vote = np.zeros((raw.size, raw.max() + 1))
+    base_vote[np.arange(raw.size), raw] = 1
+    votes.append(base_vote)
     votes=np.array(votes)
     prob=np.sum(votes,axis=0)
     return np.argmax(prob,axis=1)
@@ -63,3 +58,21 @@ def common_variant(inst_i,clf_type_i):
     clf_j =learn.get_clf(clf_type_i)
     clf_j.fit(inst_i.train.common,inst_i.train.targets)
     return clf_j.predict(inst_i.test.common)
+
+def train_clfs(clf_type_i,dataset):
+    clfs=[]
+    for binary_j in dataset.binary:
+        multi_i=np.concatenate([dataset.common,binary_j],axis=1)
+        clf_j =learn.get_clf(clf_type_i)
+        clf_j.fit(multi_i,dataset.targets)
+        clfs.append(clf_j)
+    return clfs
+
+def eval_clfs(clfs,dataset):
+    votes=[]
+    for j,clf_j in enumerate(clfs):
+        binary_j=dataset.binary[j]
+        multi_i=np.concatenate([dataset.common,binary_j],axis=1)
+        vote_i= clf_j.predict_proba(multi_i)
+        votes.append(vote_i)
+    return votes

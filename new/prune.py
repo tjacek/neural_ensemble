@@ -39,8 +39,8 @@ def ens_iter(data_path,model_path):
         for name_j,model_j in clf_dict_i.items():            
             s_clf=crit(acc_dict,i)
             print(len(s_clf))
-#            if(len(s_clf)<3):
-#                s_clf=[]
+            if(len(s_clf)<3):
+                s_clf=[]
 #            s_clf=None
             ens_j=variants.make_ensemble(model_j,train_i,test_i,s_clf)
             yield i,name_j,ens_j
