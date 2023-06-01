@@ -22,8 +22,8 @@ do
   model_i="${dir_path}/models"
   acc_i="${dir_path}/acc.txt"
 
-#  python3 hyper_binary.py --data "${data_i}" --hyper "${hyper_i}" \
-#    --n_split ${n_split} --n_iter ${bayes_iter} --clfs ${clfs} --log_path ${log_path}
+  python3 hyper_binary.py --data "${data_i}" --hyper "${hyper_i}" \
+    --n_split ${n_split} --n_iter ${bayes_iter} --clfs ${clfs} --log_path ${log_path}
 
   python3 train.py --data "${data_i}" --hyper "${hyper_i}" \
         --out "${model_i}" --ens 'CPU' --n_splits "${n_split}" \
@@ -36,11 +36,11 @@ do
   pvalue_i="${result_dir_i}/pvalue.txt"
   pred_i="${result_dir_i}/pred"
 
-#  python3 prune.py --data ${data_i} --models ${model_i} \
-#     --out ${pred_i} --log_path ${log_path} 
+  python3 prune.py --data ${data_i} --models ${model_i} \
+     --out ${pred_i} --log_path ${log_path} 
 
- # python3 eval.py --pred ${pred_i} --results ${results_i} \
- #    --p_value ${pvalue_i}
+  python3 eval.py --pred ${pred_i} --results ${results_i} \
+     --p_value ${pvalue_i}
 
   
 #        --results ${results_i} --p_value ${pvalue_i} --log_path ${log_path}

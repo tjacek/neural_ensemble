@@ -190,6 +190,7 @@ class BinaryBuilder(object):
                 name_j=self.layer_name(i,j)
                 x_i=Dense(hidden_j,activation='relu',
                     name=name_j)(x_i)
+            x_i=BatchNormalization(name=f'batch{i}')(x_i)
             x_i=Dense(2, activation='softmax',name=f'binary{i}')(x_i)
             outputs.append(x_i)
 
