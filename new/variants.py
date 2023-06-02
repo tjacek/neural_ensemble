@@ -10,6 +10,9 @@ class Ensemble(object):
 
     def __len__(self):
         return len(self.train.binary)
+    
+    def n_cats(self):
+        return max(self.train.targets)+1
 
     def __call__(self,clf_type_i,variant_type_i='basic'):
         variant_i=get_variant(variant_type_i)
@@ -47,8 +50,12 @@ def basic_variant(inst_i,clf_type_i):
 #    one_hot= OneHotEncoder()
 #    base_vote= one_hot.fit_transform(  common_variant(inst_i,clf_type_i))
     raw=common_variant(inst_i,clf_type_i)
-    base_vote = np.zeros((raw.size, raw.max() + 1))
-    base_vote[np.arange(raw.size), raw] = 1
+    if(len(raw.shape)==1):
+        base_vote = np.zeros((raw.size, inst_i.n_cats()))
+        base_vote[np.arange(raw.size), raw] = 1
+    else:
+        base_vote=raw
+    print(base_vote.shape)
     votes.append(base_vote)
     votes=np.array(votes)
     prob=np.sum(votes,axis=0)
