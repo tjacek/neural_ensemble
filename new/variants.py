@@ -40,27 +40,29 @@ def get_variant(variant_type_i):
         return basic_variant
     if(variant_type_i=='common'):
         return common_variant
+    if(variant_type_i=='binary'):
+        return binary_variant
 
 def basic_variant(inst_i,clf_type_i):
     if(len(inst_i)==0):
         return common_variant(inst_i,clf_type_i)  
     clfs=train_clfs(clf_type_i,inst_i.train)
-
     votes=eval_clfs(clfs,inst_i.test)
-#    one_hot= OneHotEncoder()
-#    base_vote= one_hot.fit_transform(  common_variant(inst_i,clf_type_i))
     raw=common_variant(inst_i,clf_type_i)
-    if(len(raw.shape)==1):
-        base_vote = np.zeros((raw.size, inst_i.n_cats()))
-        base_vote[np.arange(raw.size), raw] = 1
-    else:
-        base_vote=raw
-    print(base_vote.shape)
-    votes.append(base_vote)
-    votes=np.array(votes)
-    prob=np.sum(votes,axis=0)
-    return np.argmax(prob,axis=1)
+    votes.append(to_one_hot(raw,inst_i))
+    return voting(votes)
 
+def binary_variant(inst_i,clf_type_i):
+    votes=[]
+    for train_j,test_j in zip(inst_i.train.binary,inst_i.test.binary):
+        clf_j =learn.get_clf(clf_type_i)
+        clf_j.fit(train_j,inst_i.train.targets)
+        vote_j= clf_j.predict_proba(test_j)
+        votes.append(vote_j)
+#    votes=eval_clfs(clfs,inst_i.test)
+#    raise Exception(votes[0].shape)
+    return voting( votes)
+    
 def common_variant(inst_i,clf_type_i):
     clf_j =learn.get_clf(clf_type_i)
     clf_j.fit(inst_i.train.common,inst_i.train.targets)
@@ -83,3 +85,16 @@ def eval_clfs(clfs,dataset):
         vote_i= clf_j.predict_proba(multi_i)
         votes.append(vote_i)
     return votes
+
+def voting(votes):
+    votes=np.array(votes)
+    prob=np.sum(votes,axis=0)
+    return np.argmax(prob,axis=1)
+
+def to_one_hot(raw,inst_i):
+    if(len(raw.shape)==1):
+        base_vote = np.zeros((raw.size, inst_i.n_cats()))
+        base_vote[np.arange(raw.size), raw] = 1
+    else:
+        base_vote=raw
+    return base_vote
