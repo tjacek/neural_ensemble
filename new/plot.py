@@ -39,13 +39,14 @@ def indv_acc(data_path,model_path,clf='RF'):
             ens_j=variants.make_ensemble(model_j,train_i,test_i,None)
             clfs=variants.train_clfs(clf,ens_j.train)
             votes=variants.eval_clfs(clfs,ens_j.test)
-            for i,vote_i in enumerate(votes):
-                pred_i=np.argmax(vote_i,axis=1)
-                acc_i= accuracy_score(pred_i,ens_j.get_true())
-                print(acc_i)
-#    feats_i= list(binary_iter(data_path,model_path))[0]
-#    name_i,common_i,binary_i,y_test= feats_i
-#    np.concatenate([common_i,binary_i],axis=0)
+            dict_j={}   
+            for t,vote_t in enumerate(votes):
+                pred_t=np.argmax(vote_t,axis=1)
+                acc_t= accuracy_score(pred_t,ens_j.get_true())
+                dict_j[t]=acc_t
+            pred_j=variants.common_variant(ens_j,clf)
+            dict_j['common']=accuracy_score(pred_j,ens_j.get_true())
+            print(dict_j)
 
 def binary_iter(data_path,binary_path):
     clf_dict,(train_i,test_i)=models.single_read(binary_path)
