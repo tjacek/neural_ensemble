@@ -14,9 +14,27 @@ class ThresholdCrit(object):
         return [k for k,acc_k in enumerate(acc_dict[i].values())
                     if(acc_k>self.threshold)]
 
+class BestCrit(object):
+    def __init__(self,n):
+        self.n=n
+
+    def __call__(self,acc_dict,i):
+        indexes,acc=[],[]
+        for k,acc_k in enumerate(acc_dict[i].values()):
+            indexes.append(k)
+            acc.append(acc_k)
+        s_clf= [indexes[t] 
+            for t in np.argsort(acc)[-self.n:]]
+        print(acc[s_clf[0]])
+        return s_clf
+
+def no_selection(acc_dict,i):
+    n_clf=len(acc_dict[i])
+    return np.arange(n_clf)
+
 def single_exp(data_path,model_path,out_path):
     clf_types=['RF','SVC']
-    variant_types=['NECSCF','common']
+    variant_types=['NECSCF','common','binary']
     pred_dict=pred.AllPreds()
     for i,type_j,ens_j in ens_iter(data_path,model_path):
         pred_dict.true[i]=ens_j.get_true()
@@ -33,14 +51,15 @@ def ens_iter(data_path,model_path):
     dir_path= '/'.join(model_path.split('/')[:-1])
     acc_dict= pred.read_acc_dict(f'{dir_path}/acc.txt')
     modelsIO=models.ManyClfs(model_path)
-    crit=  ThresholdCrit(0.75)
+    crit= BestCrit(1) #ThresholdCrit(0.75)
     for i,clf_dict_i,train_i,test_i in modelsIO.split(X,y):             
-        n_clf=len(acc_dict[i])
+#        n_clf=len(acc_dict[i])
         for name_j,model_j in clf_dict_i.items():            
             s_clf=crit(acc_dict,i)
-            print(len(s_clf))
-            if(len(s_clf)<3):
-                s_clf=[]
+            print(s_clf)
+#            print(len(s_clf))
+#            if(len(s_clf)<3):
+#                s_clf=[]
 #            s_clf=None
             ens_j=variants.make_ensemble(model_j,train_i,test_i,s_clf)
             yield i,name_j,ens_j
