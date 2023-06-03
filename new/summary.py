@@ -90,16 +90,17 @@ def acc_summary(dir_path):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--in_path", type=str, default='../../balanced_default')
+    parser.add_argument("--in_path", type=str, default='../../mult_acc')
 #    parser.add_argument("--metric", type=str, default='balanced_acc_mean')
-    parser.add_argument("--dir", type=str, default='low')
-    parser.add_argument("--out_path", type=str, default='../../balanced_default/summary.txt')
+    parser.add_argument("--dir", type=str, default='high')
+    parser.add_argument("--out_path", type=str, default='../../mult_acc')#/summary.txt')
 #    parser.add_argument("--short",action='store_true')
 #    parser.add_argument("--acc",action='store_true')
 
     args = parser.parse_args()
     print(args)
-    make_summary(args.in_path,args.dir,args.out_path)
+    out_path=f'{args.out_path}/{args.dir}'
+    make_summary(args.in_path,args.dir,out_path)
 #    if(args.short):
 #        short_summary(args.dir,args.out)
 #    elif(args.acc):
