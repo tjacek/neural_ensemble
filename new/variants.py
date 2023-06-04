@@ -37,20 +37,27 @@ def make_ensemble(nn_i,train_i,test_i,s_clf=None):
 
 def get_variant(variant_type_i):
     if(variant_type_i=='NECSCF'):
-        return basic_variant
+        return BasicVariant(False)
+    if(variant_type_i=='NECSCF2'):
+        return BasicVariant(True)
     if(variant_type_i=='common'):
         return common_variant
     if(variant_type_i=='binary'):
         return binary_variant
 
-def basic_variant(inst_i,clf_type_i):
-    if(len(inst_i)==0):
-        return common_variant(inst_i,clf_type_i)  
-    clfs=train_clfs(clf_type_i,inst_i.train)
-    votes=eval_clfs(clfs,inst_i.test)
-    raw=common_variant(inst_i,clf_type_i)
-    votes.append(to_one_hot(raw,inst_i))
-    return voting(votes)
+class BasicVariant(object):
+    def __init__(self,common=False):
+        self.common=False
+
+    def __call__(self,inst_i,clf_type_i):
+        if(len(inst_i)==0):
+            return common_variant(inst_i,clf_type_i)  
+        clfs=train_clfs(clf_type_i,inst_i.train)
+        votes=eval_clfs(clfs,inst_i.test)
+        if(self.common):
+            raw=common_variant(inst_i,clf_type_i)
+            votes.append(to_one_hot(raw,inst_i))
+        return voting(votes)
 
 def binary_variant(inst_i,clf_type_i):
     votes=[]
@@ -59,8 +66,6 @@ def binary_variant(inst_i,clf_type_i):
         clf_j.fit(train_j,inst_i.train.targets)
         vote_j= clf_j.predict_proba(test_j)
         votes.append(vote_j)
-#    votes=eval_clfs(clfs,inst_i.test)
-#    raise Exception(votes[0].shape)
     return voting( votes)
     
 def common_variant(inst_i,clf_type_i):

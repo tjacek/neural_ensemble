@@ -1,11 +1,11 @@
 data_path='../../uci'
-out_path='../../prec_prune'
+out_path='../../mult_acc'
 n_split=10
 n_repeats=10
 bayes_iter=20
 clfs="all" #'GPU,CPU'  
 log_path="${out_path}/time.log"
-result_dir="high"
+result_dir="raw"
 
 mkdir ${out_path}
 
@@ -22,12 +22,12 @@ do
   model_i="${dir_path}/models"
   acc_i="${dir_path}/acc.txt"
 
-  python3 hyper_binary.py --data "${data_i}" --hyper "${hyper_i}" \
-    --n_split ${n_split} --n_iter ${bayes_iter} --clfs ${clfs} --log_path ${log_path}
+#  python3 hyper_binary.py --data "${data_i}" --hyper "${hyper_i}" \
+#    --n_split ${n_split} --n_iter ${bayes_iter} --clfs ${clfs} --log_path ${log_path}
 
-  python3 train.py --data "${data_i}" --hyper "${hyper_i}" \
-        --out "${model_i}" --ens 'CPU' --n_splits "${n_split}" \
-        --n_repeats "${n_repeats}" --log_path ${log_path} --acc_path "${acc_i}"
+#  python3 train.py --data "${data_i}" --hyper "${hyper_i}" \
+#        --out "${model_i}" --ens 'CPU' --n_splits "${n_split}" \
+#        --n_repeats "${n_repeats}" --log_path ${log_path} --acc_path "${acc_i}"
  
   result_dir_i="${dir_path}/${result_dir}"
   echo "${result_dir_i}"
@@ -42,8 +42,8 @@ do
   python3 eval.py --pred ${pred_i} --results ${results_i} \
      --p_value ${pvalue_i}
 
-  
-#        --results ${results_i} --p_value ${pvalue_i} --log_path ${log_path}
 done
 
-#python3 summary.py --dir ${out_path}  --metric 'acc_mean' --out "${out_path}/summary.txt"
+python3 summary.py --in_path "${out_path}" --dir "${result_dir}" --out_path "${out_path}"  
+
+#--dir ${out_path}   --out "${out_path}/summary.txt"
