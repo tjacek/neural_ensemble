@@ -7,10 +7,11 @@ from scipy import stats
 from collections import defaultdict
 import pred
 
-def single_exp(pred_path,result_path,pvalue_path):
+def single_exp(pred_path,result_path,pvalue_path,main_variant='better'):
     pred_dict= pred.read_preds(pred_path)
     get_results(pred_dict,result_path)
-    get_pvalue(pred_dict,pvalue_path,metric='acc')
+    get_pvalue(pred_dict,pvalue_path,metric='acc',
+        main_variant=main_variant)
 
 def select_exp(pred_path,acc_path):
     pred_dict= pred.read_preds(pred_path)
@@ -37,11 +38,12 @@ def get_results(pred_dict,result_path=None):
     if(not (result_path is None)):
         df.to_csv(result_path, index=False)
 
-def get_pvalue(pred_dict,pvalue_path=None,metric='balanced_acc'):
+def get_pvalue(pred_dict,pvalue_path=None,metric='balanced_acc',
+                main_variant='NECSCF'):
     metric_dict=pred_dict.compute_metric(metric)
     ens_names,clf_names=[],[]
     for key_i in metric_dict:
-        if('NECSCF' in key_i):
+        if(main_variant in key_i):
             ens_names.append(key_i)
         else:
             clf_names.append(key_i)
@@ -53,6 +55,7 @@ def get_pvalue(pred_dict,pvalue_path=None,metric='balanced_acc'):
             p_value=round(r[1],4)
             line_ij=[ens_i,clf_j,p_value,(p_value<0.05)]
             lines.append(line_ij)
+    print(lines)
     df=pd.DataFrame(lines,columns=['ens','clf','p_value','sig'])
     print(df)
     if(not (pvalue_path is None)):
