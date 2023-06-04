@@ -34,7 +34,7 @@ def no_selection(acc_dict,i):
 
 def single_exp(data_path,model_path,out_path):
     clf_types=['RF','SVC']
-    variant_types=['NECSCF','common','binary']
+    variant_types=['better','common']# 'NECSCF','binary']
     pred_dict=pred.AllPreds()
     for i,type_j,ens_j in ens_iter(data_path,model_path):
         pred_dict.true[i]=ens_j.get_true()
@@ -51,7 +51,7 @@ def ens_iter(data_path,model_path):
     dir_path= '/'.join(model_path.split('/')[:-1])
     acc_dict= pred.read_acc_dict(f'{dir_path}/acc.txt')
     modelsIO=models.ManyClfs(model_path)
-    crit= BestCrit(1) #ThresholdCrit(0.75)
+    crit=no_selection #BestCrit(1) #ThresholdCrit(0.75)
     for i,clf_dict_i,train_i,test_i in modelsIO.split(X,y):             
 #        n_clf=len(acc_dict[i])
         for name_j,model_j in clf_dict_i.items():            

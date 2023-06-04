@@ -1,6 +1,7 @@
 import numpy as np
 from collections import namedtuple
 from sklearn.preprocessing import OneHotEncoder
+from sklearn.metrics import accuracy_score
 import learn
 
 class Ensemble(object):
@@ -20,6 +21,11 @@ class Ensemble(object):
 
     def get_true(self):
         return self.test.targets
+
+    def get_acc(self,y_pred):
+        if( len(y_pred.shape)==2):
+            y_pred=np.argmax( y_pred,axis=1)
+        return accuracy_score(self.get_true(),y_pred)
 
 def make_ensemble(nn_i,train_i,test_i,s_clf=None):
     Dataset = namedtuple('Dataset','common binary targets')
@@ -44,6 +50,8 @@ def get_variant(variant_type_i):
         return common_variant
     if(variant_type_i=='binary'):
         return binary_variant
+    if(variant_type_i=='better'):
+        return better_variant
 
 class BasicVariant(object):
     def __init__(self,common=False):
@@ -67,11 +75,25 @@ def binary_variant(inst_i,clf_type_i):
         vote_j= clf_j.predict_proba(test_j)
         votes.append(vote_j)
     return voting( votes)
-    
+
 def common_variant(inst_i,clf_type_i):
     clf_j =learn.get_clf(clf_type_i)
     clf_j.fit(inst_i.train.common,inst_i.train.targets)
     return clf_j.predict(inst_i.test.common)
+
+def better_variant(inst_i,clf_type_i):
+    y_pred=common_variant(inst_i,clf_type_i)
+    common_acc=inst_i.get_acc(y_pred)
+    clfs=train_clfs(clf_type_i,inst_i.train)
+    votes=eval_clfs(clfs,inst_i.test)
+    s_votes=[]
+    for vote_i in votes:
+        acc_i=inst_i.get_acc(vote_i)
+        if(acc_i>common_acc):
+            s_votes.append(vote_i)
+    if(len(s_votes)==0):
+        return y_pred#np.argmax(y_pred,axis=1)
+    return voting(s_votes)
 
 def train_clfs(clf_type_i,dataset):
     clfs=[]
