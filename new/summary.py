@@ -4,31 +4,27 @@ import numpy as np
 import tools,pred
 
 def make_summary(in_path,dir_path,out_path,metric='acc_mean'):
-    for path_i in tools.get_dirs(in_path):
-        name_i=path_i.split('/')[-1]
-        dir_i=f'{path_i}/{dir_path}'
-        df=pd.read_csv(f'{dir_i}/results')
-        df=df.sort_values(by=metric,ascending=False)
-        df_pvalue=pd.read_csv(f'{dir_i}/pvalue.txt')
+#    for path_i in tools.get_dirs(in_path):
+#        name_i=path_i.split('/')[-1]
+#        dir_i=f'{path_i}/{dir_path}'
+#        df=pd.read_csv(f'{dir_i}/results')
+#        df=df.sort_values(by=metric,ascending=False)
+#        df_pvalue=pd.read_csv(f'{dir_i}/pvalue.txt')
+    for name_i,df,df_pvalue in result_iter(in_path,dir_path,metric):
         with open(out_path,"a") as f:
             f.write(f'{name_i}\n')
             f.write(df.to_csv())
             f.write(df_pvalue.to_csv())
 
 
-
-#def make_summary(dir_path,out_path,metric='acc_mean'):
-#    paths=tools.get_dirs(dir_path)
-#    for path_i in paths:
-#        name_i=path_i.split('/')[-1]
-#        result_i=f'{path_i}/results'
-#        df=pd.read_csv(result_i) 
-#        df=df.sort_values(by=metric,ascending=False)
-#        df_pvalue=pd.read_csv(f'{path_i}/pvalue.txt') 
-#        with open(out_path,"a") as f:
-#            f.write(f'{name_i}\n')
-#            f.write(df.to_csv())
-#            f.write(df_pvalue.to_csv())
+def result_iter(in_path,dir_path,metric='acc_mean'):
+    for path_i in tools.get_dirs(in_path):
+        name_i=path_i.split('/')[-1]
+        dir_i=f'{path_i}/{dir_path}'
+        df=pd.read_csv(f'{dir_i}/results')
+        df=df.sort_values(by=metric,ascending=False)
+        df_pvalue=pd.read_csv(f'{dir_i}/pvalue.txt')
+        yield name_i,df,df_pvalue
 
 def short_summary(dir_path,out_path):
     paths=tools.get_dirs(dir_path)
@@ -52,31 +48,30 @@ def short_summary(dir_path,out_path):
     df= pd.DataFrame(lines,columns=cols)
     print(df)
 
-def best(dir_path,metric='balanced_acc_mean'):
-    paths=tools.get_dirs(dir_path)
-    cols=['dataset','best','second','p_value','sig']
-    lines=[]
-    for path_i in paths:
-        name_i=path_i.split('/')[-1]
-        result_i=f'{path_i}/results'
-        df=pd.read_csv(result_i) 
-        df['ens']=df['clf'].apply(lambda clf_i: ('NECSCF' in clf_i))
-        df_pvalue=pd.read_csv(f'{path_i}/pvalue.txt') 
-        df=df.sort_values(by=metric,ascending=False)
+#def best(dir_path,metric='balanced_acc_mean'):
+#    paths=tools.get_dirs(dir_path)
+#    cols=['dataset','best','second','p_value','sig']
+#    lines=[]
+#    for path_i in paths:
+#        name_i=path_i.split('/')[-1]
+#        result_i=f'{path_i}/results'
+#        df=pd.read_csv(result_i) 
+#        df['ens']=df['clf'].apply(lambda clf_i: ('NECSCF' in clf_i))
+#        df_pvalue=pd.read_csv(f'{path_i}/pvalue.txt') 
+#        df=df.sort_values(by=metric,ascending=False)
 
-        best,is_ens=df.iloc[0]['clf'],df.iloc[0]['ens']
+#        best,is_ens=df.iloc[0]['clf'],df.iloc[0]['ens']
         
-        tmp= df[df['ens']==(not is_ens)].sort_values(by=metric,ascending=False)
-        second= tmp.iloc[0]['clf']
+#        tmp= df[df['ens']==(not is_ens)].sort_values(by=metric,ascending=False)
+#        second= tmp.iloc[0]['clf']
 
-        ens_type,clf_type = (best,second)  if(is_ens) else (second,best)
+#        ens_type,clf_type = (best,second)  if(is_ens) else (second,best)
 
-        p_row=df_pvalue[ (df_pvalue['ens']==ens_type) &
-                    (df_pvalue['clf']==clf_type)]
-#        df_pvalue[]
-        lines.append([name_i,best,second,float(p_row['p_value']),str(p_row['sig'])])
-    df= pd.DataFrame(lines,columns=cols)
-    print(df)
+#        p_row=df_pvalue[ (df_pvalue['ens']==ens_type) &
+#                    (df_pvalue['clf']==clf_type)]
+#        lines.append([name_i,best,second,float(p_row['p_value']),str(p_row['sig'])])
+#    df= pd.DataFrame(lines,columns=cols)
+#    print(df)
 
 def acc_summary(dir_path):
     for path_i in tools.get_dirs(dir_path):
