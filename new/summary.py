@@ -21,6 +21,18 @@ def result_iter(in_path,dir_path,metric='acc_mean'):
         yield name_i,df,df_pvalue
 
 def comp_summary(in_path:str,dirs:list,out_path:str):
+    df_dict=make_dataframes(in_path,dirs)
+    for name_i,df_list in df_dict.items():
+        full_df=pd.concat(df_list)
+        full_df=full_df.sort_values(by='acc_mean',ascending=False)
+
+        print(full_df)
+#        with open(out_path,"a") as f:
+#            f.write(f'{name_i}\n')
+#            for df_i in df_list:
+#                f.write(df_i.to_csv())
+
+def make_dataframes(in_path,dirs):
     df_dict=defaultdict(lambda:[])
     for dir_i in dirs:
         for name_j,df,df_pvalue in  result_iter(in_path,dir_i):
@@ -29,13 +41,9 @@ def comp_summary(in_path:str,dirs:list,out_path:str):
             df['dataset']=df['dataset'].apply(lambda alg_i: name_j)
             df=df.round(decimals=4)
             df=df[['dataset','variant','clf','acc_mean','acc_std']]
-            df=df.sort_values(by='variant',ascending=False)
+#           df=df.sort_values(by='variant',ascending=False)
             df_dict[name_j].append(df)
-    for name_i,df_list in df_dict.items():
-        with open(out_path,"a") as f:
-            f.write(f'{name_i}\n')
-            for df_i in df_list:
-                f.write(df_i.to_csv())
+    return df_dict
 
 def get_clf(name_i):
     clf_i=name_i.split('(')[1]
