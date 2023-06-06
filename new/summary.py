@@ -1,21 +1,15 @@
 import argparse
 import pandas as pd
 import numpy as np
+from collections import defaultdict
 import tools,pred
 
 def make_summary(in_path,dir_path,out_path,metric='acc_mean'):
-#    for path_i in tools.get_dirs(in_path):
-#        name_i=path_i.split('/')[-1]
-#        dir_i=f'{path_i}/{dir_path}'
-#        df=pd.read_csv(f'{dir_i}/results')
-#        df=df.sort_values(by=metric,ascending=False)
-#        df_pvalue=pd.read_csv(f'{dir_i}/pvalue.txt')
     for name_i,df,df_pvalue in result_iter(in_path,dir_path,metric):
         with open(out_path,"a") as f:
             f.write(f'{name_i}\n')
             f.write(df.to_csv())
             f.write(df_pvalue.to_csv())
-
 
 def result_iter(in_path,dir_path,metric='acc_mean'):
     for path_i in tools.get_dirs(in_path):
@@ -26,27 +20,30 @@ def result_iter(in_path,dir_path,metric='acc_mean'):
         df_pvalue=pd.read_csv(f'{dir_i}/pvalue.txt')
         yield name_i,df,df_pvalue
 
-def short_summary(dir_path,out_path):
-    paths=tools.get_dirs(dir_path)
-    cols=['dataset','ens','clf','imprv','diff']
-    lines=[]
-    for path_i in paths:
-        name_i=path_i.split('/')[-1]
-        result_i=f'{path_i}/results'
-        df=pd.read_csv(result_i) 
-        df_pvalue=pd.read_csv(f'{path_i}/pvalue.txt') 
-        sig_i=(df_pvalue[df_pvalue['sig']==True])
-        for j, row_j in sig_i.iterrows():
-            ens_j,clf_j=row_j['ens'],row_j['clf']
-#            if((clf_j in ens_j) ):#or ('TF' in ens_j)):
+def comp_summary(in_path:str,dirs:list,out_path:str):
+    df_dict=defaultdict(lambda:[])
+    for dir_i in dirs:
+        for name_j,df,df_pvalue in  result_iter(in_path,dir_i):
+            df['clf']=df['dataset'].apply(lambda alg_i: get_clf(alg_i))
+            df['variant']=df['dataset'].apply(lambda alg_i: get_variant(alg_i))
+            df['dataset']=df['dataset'].apply(lambda alg_i: name_j)
+            df=df.round(decimals=4)
+            df_dict[name_j].append(df)
+    for name_i,df_list in df_dict.items():
+        with open(out_path,"a") as f:
+            f.write(f'{name_i}\n')
+            for df_i in df_list:
+                f.write(df_i.to_csv())
 
-            ens_acc= df[df['clf']==ens_j]['balanced_acc_mean']#['acc_mean']
-            clf_acc= df[df['clf']==clf_j]['balanced_acc_mean']#['acc_mean']
-            diff= (float(ens_acc)-float(clf_acc))
-            line_j=[name_i,ens_j,clf_j,(diff>0),diff ]
-            lines.append(line_j)
-    df= pd.DataFrame(lines,columns=cols)
-    print(df)
+def get_clf(name_i):
+    clf_i=name_i.split('(')[1]
+    clf_i=clf_i.replace(")","")
+    return clf_i
+
+def get_variant(name_i):
+    clf_i=name_i.split('(')[0]
+    clf_i=clf_i.replace(")","")
+    return clf_i
 
 #def best(dir_path,metric='balanced_acc_mean'):
 #    paths=tools.get_dirs(dir_path)
@@ -86,19 +83,11 @@ def acc_summary(dir_path):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--in_path", type=str, default='../../mult_acc')
-#    parser.add_argument("--metric", type=str, default='balanced_acc_mean')
     parser.add_argument("--dir", type=str, default='high')
-    parser.add_argument("--out_path", type=str, default='../../mult_acc')#/summary.txt')
-#    parser.add_argument("--short",action='store_true')
-#    parser.add_argument("--acc",action='store_true')
+    parser.add_argument("--out_path", type=str, default='../../mult_acc/comp.txt')#/summary.txt')
 
     args = parser.parse_args()
     print(args)
     out_path=f'{args.out_path}/{args.dir}'
-    make_summary(args.in_path,args.dir,out_path)
-#    if(args.short):
-#        short_summary(args.dir,args.out)
-#    elif(args.acc):
-#        acc_summary(args.dir)
-#    else:
-#        make_summary(args.dir,args.out,args.metric)
+#    make_summary(args.in_path,args.dir,out_path)
+    comp_summary(args.in_path,['raw2','better','th_75'],args.out_path)
