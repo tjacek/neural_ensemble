@@ -28,6 +28,8 @@ def comp_summary(in_path:str,dirs:list,out_path:str):
             df['variant']=df['dataset'].apply(lambda alg_i: get_variant(alg_i))
             df['dataset']=df['dataset'].apply(lambda alg_i: name_j)
             df=df.round(decimals=4)
+            df=df[['dataset','variant','clf','acc_mean','acc_std']]
+            df=df.sort_values(by='variant',ascending=False)
             df_dict[name_j].append(df)
     for name_i,df_list in df_dict.items():
         with open(out_path,"a") as f:
