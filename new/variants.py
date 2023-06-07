@@ -52,7 +52,9 @@ def get_variant(variant_type_i):
         return binary_variant
     if(variant_type_i=='better'):
         return better_variant
-
+    if(variant_type_i=='best'):
+        return best_variant
+        
 class BasicVariant(object):
     def __init__(self,common=False):
         self.common=False
@@ -80,6 +82,16 @@ def common_variant(inst_i,clf_type_i):
     clf_j =learn.get_clf(clf_type_i)
     clf_j.fit(inst_i.train.common,inst_i.train.targets)
     return clf_j.predict(inst_i.test.common)
+
+def best_variant(inst_i,clf_type_i):
+    clfs=train_clfs(clf_type_i,inst_i.train)
+    votes=eval_clfs(clfs,inst_i.test)
+    indiv_acc=[]
+    for vote_i in votes:
+        acc_i=inst_i.get_acc(vote_i)
+        indiv_acc.append(acc_i)
+    k=np.argmax(indiv_acc)
+    return votes[k] #voting(s_votes)
 
 def better_variant(inst_i,clf_type_i):
     y_pred=common_variant(inst_i,clf_type_i)
