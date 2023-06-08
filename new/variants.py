@@ -54,7 +54,7 @@ def get_variant(variant_type_i):
         return better_variant
     if(variant_type_i=='best'):
         return best_variant
-        
+
 class BasicVariant(object):
     def __init__(self,common=False):
         self.common=False
@@ -91,7 +91,7 @@ def best_variant(inst_i,clf_type_i):
         acc_i=inst_i.get_acc(vote_i)
         indiv_acc.append(acc_i)
     k=np.argmax(indiv_acc)
-    return votes[k] #voting(s_votes)
+    return np.argmax(votes[k],axis=1) #voting(s_votes)
 
 def better_variant(inst_i,clf_type_i):
     y_pred=common_variant(inst_i,clf_type_i)
