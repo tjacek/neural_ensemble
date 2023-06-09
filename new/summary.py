@@ -25,8 +25,8 @@ def comp_summary(in_path:str,dirs:list,out_path:str):
     for name_i,df_list in df_dict.items():
         full_df=pd.concat(df_list)
         full_df=full_df.sort_values(by='acc_mean',ascending=False)
-
-        print(full_df)
+        csv_i=full_df.to_csv()
+        to_latex(csv_i)
 #        with open(out_path,"a") as f:
 #            f.write(f'{name_i}\n')
 #            for df_i in df_list:
@@ -63,31 +63,12 @@ def rename():
         return var_dict[variant_i]
     return helper
 
-#def best(dir_path,metric='balanced_acc_mean'):
-#    paths=tools.get_dirs(dir_path)
-#    cols=['dataset','best','second','p_value','sig']
-#    lines=[]
-#    for path_i in paths:
-#        name_i=path_i.split('/')[-1]
-#        result_i=f'{path_i}/results'
-#        df=pd.read_csv(result_i) 
-#        df['ens']=df['clf'].apply(lambda clf_i: ('NECSCF' in clf_i))
-#        df_pvalue=pd.read_csv(f'{path_i}/pvalue.txt') 
-#        df=df.sort_values(by=metric,ascending=False)
+def to_latex(csv_i):
+    for line_i in csv_i.split('\n'):
+        raw_i=' & '.join( line_i.split(','))
+        print('\hline' + raw_i + '\\\\')
 
-#        best,is_ens=df.iloc[0]['clf'],df.iloc[0]['ens']
-        
-#        tmp= df[df['ens']==(not is_ens)].sort_values(by=metric,ascending=False)
-#        second= tmp.iloc[0]['clf']
-
-#        ens_type,clf_type = (best,second)  if(is_ens) else (second,best)
-
-#        p_row=df_pvalue[ (df_pvalue['ens']==ens_type) &
-#                    (df_pvalue['clf']==clf_type)]
-#        lines.append([name_i,best,second,float(p_row['p_value']),str(p_row['sig'])])
-#    df= pd.DataFrame(lines,columns=cols)
-#    print(df)
-
+#~!@#$%^&*()_+   QWERT&*//
 def acc_summary(dir_path):
     for path_i in tools.get_dirs(dir_path):
         print(path_i)
