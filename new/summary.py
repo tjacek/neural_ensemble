@@ -38,10 +38,10 @@ def make_dataframes(in_path,dirs):
         for name_j,df,df_pvalue in  result_iter(in_path,dir_i):
             df['clf']=df['dataset'].apply(lambda alg_i: get_clf(alg_i))
             df['variant']=df['dataset'].apply(lambda alg_i: get_variant(alg_i))
+            df['variant']=df['variant'].apply(rename())
             df['dataset']=df['dataset'].apply(lambda alg_i: name_j)
             df=df.round(decimals=4)
             df=df[['dataset','variant','clf','acc_mean','acc_std']]
-#           df=df.sort_values(by='variant',ascending=False)
             df_dict[name_j].append(df)
     return df_dict
 
@@ -54,6 +54,14 @@ def get_variant(name_i):
     clf_i=name_i.split('(')[0]
     clf_i=clf_i.replace(")","")
     return clf_i
+
+def rename():
+    var_dict={'better':'selection','NECSCF2':'all_clfs'}
+    def helper(variant_i):
+        if(not variant_i in var_dict):
+            return variant_i
+        return var_dict[variant_i]
+    return helper
 
 #def best(dir_path,metric='balanced_acc_mean'):
 #    paths=tools.get_dirs(dir_path)
@@ -100,4 +108,4 @@ if __name__ == '__main__':
     print(args)
     out_path=f'{args.out_path}/{args.dir}'
 #    make_summary(args.in_path,args.dir,out_path)
-    comp_summary(args.in_path,['raw2','better','th_75'],args.out_path)
+    comp_summary(args.in_path,['raw2','better','best2'],args.out_path)
