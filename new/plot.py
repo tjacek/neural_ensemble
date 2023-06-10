@@ -8,7 +8,7 @@ from scipy import stats
 from sklearn.metrics import accuracy_score
 import matplotlib.pyplot as plt
 import json
-import models,pred,variants
+import models,pred,variants,tools
 
 #def plot_binary(data_path,model_path,out_path):
 #    binary_path=f'{model_path}/models/0'
@@ -60,6 +60,17 @@ def binary_iter(data_path,binary_path):
         binary_i= clf_i.binary_model.predict(X_test)
         yield name_i,X_test,binary_i,y_test
 
+def pvalue_exp(data_path,model_path,acc_path):
+    tools.make_dir(acc_path)
+    for path_i in tools.top_files(data_path):
+        name_i=path_i.split('/')[-1] 
+        model_i=f'{model_path}/{name_i}/models'
+        acc_i=f'{acc_path}/{name_i}'
+#        save_indv(path_i,model_i,acc_i,clf='RF')
+        line_i=indiv_pvalue(acc_i)
+        line_i=f'{name_i},{line_i}'
+        print(line_i)
+
 def save_indv(data_path,model_path,out_path,clf='RF'):
     acc=list(indv_acc(data_path,model_path,clf))
     with open(out_path, 'w') as f:
@@ -91,10 +102,13 @@ def get_pvalue(x,y):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type=str, default='../../uci/vehicle')
-    parser.add_argument("--models", type=str, default='../../mult_acc/vehicle/models')
+    parser.add_argument("--data", type=str, default='../../uci')
+    parser.add_argument("--acc", type=str, default='../../acc')
+
+    parser.add_argument("--models", type=str, default='../../mult_acc')
 #    parser.add_argument("--out", type=str, default='binary')
     args = parser.parse_args()
 #    plot_binary(args.data,args.models,args.out)
 #    save_indv(args.data,args.models,'indiv_acc.txt')
-    indiv_pvalue('indiv_acc.txt')
+#    indiv_pvalue('indiv_acc.txt')
+    pvalue_exp(args.data,args.models,args.acc)
