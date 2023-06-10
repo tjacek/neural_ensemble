@@ -6,7 +6,8 @@ import numpy as np
 from sklearn import manifold
 from sklearn.metrics import accuracy_score
 import matplotlib.pyplot as plt
-import models,variants
+import json
+import models,pred,variants
 
 #def plot_binary(data_path,model_path,out_path):
 #    binary_path=f'{model_path}/models/0'
@@ -46,7 +47,8 @@ def indv_acc(data_path,model_path,clf='RF'):
                 dict_j[t]=acc_t
             pred_j=variants.common_variant(ens_j,clf)
             dict_j['common']=accuracy_score(pred_j,ens_j.get_true())
-            print(dict_j)
+            yield dict_j
+
 
 def binary_iter(data_path,binary_path):
     clf_dict,(train_i,test_i)=models.single_read(binary_path)
@@ -56,12 +58,23 @@ def binary_iter(data_path,binary_path):
     for name_i,clf_i in clf_dict.items():
         binary_i= clf_i.binary_model.predict(X_test)
         yield name_i,X_test,binary_i,y_test
-       	
+
+def save_indv(data_path,model_path,out_path,clf='RF'):
+    acc=list(indv_acc(data_path,model_path,clf))
+    with open(out_path, 'w') as f:
+        json.dump(acc, f,cls=pred.NumpyEncoder)
+
+def indiv_pvalue(in_path):
+    with open(in_path, 'r') as f:
+        indv_acc = json.load(f)
+        print(indv_acc)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type=str, default='uci/vehicle')
-    parser.add_argument("--models", type=str, default='vehicle/models')
-    parser.add_argument("--out", type=str, default='binary')
+    parser.add_argument("--data", type=str, default='../../uci/vehicle')
+    parser.add_argument("--models", type=str, default='../../mult_acc/vehicle/models')
+#    parser.add_argument("--out", type=str, default='binary')
     args = parser.parse_args()
 #    plot_binary(args.data,args.models,args.out)
-    indv_acc(args.data,args.models)
+#    save_indv(args.data,args.models,'indiv_acc.txt')
+    indiv_pvalue('indiv_acc.txt')
