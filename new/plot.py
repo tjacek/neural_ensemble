@@ -4,6 +4,7 @@ import argparse
 import pandas as pd
 import numpy as np
 from sklearn import manifold
+from scipy import stats
 from sklearn.metrics import accuracy_score
 import matplotlib.pyplot as plt
 import json
@@ -67,7 +68,26 @@ def save_indv(data_path,model_path,out_path,clf='RF'):
 def indiv_pvalue(in_path):
     with open(in_path, 'r') as f:
         indv_acc = json.load(f)
-        print(indv_acc)
+        keys=indv_acc[0].keys()
+        samples_dict={key_i:[] for key_i in keys }
+        for indv_dict_i in indv_acc: 
+            for key_j in indv_dict_i:
+                samples_dict[key_j].append(indv_dict_i[key_j])
+        common_acc=samples_dict['common']
+        del samples_dict['common']
+        mean_acc=[ (key_i,np.mean(acc_i)) 
+            for key_i,acc_i in samples_dict.items()]
+        cat,acc=list(zip(*mean_acc))
+        best=  cat[np.argmax(acc)]
+        worst=  cat[np.argmin(acc)]
+        p_best= get_pvalue(samples_dict[best],common_acc)
+        p_worst= get_pvalue(samples_dict[worst],common_acc)
+        mean_dict= dict(zip(cat,acc))
+        return f'{np.mean(common_acc):.4f},{mean_dict[best]:.4f},{p_best},{mean_dict[worst]:.4f},{p_worst}'
+
+def get_pvalue(x,y):
+    r=stats.ttest_ind(x,y, equal_var=False)
+    return round(r[1],4)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
