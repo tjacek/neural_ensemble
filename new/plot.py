@@ -60,15 +60,17 @@ def binary_iter(data_path,binary_path):
         binary_i= clf_i.binary_model.predict(X_test)
         yield name_i,X_test,binary_i,y_test
 
-def pvalue_exp(data_path,model_path,acc_path):
+def pvalue_exp(data_path,model_path,acc_path,clf='RF'):
     tools.make_dir(acc_path)
     for path_i in tools.top_files(data_path):
         name_i=path_i.split('/')[-1] 
         model_i=f'{model_path}/{name_i}/models'
         acc_i=f'{acc_path}/{name_i}'
-#        save_indv(path_i,model_i,acc_i,clf='RF')
-        line_i=indiv_pvalue(acc_i)
-        line_i=f'{name_i},{line_i}'
+#        save_indv(path_i,model_i,acc_i,clf=clf)
+#        line_i=indiv_pvalue(acc_i)
+        line_i=indiv_stats(acc_i)
+
+        line_i=f'{name_i},{clf},{line_i}'
         print(line_i)
 
 def save_indv(data_path,model_path,out_path,clf='RF'):
@@ -100,6 +102,19 @@ def get_pvalue(x,y):
     r=stats.ttest_ind(x,y, equal_var=False)
     return round(r[1],4)
 
+def indiv_stats(in_path):
+    with open(in_path, 'r') as f:
+        indv_acc = json.load(f)
+        succ,size=0,0
+        for dict_i in indv_acc:
+            common_acc=dict_i['common']
+            better= [ int(acc_i>common_acc) 
+               for acc_i  in dict_i.values()]
+            succ+= sum(better)
+            size+=len(dict_i)
+        return f'{(succ/size):.4f}'
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", type=str, default='../../uci')
@@ -111,4 +126,4 @@ if __name__ == '__main__':
 #    plot_binary(args.data,args.models,args.out)
 #    save_indv(args.data,args.models,'indiv_acc.txt')
 #    indiv_pvalue('indiv_acc.txt')
-    pvalue_exp(args.data,args.models,args.acc)
+    pvalue_exp(args.data,args.models,args.acc,'SVC')
