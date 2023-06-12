@@ -2,7 +2,7 @@ import numpy as np
 from collections import namedtuple
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.metrics import accuracy_score
-import learn
+import learn,inliner
 
 class Ensemble(object):
     def __init__(self,train,test):
@@ -54,6 +54,9 @@ def get_variant(variant_type_i):
         return better_variant
     if(variant_type_i=='best'):
         return best_variant
+    if(variant_type_i=='inliner'):
+        return inliner.InlinerVoting()
+    raise Exception(f'')
 
 class BasicVariant(object):
     def __init__(self,common=False):
