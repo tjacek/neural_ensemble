@@ -56,7 +56,9 @@ def get_variant(variant_type_i):
         return best_variant
     if(variant_type_i=='inliner'):
         return inliner.InlinerVoting()
-    raise Exception(f'')
+    if(variant_type_i=='conf'):
+        return inliner.conf_voting
+    raise Exception(f'Variant {variant_type_i} not implemented')
 
 class BasicVariant(object):
     def __init__(self,common=False):
