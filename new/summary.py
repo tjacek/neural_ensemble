@@ -20,19 +20,30 @@ def result_iter(in_path,dir_path,metric='acc_mean'):
         df_pvalue=pd.read_csv(f'{dir_i}/pvalue.txt')
         yield name_i,df,df_pvalue
 
-def comp_summary(in_path:str,dirs:list,out_path:str):
-    df_dict=make_dataframes(in_path,dirs)
+def comp_summary(in_path:str,dirs:list,out_path:str,p_path=None):
+    df_dict,pvalue_dict=make_dataframes(in_path,dirs)
+    def helper(dataset,variant,clf):
+        if(variant=='common'):
+            return '-'
+        df_i=pvalue_dict[dataset][variant]
+        df_i= df_i[(df_i['ens']==f'{variant}({clf})') & (df_i['clf']==f'common({clf})')]
+        return float(df_i['p_value'])
     for name_i,df_list in df_dict.items():
         full_df=pd.concat(df_list)
+        full_df['p_value'] = full_df.apply(lambda x: helper(x.dataset,x.variant,x.clf), axis=1)
+
         full_df=full_df.sort_values(by='acc_mean',ascending=False)
+#        print(full_df)
         csv_i=full_df.to_csv()
         to_latex(csv_i)
+#    print(pvalue_dict)
 #        with open(out_path,"a") as f:
 #            f.write(f'{name_i}\n')
 #            for df_i in df_list:
 #                f.write(df_i.to_csv())
 
 def make_dataframes(in_path,dirs):
+    pvalue_dict=defaultdict(lambda:{})
     df_dict=defaultdict(lambda:[])
     for dir_i in dirs:
         for name_j,df,df_pvalue in  result_iter(in_path,dir_i):
@@ -43,7 +54,14 @@ def make_dataframes(in_path,dirs):
             df=df.round(decimals=4)
             df=df[['dataset','variant','clf','acc_mean','acc_std']]
             df_dict[name_j].append(df)
-    return df_dict
+            pvalue_dict[name_j][dir_i] =df_pvalue
+    return df_dict,pvalue_dict
+
+#def get_pvalue_dict(in_path,dir_path):
+#    pvalue_dict={}
+#    for name_j,df,df_pvalue in  result_iter(in_path,dir_i):
+#        pvalue_dict[name_j]=df_pvalue
+#    return pvalue_dict
 
 def get_clf(name_i):
     clf_i=name_i.split('(')[1]
@@ -68,16 +86,15 @@ def to_latex(csv_i):
         raw_i=' & '.join( line_i.split(','))
         print('\hline' + raw_i + '\\\\')
 
-#~!@#$%^&*()_+   QWERT&*//
-def acc_summary(dir_path):
-    for path_i in tools.get_dirs(dir_path):
-        print(path_i)
-        acc_path_i=f'{path_i}/acc.txt'
-        acc_dict=pred.read_acc_dict(acc_path_i)
-        for j,clf_j in acc_dict.items():
-            acc_j= list(clf_j.values())
-            stats_j=[f'{fun(acc_j):.2f}' for fun in [np.mean,np.median,np.max,np.min]]
-            print(','.join(stats_j))
+#def acc_summary(dir_path):
+#    for path_i in tools.get_dirs(dir_path):
+#        print(path_i)
+#        acc_path_i=f'{path_i}/acc.txt'
+#        acc_dict=pred.read_acc_dict(acc_path_i)
+#        for j,clf_j in acc_dict.items():
+#            acc_j= list(clf_j.values())
+#            stats_j=[f'{fun(acc_j):.2f}' for fun in [np.mean,np.median,np.max,np.min]]
+#            print(','.join(stats_j))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -89,4 +106,5 @@ if __name__ == '__main__':
     print(args)
     out_path=f'{args.out_path}/{args.dir}'
 #    make_summary(args.in_path,args.dir,out_path)
-    comp_summary(args.in_path,['raw2','better','best2'],args.out_path)
+    comp_summary(args.in_path,['conf'], #['raw2','better','best2'],
+        args.out_path)
