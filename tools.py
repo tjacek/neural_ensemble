@@ -1,6 +1,16 @@
 import os,warnings
+import logging#,time
 from functools import wraps
 
+def silence_warnings():
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+    import tensorflow as tf
+    import logging
+    logging.getLogger('tensorflow').setLevel(logging.ERROR)
+    tf.get_logger().setLevel('ERROR')
+    def warn(*args, **kwargs):
+        pass
+    warnings.warn = warn
 
 def dir_fun(fun):
     @wraps(fun)

@@ -23,6 +23,10 @@ def gen_splits(X,y,n_splits=3,n_repeats=3):
         all_splits.append(DataSplit(train_i,test_i))
     return all_splits
 
+def get_dataset(data_path):
+    df=pd.read_csv(data_path,header=None) 
+    return prepare_data(df)
+
 def prepare_data(df):
     X=df.iloc[:,:-1]
     X=X.to_numpy()
@@ -32,3 +36,7 @@ def prepare_data(df):
     y=y.to_numpy()
     y=[cats[y_i] for y_i in y]
     return X,np.array(y)
+
+def get_dataset_params(X,y):
+    return {'n_cats':max(y)+1,
+            'dims':X.shape[1]}
