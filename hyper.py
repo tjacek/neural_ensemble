@@ -1,5 +1,7 @@
 import tools
 tools.silence_warnings()
+import tensorflow.keras
+import tensorflow as tf
 from tensorflow.keras import Input, Model
 import keras_tuner as kt
 import argparse
@@ -8,7 +10,7 @@ import data
 class MultiKTBuilder(object): 
     def __init__(self,params):#,hidden=[(0.25,5),(0.25,5)]):
         self.params=params
-        self.hidden=hidden
+        self.hidden=(1,10)
 
     def __call__(self,hp):
         model = tf.keras.Sequential()
@@ -23,23 +25,37 @@ class MultiKTBuilder(object):
         model.compile('adam', 'sparse_categorical_crossentropy', metrics=['accuracy'])
         return model
 
-#    def get_params_names(self):
-#        params=[f'n_hidden{j}' for j in range(len(self.hidden))]              
-
-#    def layer_name(self,i,j):
-#        if(j==(len(self.hidden)-1)):
-#            return f'hidden{i}'
-#        return f'{i}_{j}'
-
 def single_exp(data_path,hyper_path,n_split,n_iter):
     X,y=data.get_dataset(data_path)
     data_params=data.get_dataset_params(X,y)
     print(data_params)
-#    best=bayes_optim(X,y,data_params,n_split,n_iter)
-#    print(best)
-#    with open(hyper_path,"a") as f:
-#        f.write(f'{str(best)}\n') 
-#    return best
+    best=bayes_optim(X,y,data_params,n_split,n_iter)
+    with open(hyper_path,"a") as f:
+        f.write(f'{str(best)}\n') 
+    return best
+
+def bayes_optim(X,y,data_params,n_split,n_iter):
+    model_builder= MultiKTBuilder(data_params) 
+
+    tuner=kt.BayesianOptimization(model_builder,
+                objective='val_loss',
+                max_trials=n_iter,
+                overwrite=True)
+#    binary_y=ens.binarize(y)
+    validation_split= 1.0/n_split
+    stop_early = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5)
+    tuner.search(X, y, epochs=150, validation_split=validation_split,
+       verbose=1,callbacks=[stop_early])
+    
+    tuner.results_summary()
+    best_hps=tuner.get_best_hyperparameters(num_trials=10)[0]
+    best=  best_hps.values
+    relative={key_i: (value_i/data_params['dims'])  
+                for key_i,value_i in best.items()
+                    if('unit' in key_i)}
+    print(relative)
+    return best,relative
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
