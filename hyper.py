@@ -17,10 +17,12 @@ class MultiKTBuilder(object):
         for i in range(hp.Int('layers', 1, 2)):
             hidden_i=hp.Int('units_' + str(i), 
                     min_value= int(self.params['dims']*self.hidden[0]), 
-                    max_value=int(self.params['dims']*self.hidden[1]), 
+                    max_value=int(self.params['dims']*self.hidden[1]),
                     step=10)
             model.add(tf.keras.layers.Dense(units=hidden_i ))
-#                                    activation=hp.Choice('act_' + str(i), ['relu', 'sigmoid'])))
+        batch=hp.Choice('batch', [True, False])
+        if(batch):
+            model.add(tf.keras.layers.BatchNormalization())
         model.add(tf.keras.layers.Dense(self.params['n_cats'], activation='softmax'))
         model.compile('adam', 'sparse_categorical_crossentropy', metrics=['accuracy'])
         return model
@@ -38,12 +40,13 @@ def bayes_optim(X,y,data_params,n_split,n_iter):
     model_builder= MultiKTBuilder(data_params) 
 
     tuner=kt.BayesianOptimization(model_builder,
-                objective='val_loss',
+                objective='loss',#'val_loss',
                 max_trials=n_iter,
                 overwrite=True)
 #    binary_y=ens.binarize(y)
     validation_split= 1.0/n_split
-    stop_early = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5)
+    stop_early = tf.keras.callbacks.EarlyStopping(monitor='val_loss', 
+        patience=50)
     tuner.search(X, y, epochs=150, validation_split=validation_split,
        verbose=1,callbacks=[stop_early])
     
@@ -53,15 +56,27 @@ def bayes_optim(X,y,data_params,n_split,n_iter):
     relative={key_i: (value_i/data_params['dims'])  
                 for key_i,value_i in best.items()
                     if('unit' in key_i)}
-    print(relative)
-    return best,relative
+    models=tuner.get_best_models()
+    acc=get_metric_value(tuner,X,y)
+    return best,relative,acc
 
+
+
+def get_metric_value(tuner,X,y):
+    best_model= tuner.get_best_models(1)[0]
+    metric_values= best_model.evaluate(X, y)
+    eval_metrics= list(zip(best_model.metrics_names ,metric_values))
+    acc=[]
+    for metric_i,value_i in eval_metrics:
+        if('accuracy' in metric_i):
+            acc.append(value_i)
+    return acc[0]
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", type=str, default='data/wine-quality-red')
     parser.add_argument("--hyper", type=str, default='hyper.txt')
     parser.add_argument("--n_split", type=int, default=10)
-    parser.add_argument("--n_iter", type=int, default=2)
+    parser.add_argument("--n_iter", type=int, default=10)
     args = parser.parse_args()
     single_exp(args.data,args.hyper,args.n_split,args.n_iter)
