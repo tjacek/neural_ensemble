@@ -30,6 +30,14 @@ def top_files(path):
     paths=sorted(paths)
     return paths
 
+def round_data(data,decimals=4):
+    if(type(data)==dict):
+        return {name_i:round(value_i,4) 
+                for name_i,value_i in data.items()}
+    if(type(data)==list):
+        return [round(value_i,4) for value_i in data]
+    return round(data,4)
+
 def get_dirs(path):
     return [path_i for path_i in top_files(path)
             if(os.path.isdir(path_i))]

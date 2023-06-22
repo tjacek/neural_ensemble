@@ -32,6 +32,7 @@ def single_exp(data_path,hyper_path,n_split,n_iter):
     data_params=data.get_dataset_params(X,y)
     print(data_params)
     best=bayes_optim(X,y,data_params,n_split,n_iter)
+    best=[tools.round_data(best_i,4) for best_i in best]
     with open(hyper_path,"a") as f:
         f.write(f'{str(best)}\n') 
     return best
@@ -59,7 +60,6 @@ def bayes_optim(X,y,data_params,n_split,n_iter):
     models=tuner.get_best_models()
     acc=get_metric_value(tuner,X,y)
     return best,relative,acc
-
 
 
 def get_metric_value(tuner,X,y):
