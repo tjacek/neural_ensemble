@@ -1,3 +1,4 @@
+import numpy as np
 import tensorflow as tf
 import keras
 from tensorflow.keras.layers import Dense,BatchNormalization,Concatenate
@@ -10,60 +11,55 @@ def simple_nn(params,hyper_params):
             optimizer='adam',metrics='accuracy')
     return model
 
-def nn_builder(params,hyper_params):
-    input_layer = Input(shape=(params['dims']))         
+def nn_builder(params,hyper_params,input_layer=None,as_model=True,i=0):
+    if(input_layer is None):
+        input_layer = Input(shape=(params['dims']))         
     x_i=input_layer#Concatenate()([common,input_i])
     for j,hidden_j in enumerate(hyper_params['layers']):
         x_i=Dense(hidden_j,activation='relu',
-                    name=f"layer_{j}")(x_i)
+                    name=f"layer_{i}_{j}")(x_i)
     if(hyper_params['layers']):
-        x_i=BatchNormalization(name=f'batch')(x_i)
-    x_i=Dense(params['n_cats'], activation='softmax',name=f'out')(x_i)
-    model= Model(inputs=input_layer, outputs=x_i)
-    return model
-    
-class NeuralEnsembleCPU(BaseEstimator, ClassifierMixin):
-    def __init__(self,binary=None,multi_clf='RF'):
-        if(binary is None):
-            binary=BinaryBuilder()
-        self.binary_builder=binary
-        self.binary_model=None
-        self.multi_clf=multi_clf
-        self.clfs=[]
-        self.train_data=None
-        self.data_params=None
-        self.catch=None
+        x_i=BatchNormalization(name=f'batch_{i}')(x_i)
+    x_i=Dense(params['n_cats'], activation='softmax',name=f'out_{i}')(x_i)
+    if(as_model):
+        return Model(inputs=input_layer, outputs=x_i)
+    return x_i
 
-
-class BinaryBuilder(object):
-    def __init__(self,hyper:dict):
-        self.hyper=hyper
-
-    def __call__(self,params):
-        input_layer = Input(shape=(params['dims']))
-        outputs=[]
-        x_i=input_layer
-        for i in range(params['n_cats']):
-            outputs.append(build_model(self.hyper))
-        loss={f'binary{i}' : weighted_binary_loss(params['class_weights'],i)
+def binary_ensemble(params,hyper_params):
+    input_layer = Input(shape=(params['dims']))
+    single_cls=[]
+    for i in range(params['n_cats']):
+        nn_i=nn_builder(params,hyper_params,input_layer,False,i)
+        single_cls.append(nn_i)
+        
+#    loss={f'binary{i}' : weighted_binary_loss(params['class_weights'],i)#'binary_crossentropy' 
+#                for i in range(params['n_cats'])}
+    metrics={f'out_{i}' : 'accuracy'
                 for i in range(params['n_cats'])}
-        metrics={f'binary{i}' :  get_metric(params['metric'])
-                for i in range(params['n_cats'])}
-        model= Model(inputs=input_layer, outputs=outputs)
-        model.compile(loss=loss, 
+    model= Model(inputs=input_layer, outputs=single_cls)
+    model.compile(loss='categorical_crossentropy', #loss=loss, 
             optimizer='adam',metrics=metrics)
-        return model
+    return BinaryEnsemble(model,params['n_cats'])
 
-    def layer_name(self,i,j):
-        if(j==(len(self.hidden)-1)):
-            return f'hidden{i}'
-        return f'{i}_{j}'
+class BinaryEnsemble(object):
+    def __init__(self,multi_output,n_clf):
+        self.multi_output=multi_output
+        self.n_clf=n_clf
 
-    def __str__(self):
-        return '_'.join([str(h) for h in self.hidden])
+    def fit(self,X,y):
+        y_multi=[y for i in range(self.n_clf)]
+        self.multi_output.fit(X,y_multi)
 
-def build_model(hyper:dict):
-    pass
+    def predict(self,X):
+        y_pred= self.multi_output.predict(X)
+        n_samples,n_cats=y_pred[0].shape
+        print((n_samples,n_cats))
+        final_pred=[]
+        for i in range(n_samples):
+            ballot_i=np.array([y_pred[j][i] 
+                for j in range(n_cats)])
+            final_pred.append(np.sum(ballot_i,axis=0))
+        return final_pred
 
 def get_metric(name_i):
     if(name_i=='balanced_accuracy'):
@@ -95,12 +91,3 @@ def weighted_binary_loss( class_sizes,i):
         )
         return losses
     return loss
-
-#    for j,hidden_j in enumerate(self.hidden):
-#        hidden_j=int(hidden_j*params['dims'])
-#            name_j=self.layer_name(i,j)
-#                x_i=Dense(hidden_j,activation='relu',
-#                    name=name_j)(x_i)
-#            x_i=BatchNormalization(name=f'batch{i}')(x_i)
-#            x_i=Dense(2, activation='softmax',name=f'binary{i}')(x_i)
-#            outputs.append(x_i)
