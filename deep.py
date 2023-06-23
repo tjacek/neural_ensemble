@@ -1,5 +1,27 @@
+import tensorflow as tf
+import keras
+from tensorflow.keras.layers import Dense,BatchNormalization,Concatenate
+from tensorflow.keras import Input, Model
 from sklearn.base import BaseEstimator, ClassifierMixin
 
+def simple_nn(params,hyper_params):
+    model=nn_builder(params,hyper_params)
+    model.compile(loss='categorical_crossentropy', 
+            optimizer='adam',metrics='accuracy')
+    return model
+
+def nn_builder(params,hyper_params):
+    input_layer = Input(shape=(params['dims']))         
+    x_i=input_layer#Concatenate()([common,input_i])
+    for j,hidden_j in enumerate(hyper_params['layers']):
+        x_i=Dense(hidden_j,activation='relu',
+                    name=f"layer_{j}")(x_i)
+    if(hyper_params['layers']):
+        x_i=BatchNormalization(name=f'batch')(x_i)
+    x_i=Dense(params['n_cats'], activation='softmax',name=f'out')(x_i)
+    model= Model(inputs=input_layer, outputs=x_i)
+    return model
+    
 class NeuralEnsembleCPU(BaseEstimator, ClassifierMixin):
     def __init__(self,binary=None,multi_clf='RF'):
         if(binary is None):
@@ -81,4 +103,4 @@ def weighted_binary_loss( class_sizes,i):
 #                    name=name_j)(x_i)
 #            x_i=BatchNormalization(name=f'batch{i}')(x_i)
 #            x_i=Dense(2, activation='softmax',name=f'binary{i}')(x_i)
-            outputs.append(x_i)
+#            outputs.append(x_i)

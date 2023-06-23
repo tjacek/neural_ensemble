@@ -44,7 +44,6 @@ def bayes_optim(X,y,data_params,n_split,n_iter):
                 objective='loss',#'val_loss',
                 max_trials=n_iter,
                 overwrite=True)
-#    binary_y=ens.binarize(y)
     validation_split= 1.0/n_split
     stop_early = tf.keras.callbacks.EarlyStopping(monitor='val_loss', 
         patience=50)
