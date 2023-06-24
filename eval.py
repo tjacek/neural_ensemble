@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.metrics import accuracy_score#,f1_score
 import json
 
-def single_exp(pred_path):
+def single_exp(pred_path,out_path):
     for path_i in tools.top_files(pred_path):
         all_pred=read_pred(path_i)
         acc=[ accuracy_score(test_i,pred_i) 
@@ -19,5 +19,8 @@ def read_pred(path_i):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--pred", type=str, default='pred')
+    parser.add_argument("--dir", type=int, default=0)
     args = parser.parse_args()
-    single_exp(args.pred)
+    if(args.dir>0):
+        single_exp=tools.dir_fun(single_exp)
+    single_exp(args.pred,'out')

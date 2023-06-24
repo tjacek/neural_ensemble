@@ -47,8 +47,20 @@ def parse_hyper(hyper_path):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type=str, default='data/wine-quality-red')
-    parser.add_argument("--hyper", type=str, default='hyper.txt')
+    parser.add_argument("--data", type=str, default='data')#/wine-quality-red')
+    parser.add_argument("--hyper", type=str, default='hyper')
     parser.add_argument("--pred", type=str, default='pred')
+    parser.add_argument("--dir", type=int, default=0)
     args = parser.parse_args()
-    single_exp(args.data,args.hyper,args.pred)
+    if(args.dir>0):
+        @tools.dir_fun#(single_exp)
+        def helper(in_path,out_path):
+            name_i=in_path.split('/')[-1]
+            hyper_i=f'{args.hyper}/{name_i}'
+            print(in_path)
+            print(hyper_i)
+            print(out_path)
+            single_exp(in_path,hyper_i,out_path)
+        helper(args.data,args.pred)
+    else:
+        single_exp(args.data,args.hyper,args.pred)

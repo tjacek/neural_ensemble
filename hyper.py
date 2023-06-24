@@ -73,9 +73,12 @@ def get_metric_value(tuner,X,y):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type=str, default='data/wine-quality-red')
-    parser.add_argument("--hyper", type=str, default='hyper.txt')
+    parser.add_argument("--data", type=str, default='data')# /wine-quality-red')
+    parser.add_argument("--hyper", type=str, default='hyper')
     parser.add_argument("--n_split", type=int, default=10)
     parser.add_argument("--n_iter", type=int, default=10)
+    parser.add_argument("--dir", type=int, default=0)
     args = parser.parse_args()
+    if(args.dir>0):
+        single_exp=tools.dir_fun(single_exp)
     single_exp(args.data,args.hyper,args.n_split,args.n_iter)
