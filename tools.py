@@ -22,6 +22,10 @@ def dir_fun(fun):
             fun(*new_args,**kwargs)
     return helper
 
+def make_dir(path):
+    if(not os.path.isdir(path)):
+        os.mkdir(path)
+
 def top_files(path):
     if(type(path)==str):
         paths=[ path+'/'+file_i for file_i in os.listdir(path)]

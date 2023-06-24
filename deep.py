@@ -32,12 +32,24 @@ def binary_ensemble(params,hyper_params):
         nn_i=nn_builder(params,hyper_params,input_layer,False,i)
         single_cls.append(nn_i)
         
-#    loss={f'binary{i}' : weighted_binary_loss(params['class_weights'],i)#'binary_crossentropy' 
-#                for i in range(params['n_cats'])}
+    loss={}
+    class_dict=params['class_weights']
+    for i in range(params['n_cats']):        
+        other_i=[ size_j  
+                    for cat_j,size_j in class_dict.items()
+                        if(cat_j!=i)]
+        cat_size_i= 0.5*(1/class_dict[i])
+        other_size_i=1/sum(other_i)
+        class_weights= [other_size_i for i in range(params['n_cats'])]
+        class_weights[i]=cat_size_i
+        print(class_weights)
+        class_weights=np.array(class_weights,dtype=np.float32)
+        loss[f'out_{i}']=weighted_binary_loss(class_weights)#'binary_crossentropy' 
     metrics={f'out_{i}' : 'accuracy'
                 for i in range(params['n_cats'])}
     model= Model(inputs=input_layer, outputs=single_cls)
-    model.compile(loss='categorical_crossentropy', #loss=loss, 
+    model.compile(#loss='categorical_crossentropy', 
+            loss=loss, 
             optimizer='adam',metrics=metrics)
     return BinaryEnsemble(model,params['n_cats'])
 
@@ -53,7 +65,6 @@ class BinaryEnsemble(object):
     def predict(self,X):
         y_pred= self.multi_output.predict(X)
         n_samples,n_cats=y_pred[0].shape
-        print((n_samples,n_cats))
         final_pred=[]
         for i in range(n_samples):
             ballot_i=np.array([y_pred[j][i] 
@@ -78,8 +89,8 @@ class BalancedAccuracy(keras.metrics.SparseCategoricalAccuracy):
         weight = tf.gather(cls_counts, y_true_int)
         return super().update_state(y_flat, y_pred, sample_weight=weight)
 
-def weighted_binary_loss( class_sizes,i):
-    class_weights= binary_weights(class_sizes,i)
+def weighted_binary_loss( class_weights):
+#    class_weights= binary_weights(class_sizes,i)
     def loss(y_obs,y_pred):        
         y_obs = tf.dtypes.cast(y_obs,tf.int32)
         hothot=  tf.dtypes.cast( y_obs,tf.float32)
@@ -91,3 +102,10 @@ def weighted_binary_loss( class_sizes,i):
         )
         return losses
     return loss
+
+def binary_weights(class_sizes,i):#,double=False ):
+    rest=[value_j for j,value_j in class_sizes.items()
+                  if(j!=i)]
+    rest= sum(rest)
+    weights=[1/rest, 1/class_sizes[i]]
+    return np.array(weights,dtype=np.float32)/sum(weights)
