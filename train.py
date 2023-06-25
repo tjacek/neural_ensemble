@@ -3,6 +3,7 @@ tools.silence_warnings()
 import argparse
 import numpy as np
 import tensorflow as tf 
+from keras import callbacks
 import json
 import data,deep
 
@@ -18,12 +19,14 @@ def single_exp(data_path,hyper_path,out_path):
         make_pred(make_model_i,out_i,hyper_params,dataset_params,splits)
 
 def make_pred(make_model,out_path,hyper_params,dataset_params,splits):
+    earlystopping = callbacks.EarlyStopping(monitor='accuracy',#params['metric'],
+                mode="max", patience=5,restore_best_weights=True)
     all_pred=[]
     for (X_train,y_train),(X_test,y_test) in splits():
         model=make_model(dataset_params,hyper_params)
         y_train = tf.keras.utils.to_categorical(y_train, 
         	                num_classes = dataset_params['n_cats'])
-        model.fit(X_train,y_train)
+        model.fit(X_train,y_train,epochs=150,callbacks=earlystopping)
         y_pred= model.predict(X_test)
         y_pred=np.argmax(y_pred,axis=1)
         all_pred.append((y_test,y_pred))
@@ -57,9 +60,6 @@ if __name__ == '__main__':
         def helper(in_path,out_path):
             name_i=in_path.split('/')[-1]
             hyper_i=f'{args.hyper}/{name_i}'
-            print(in_path)
-            print(hyper_i)
-            print(out_path)
             single_exp(in_path,hyper_i,out_path)
         helper(args.data,args.pred)
     else:

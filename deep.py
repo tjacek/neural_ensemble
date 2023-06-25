@@ -31,20 +31,11 @@ def binary_ensemble(params,hyper_params):
     for i in range(params['n_cats']):
         nn_i=nn_builder(params,hyper_params,input_layer,False,i)
         single_cls.append(nn_i)
-        
+    binary_loss=BinaryLoss()
     loss={}
     class_dict=params['class_weights']
     for i in range(params['n_cats']):        
-        other_i=[ size_j  
-                    for cat_j,size_j in class_dict.items()
-                        if(cat_j!=i)]
-        cat_size_i= 0.5*(1/class_dict[i])
-        other_size_i=1/sum(other_i)
-        class_weights= [other_size_i for i in range(params['n_cats'])]
-        class_weights[i]=cat_size_i
-        print(class_weights)
-        class_weights=np.array(class_weights,dtype=np.float32)
-        loss[f'out_{i}']=weighted_binary_loss(class_weights)#'binary_crossentropy' 
+        loss[f'out_{i}']=binary_loss(i,class_dict)
     metrics={f'out_{i}' : 'accuracy'
                 for i in range(params['n_cats'])}
     model= Model(inputs=input_layer, outputs=single_cls)
@@ -58,9 +49,10 @@ class BinaryEnsemble(object):
         self.multi_output=multi_output
         self.n_clf=n_clf
 
-    def fit(self,X,y):
+    def fit(self,X,y,epochs=150,callbacks=None):
         y_multi=[y for i in range(self.n_clf)]
-        self.multi_output.fit(X,y_multi)
+        self.multi_output.fit(X,y_multi,epochs=epochs,
+                                callbacks=callbacks)
 
     def predict(self,X):
         y_pred= self.multi_output.predict(X)
@@ -71,6 +63,21 @@ class BinaryEnsemble(object):
                 for j in range(n_cats)])
             final_pred.append(np.sum(ballot_i,axis=0))
         return final_pred
+
+class BinaryLoss(object):
+    def __init__(self,alpha=0.5):
+        self.alpha=alpha
+
+    def __call__(self,i,class_dict):
+        other_i=[ size_j  
+                for cat_j,size_j in class_dict.items()
+                    if(cat_j!=i)]
+        cat_size_i  = self.alpha*(1/class_dict[i])
+        other_size_i= (1.0-self.alpha) *  (1/sum(other_i))
+        class_weights= [other_size_i for i in range(len(class_dict) )]
+        class_weights[i]=cat_size_i
+        class_weights=np.array(class_weights,dtype=np.float32)
+        return weighted_binary_loss(class_weights)
 
 def get_metric(name_i):
     if(name_i=='balanced_accuracy'):
@@ -90,7 +97,6 @@ class BalancedAccuracy(keras.metrics.SparseCategoricalAccuracy):
         return super().update_state(y_flat, y_pred, sample_weight=weight)
 
 def weighted_binary_loss( class_weights):
-#    class_weights= binary_weights(class_sizes,i)
     def loss(y_obs,y_pred):        
         y_obs = tf.dtypes.cast(y_obs,tf.int32)
         hothot=  tf.dtypes.cast( y_obs,tf.float32)
@@ -103,9 +109,9 @@ def weighted_binary_loss( class_weights):
         return losses
     return loss
 
-def binary_weights(class_sizes,i):#,double=False ):
-    rest=[value_j for j,value_j in class_sizes.items()
-                  if(j!=i)]
-    rest= sum(rest)
-    weights=[1/rest, 1/class_sizes[i]]
-    return np.array(weights,dtype=np.float32)/sum(weights)
+#def binary_weights(class_sizes,i):#,double=False ):
+#    rest=[value_j for j,value_j in class_sizes.items()
+#                  if(j!=i)]
+#    rest= sum(rest)
+#    weights=[1/rest, 1/class_sizes[i]]
+#    return np.array(weights,dtype=np.float32)/sum(weights)
