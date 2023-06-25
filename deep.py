@@ -25,24 +25,35 @@ def nn_builder(params,hyper_params,input_layer=None,as_model=True,i=0):
         return Model(inputs=input_layer, outputs=x_i)
     return x_i
 
-def binary_ensemble(params,hyper_params):
-    input_layer = Input(shape=(params['dims']))
-    single_cls=[]
-    for i in range(params['n_cats']):
-        nn_i=nn_builder(params,hyper_params,input_layer,False,i)
-        single_cls.append(nn_i)
-    binary_loss=BinaryLoss()
-    loss={}
-    class_dict=params['class_weights']
-    for i in range(params['n_cats']):        
-        loss[f'out_{i}']=binary_loss(i,class_dict)
-    metrics={f'out_{i}' : 'accuracy'
+class EnsembleBuilder(object):
+    def __init__(self,loss_type=0.5):
+        self.loss=get_loss(loss_type)
+
+    def __call__(self,params,hyper_params):
+        input_layer = Input(shape=(params['dims']))
+        single_cls=[]
+        for i in range(params['n_cats']):
+            nn_i=nn_builder(params,hyper_params,input_layer,False,i)
+            single_cls.append(nn_i)
+        binary_loss=BinaryLoss()
+        loss={}
+        class_dict=params['class_weights']
+        for i in range(params['n_cats']):        
+            loss[f'out_{i}']=binary_loss(i,class_dict)
+        metrics={f'out_{i}' : 'accuracy'
                 for i in range(params['n_cats'])}
-    model= Model(inputs=input_layer, outputs=single_cls)
-    model.compile(#loss='categorical_crossentropy', 
-            loss=loss, 
-            optimizer='adam',metrics=metrics)
-    return BinaryEnsemble(model,params['n_cats'])
+        model= Model(inputs=input_layer, outputs=single_cls)
+        model.compile(loss=loss, #loss='categorical_crossentropy',
+                      optimizer='adam',
+                      metrics=metrics)
+        return BinaryEnsemble(model,params['n_cats'])
+
+def get_loss(loss_type):
+    if(type(loss_type)==float):
+        return BinaryLoss(loss_type)
+    def helper(i,class_dict):
+        return 'categorical_crossentropy'
+    return helper
 
 class BinaryEnsemble(object):
     def __init__(self,multi_output,n_clf):

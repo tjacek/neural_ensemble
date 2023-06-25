@@ -12,7 +12,11 @@ def single_exp(data_path,hyper_path,out_path):
     hyper_params=parse_hyper(hyper_path)
     dataset_params=data.get_dataset_params(X,y)
     splits=data.gen_splits(X,y,n_splits=10,n_repeats=1)
-    alg_dict={'base':deep.simple_nn,'binary':deep.binary_ensemble}
+    alg_dict={'base':deep.simple_nn,
+              'multi_ens':deep.EnsembleBuilder('multi'),
+              'binary_ens(0.25)':deep.EnsembleBuilder(0.25),
+              'binary_ens(0.5)':deep.EnsembleBuilder(0.5),
+             }
     tools.make_dir(out_path)
     for name_i,make_model_i in alg_dict.items():
         out_i=f'{out_path}/{name_i}'
