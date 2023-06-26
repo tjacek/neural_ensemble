@@ -6,12 +6,17 @@ import tensorflow as tf
 from keras import callbacks
 from collections import defaultdict
 import json
-import data,deep
+import data,deep,learn
 
 def single_exp(data_path,model_path,out_path):
+    clfs=['RF','SVC']
     X,y=data.get_dataset(data_path)
     pred_dict=defaultdict(lambda:[])
     for name_i,model_i,split_i in get_model_paths(model_path):
+        if('base' in name_i):
+            for clf_k in clfs: 
+                pred_k= learn.fit_clf(X,y,split_i,clf_k,True)
+                pred_dict[clf_k].append(pred_k)
         test_X, test_y=split_i.get_test(X,y)
         y_pred=model_i.predict(test_X)
         y_pred=np.argmax(y_pred,axis=1)
