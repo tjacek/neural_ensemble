@@ -52,7 +52,7 @@ def get_loss(loss_type):
     if(type(loss_type)==float):
         return BinaryLoss(loss_type)
     def helper(i,class_dict):
-        return 'categorical_crossentropy'
+        return 'c*ategorical_crossentropy'
     return helper
 
 class BinaryEnsemble(object):
@@ -74,6 +74,9 @@ class BinaryEnsemble(object):
                 for j in range(n_cats)])
             final_pred.append(np.sum(ballot_i,axis=0))
         return final_pred
+
+    def save_weights(self,out_path):
+        self.multi_output.save_weights(out_path)
 
 class BinaryLoss(object):
     def __init__(self,alpha=0.5):

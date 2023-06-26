@@ -4,42 +4,35 @@ import argparse
 import numpy as np
 import tensorflow as tf 
 from keras import callbacks
-import json
 import data,deep
 
-def single_exp(data_path,hyper_path,out_path):
+def single_exp(data_path,hyper_path,out_path,n_splits=10,n_repeats=10):
     X,y=data.get_dataset(data_path)
     hyper_params=parse_hyper(hyper_path)
     dataset_params=data.get_dataset_params(X,y)
-    splits=data.gen_splits(X,y,n_splits=10,n_repeats=1)
+    splits=data.gen_splits(X,y,n_splits=n_splits,n_repeats=n_repeats)
     alg_dict={'base':deep.simple_nn,
               'multi_ens':deep.EnsembleBuilder('multi'),
-              'binary_ens(0.25)':deep.EnsembleBuilder(0.25),
               'binary_ens(0.5)':deep.EnsembleBuilder(0.5),
              }
-    tools.make_dir(out_path)
-    for name_i,make_model_i in alg_dict.items():
-        out_i=f'{out_path}/{name_i}'
-        make_pred(make_model_i,out_i,hyper_params,dataset_params,splits)
-
-def make_pred(make_model,out_path,hyper_params,dataset_params,splits):
-    earlystopping = callbacks.EarlyStopping(monitor='accuracy',#params['metric'],
+    earlystopping = callbacks.EarlyStopping(monitor='accuracy',
                 mode="max", patience=5,restore_best_weights=True)
-    all_pred=[]
-    for (X_train,y_train),(X_test,y_test) in splits():
+    def train_model(X_train,y_train,make_model):
         model=make_model(dataset_params,hyper_params)
         y_train = tf.keras.utils.to_categorical(y_train, 
         	                num_classes = dataset_params['n_cats'])
         model.fit(X_train,y_train,epochs=150,callbacks=earlystopping)
-        y_pred= model.predict(X_test)
-        y_pred=np.argmax(y_pred,axis=1)
-        all_pred.append((y_test,y_pred))
-    with open(out_path, 'wb') as f:
-        all_pred=[ (test_i.tolist(),pred_i.tolist()) 
-            for test_i,pred_i in all_pred]
-        json_str = json.dumps(all_pred, default=str)         
-        json_bytes = json_str.encode('utf-8') 
-        f.write(json_bytes)
+        return model
+    tools.make_dir(out_path)
+    for name_i,make_model_i in alg_dict.items():
+        tools.make_dir(f'{out_path}/{name_i}')
+        for j,((train_ind,train_data),test) in enumerate(splits()):
+            out_j=f'{out_path}/{name_i}/{j}'
+            tools.make_dir(out_j)
+            model_j=train_model(*train_data,make_model_i)
+            model_j.save_weights(f'{out_j}/nn')
+            np.save(f'{out_j}/train',train_ind)
+            np.save(f'{out_j}/test',test[0])
 
 def parse_hyper(hyper_path):
     with open(hyper_path) as f:
@@ -54,9 +47,11 @@ def parse_hyper(hyper_path):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type=str, default='data')#/wine-quality-red')
+    parser.add_argument("--data", type=str, default='data')
     parser.add_argument("--hyper", type=str, default='hyper')
-    parser.add_argument("--pred", type=str, default='pred')
+    parser.add_argument("--models", type=str, default='models')
+    parser.add_argument("--n_splits", type=int, default=10)
+    parser.add_argument("--n_repeats", type=int, default=1)
     parser.add_argument("--dir", type=int, default=0)
     args = parser.parse_args()
     if(args.dir>0):
@@ -64,7 +59,7 @@ if __name__ == '__main__':
         def helper(in_path,out_path):
             name_i=in_path.split('/')[-1]
             hyper_i=f'{args.hyper}/{name_i}'
-            single_exp(in_path,hyper_i,out_path)
-        helper(args.data,args.pred)
+            single_exp(in_path,hyper_i,out_path,args.n_splits,args.n_repeats)
+        helper(args.data,args.models)
     else:
-        single_exp(args.data,args.hyper,args.pred)
+        single_exp(args.data,args.hyper,args.models)
