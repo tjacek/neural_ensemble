@@ -44,17 +44,17 @@ def get_model_paths(model_path):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type=str, default='data/cmc')
-    parser.add_argument("--models", type=str, default='cmc')
-    parser.add_argument("--pred", type=str, default='pred_cmc')
+    parser.add_argument("--data", type=str, default='data')
+    parser.add_argument("--models", type=str, default='10_10/models')
+    parser.add_argument("--pred", type=str, default='10_10/pred')
     parser.add_argument("--dir", type=int, default=0)
     args = parser.parse_args()
     if(args.dir>0):
         @tools.dir_fun#(single_exp)
         def helper(in_path,out_path):
             name_i=in_path.split('/')[-1]
-            hyper_i=f'{args.hyper}/{name_i}'
-            single_exp(in_path,hyper_i,out_path)
+            model_i=f'{args.models}/{name_i}'
+            single_exp(in_path,model_i,out_path)
         helper(args.data,args.pred)
     else:
         single_exp(args.data,args.models,args.pred)
