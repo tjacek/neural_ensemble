@@ -56,9 +56,9 @@ def get_loss(loss_type):
     return helper
 
 class BinaryEnsemble(object):
-    def __init__(self,multi_output,n_clf):
+    def __init__(self,multi_output):
         self.multi_output=multi_output
-        self.n_clf=n_clf
+        self.n_clf=self.multi_output.output_shape[0][1]
 
     def fit(self,X,y,epochs=150,callbacks=None):
         y_multi=[y for i in range(self.n_clf)]
@@ -75,8 +75,8 @@ class BinaryEnsemble(object):
             final_pred.append(np.sum(ballot_i,axis=0))
         return final_pred
 
-    def save_weights(self,out_path):
-        self.multi_output.save_weights(out_path)
+    def save(self,out_path):
+        self.multi_output.save(out_path)
 
 class BinaryLoss(object):
     def __init__(self,alpha=0.5):
