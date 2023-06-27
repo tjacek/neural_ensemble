@@ -59,6 +59,7 @@ class BinaryEnsemble(object):
     def __init__(self,multi_output):
         self.multi_output=multi_output
         self.n_clf=self.multi_output.output_shape[0][1]
+        self.extractor=None 
 
     def fit(self,X,y,epochs=150,callbacks=None):
         y_multi=[y for i in range(self.n_clf)]
@@ -74,6 +75,15 @@ class BinaryEnsemble(object):
                 for j in range(n_cats)])
             final_pred.append(np.sum(ballot_i,axis=0))
         return final_pred
+
+    def extract(self,X):
+        if(self.extractor is None):
+            names=[ layer.name for layer in self.multi_output.layers]
+            penult=names[-6:-3]
+            layers=[self.multi_output.get_layer(name_i).output 
+                    for name_i in penult]
+            self.extractor=Model(inputs=self.multi_output.input,outputs=layers)
+        return self.extractor.predict(X)
 
     def save(self,out_path):
         self.multi_output.save(out_path)

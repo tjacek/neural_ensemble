@@ -13,12 +13,18 @@ def single_exp(data_path,model_path,out_path):
     X,y=data.get_dataset(data_path)
     pred_dict=defaultdict(lambda:[])
     for name_i,model_i,split_i in get_model_paths(model_path):
+        train,test=split_i.get_dataset(X,y)
         if('base' in name_i):
             for clf_k in clfs: 
-                pred_k= learn.fit_clf(X,y,split_i,clf_k,True)
+                pred_k= learn.fit_clf(train,test,clf_k,True)
                 pred_dict[clf_k].append(pred_k)
-        test_X, test_y=split_i.get_test(X,y)
-        y_pred=model_i.predict(test_X)
+        if('ens' in name_i):
+            cs_train=model_i.extract(train.X)
+            cs_test=model_i.extract(test.X)
+            for clf_k in clfs:
+                pred_k=necscf(train,test,cs_train,cs_test,clf_k)
+                pred_dict[f'{name_i}({clf_k})'].append(pred_k)
+        y_pred=model_i.predict(test.X)
         y_pred=np.argmax(y_pred,axis=1)
         pred_dict[name_i].append((y_pred,test_y))
     tools.make_dir(out_path)
@@ -36,17 +42,33 @@ def get_model_paths(model_path):
         for model_j in tools.get_dirs(path_i):
             nn_j = tf.keras.models.load_model(f'{model_j}/nn',compile=False)
             if('ens' in name_i):
-                nn_j=deep.BinaryEnsemble(nn_j,5)
+                nn_j=deep.BinaryEnsemble(nn_j)
             test_ind=np.load(f'{model_j}/test.npy')
             train_ind=np.load(f'{model_j}/train.npy')
             split_j=data.DataSplit(train_ind,test_ind)
             yield name_i,nn_j,split_j
 
+def necscf(train,test,cs_train,cs_test,clf_type):
+    votes=[]
+    for cs_train_i,cs_test_i in zip(cs_train,cs_test):
+        full_train_i=np.concatenate([train.X,cs_train_i],axis=1)
+        clf_i=learn.get_clf(clf_type)
+        clf_i.fit(full_train_i,train.y)
+        full_test_i=np.concatenate([test.X,cs_test_i],axis=1)
+        y_pred=clf_i.predict_proba(full_test_i)
+        votes.append(y_pred)
+    raise Exception( votes[0].shape )
+#    train_X,train_y=split_i.get_train(X,y)
+#    test_X,test_y=split_i.get_test(X,y)
+
+
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type=str, default='data')
-    parser.add_argument("--models", type=str, default='10_10/models')
-    parser.add_argument("--pred", type=str, default='10_10/pred')
+    parser.add_argument("--data", type=str, default='data/cmc')
+    parser.add_argument("--models", type=str, default='cmc')
+    parser.add_argument("--pred", type=str, default='pred_cmc')
     parser.add_argument("--dir", type=int, default=0)
     args = parser.parse_args()
     if(args.dir>0):
