@@ -2,6 +2,7 @@ import tools
 import argparse
 import numpy as np
 from sklearn.metrics import accuracy_score
+from sklearn import preprocessing
 import data,learn,pred
 
 def beter_acc(data_path,model_path,clf_type='RF'):
@@ -16,13 +17,12 @@ def beter_acc(data_path,model_path,clf_type='RF'):
         if(ens_acc>common_acc):
             better.append(ens_acc)
     print(len(better))
-#        full_train,full_test=get_full(train,nn_i),get_full(test,nn_i)
-#        clf_i=learn.get_clf(clf_type)
-#        clf_i.fit(train.X,train.y)
-#        clf_i
 
-def get_full(train ,nn):
+def get_full(train ,nn,scale=True):
     cs_train=nn.extract(train.X)
+    if(scale):
+        cs_train=[preprocessing.scale(cs_i)
+                    for cs_i in cs_train]
     return [np.concatenate([train.X,cs_i],axis=1)
              for cs_i in cs_train]
 
