@@ -26,7 +26,7 @@ def single_exp(data_path,model_path,out_path):
                 pred_dict[f'{name_i}({clf_k})'].append(pred_k)
         y_pred=model_i.predict(test.X)
         y_pred=np.argmax(y_pred,axis=1)
-        pred_dict[name_i].append((y_pred,test_y))
+        pred_dict[name_i].append((y_pred,test.y))
     tools.make_dir(out_path)
     for name_i,pred_i in pred_dict.items():
         with open(f'{out_path}/{name_i}', 'wb') as f:
@@ -57,12 +57,9 @@ def necscf(train,test,cs_train,cs_test,clf_type):
         full_test_i=np.concatenate([test.X,cs_test_i],axis=1)
         y_pred=clf_i.predict_proba(full_test_i)
         votes.append(y_pred)
-    raise Exception( votes[0].shape )
-#    train_X,train_y=split_i.get_train(X,y)
-#    test_X,test_y=split_i.get_test(X,y)
-
-
-
+    votes=np.array(votes)
+    votes=np.sum(votes,axis=0)
+    return np.argmax(votes,axis=1),test.y
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

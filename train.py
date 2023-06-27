@@ -30,7 +30,7 @@ def single_exp(data_path,hyper_path,out_path,n_splits=10,n_repeats=10):
             out_j=f'{out_path}/{name_i}/{j}'
             tools.make_dir(out_j)
             model_j=train_model(*train_data,make_model_i)
-            model_j.save_weights(f'{out_j}/nn')
+            model_j.save(f'{out_j}/nn')
             np.save(f'{out_j}/train',train_ind)
             np.save(f'{out_j}/test',test[0])
 
@@ -51,7 +51,7 @@ if __name__ == '__main__':
     parser.add_argument("--hyper", type=str, default='hyper')
     parser.add_argument("--models", type=str, default='models')
     parser.add_argument("--n_splits", type=int, default=10)
-    parser.add_argument("--n_repeats", type=int, default=1)
+    parser.add_argument("--n_repeats", type=int, default=10)
     parser.add_argument("--dir", type=int, default=0)
     args = parser.parse_args()
     if(args.dir>0):
@@ -62,4 +62,4 @@ if __name__ == '__main__':
             single_exp(in_path,hyper_i,out_path,args.n_splits,args.n_repeats)
         helper(args.data,args.models)
     else:
-        single_exp(args.data,args.hyper,args.models)
+        single_exp(args.data,args.hyper,args.models,args.n_splits,args.n_repeats)

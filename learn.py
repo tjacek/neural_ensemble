@@ -6,10 +6,10 @@ from sklearn import ensemble
 def fit_clf(train,test,clf_type,hard=False):
     clf_i=get_clf(clf_type)
     clf_i.fit(train.X,train.y)
-    y_pred=clf_i.predict_proba(test_X)
+    y_pred=clf_i.predict_proba(test.X)
     if(hard):
         y_pred=np.argmax(y_pred,axis=1)
-    return (y_pred,test_y)
+    return (y_pred,test.y)
 
 #def fit_split(X,y,split_i,clf_type=None,hard=False):
 #    clf_i= get_clf(clf_type)
