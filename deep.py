@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
 import keras
+from sklearn import preprocessing
 from tensorflow.keras.layers import Dense,BatchNormalization,Concatenate
 from tensorflow.keras import Input, Model
 from sklearn.base import BaseEstimator, ClassifierMixin
@@ -84,6 +85,14 @@ class BinaryEnsemble(object):
                     for name_i in penult]
             self.extractor=Model(inputs=self.multi_output.input,outputs=layers)
         return self.extractor.predict(X)
+
+    def get_full(self,train,scale=True):
+        cs_train=self.extract(train.X)
+        if(scale):
+            cs_train=[preprocessing.scale(cs_i)
+                    for cs_i in cs_train]
+        return [np.concatenate([train.X,cs_i],axis=1)
+                for cs_i in cs_train]
 
     def save(self,out_path):
         self.multi_output.save(out_path)
