@@ -2,16 +2,29 @@ import tools
 tools.silence_warnings()
 import argparse
 import numpy as np
+import pandas as pd
 from sklearn.metrics import accuracy_score,balanced_accuracy_score#,f1_score
+from scipy import stats
 import json
 
 def single_exp(pred_path,out_path):
     acc_dict=metric_dict(accuracy_score,pred_path)
+    df=make_df(acc_dict)
+    for data_i in df.dataset.unique():
+        pvalue_df=get_pvalue(data_i,df,acc_dict)
+        print(pvalue_df[ (pvalue_df.improv==True) &
+                         (pvalue_df.pvalue<0.05)])
+
+def make_df(acc_dict):
+    lines=[]
     stats=[np.mean,np.std]
     for id_i,metric_i in acc_dict.items():
-        line_i=[id_i]+[f'{stat_j(metric_i):.4}' 
+        line_i=id_i.split(',')
+        line_i+=[round(stat_j(metric_i),4) 
                         for stat_j in stats]
-        print(','.join(line_i))
+        lines.append(line_i)
+    cols=['dataset','clf','mean','std']
+    return pd.DataFrame(lines,columns=cols)
 
 def metric_dict(metric_i,pred_path):
     metric_dict={}
@@ -32,6 +45,38 @@ def read_pred(path_i):
 def get_id(path_i):
     raw=path_i.split('/')
     return f'{raw[-2]},{raw[-1]}'
+
+def get_pvalue(dataset,df,acc_dict):
+    single,ens=[],[]
+    for id_i in acc_dict:
+        if('ens' in id_i):
+            ens.append(id_i)
+        else:
+            single.append(id_i)
+    single_mean=get_mean_dict(single,df,dataset)
+    ens_mean=get_mean_dict(ens,df,dataset)
+    lines=[]
+    for single_i in single:
+        for ens_j in ens:
+            r=stats.ttest_ind(acc_dict[single_i], 
+                acc_dict[ens_j], equal_var=False)
+            p_value=round(r[1],4)
+            single_clf_i=single_i.split(',')[-1]
+            ens_clf_j=ens_j.split(',')[-1]
+            diff_ij= ens_mean[ens_clf_j]-single_mean[single_clf_i]
+            line_i=[dataset,single_clf_i,ens_clf_j]
+            line_i+=[p_value,(diff_ij>0),diff_ij]
+            lines.append(line_i)
+    cols=['dataset','single','ens','pvalue','improv','diff']
+    return pd.DataFrame(lines,columns=cols)
+
+def get_mean_dict(single,df,dataset):
+    single_acc={}
+    for single_i in single:
+        clf_i=single_i.split(',')[-1]
+        df_i= df[(df.dataset==dataset) & (df.clf==clf_i)]
+        single_acc[clf_i]=list(df_i['mean'])[0]
+    return single_acc
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
