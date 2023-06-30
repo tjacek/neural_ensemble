@@ -12,8 +12,18 @@ def single_exp(pred_path,out_path):
     df=make_df(acc_dict)
     for data_i in df.dataset.unique():
         pvalue_df=get_pvalue(data_i,df,acc_dict)
-        print(pvalue_df[ (pvalue_df.improv==True) &
-                         (pvalue_df.pvalue<0.05)])
+        summary(pvalue_df, stats_type=1)
+
+def summary(df_i, stats_type=1):
+    if(stats_type==1):
+        print(df_i[ (df_i.improv==True) &
+                    (df_i.pvalue<0.05)])
+    elif(stats_type==2):
+        print(df_i[ (df_i.improv==True) &
+              (df_i.pvalue>0.05)])
+    else:
+        print(df_i[ (df_i.improv==False) &
+                    (df_i.pvalue<0.05)])
 
 def make_df(acc_dict):
     lines=[]
