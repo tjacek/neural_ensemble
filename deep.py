@@ -47,7 +47,7 @@ class EnsembleBuilder(object):
         model.compile(loss=loss, #loss='categorical_crossentropy',
                       optimizer='adam',
                       metrics=metrics)
-        return BinaryEnsemble(model,params['n_cats'])
+        return BinaryEnsemble(model)#,params['n_cats'])
 
 def get_loss(loss_type):
     if(type(loss_type)==float):
