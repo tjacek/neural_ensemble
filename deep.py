@@ -53,7 +53,7 @@ def get_loss(loss_type):
     if(type(loss_type)==float):
         return BinaryLoss(loss_type)
     def helper(i,class_dict):
-        return 'c*ategorical_crossentropy'
+        return 'categorical_crossentropy'
     return helper
 
 class BinaryEnsemble(object):
@@ -62,10 +62,10 @@ class BinaryEnsemble(object):
         self.n_clf=self.multi_output.output_shape[0][1]
         self.extractor=None 
 
-    def fit(self,X,y,epochs=150,callbacks=None):
+    def fit(self,X,y,epochs=150,batch_size=None, verbose=0,callbacks=None):
         y_multi=[y for i in range(self.n_clf)]
-        self.multi_output.fit(X,y_multi,epochs=epochs,
-                                callbacks=callbacks)
+        self.multi_output.fit(X,y_multi,batch_size=batch_size,epochs=epochs,
+                            verbose=verbose,callbacks=callbacks)
 
     def predict(self,X):
         y_pred= self.multi_output.predict(X)

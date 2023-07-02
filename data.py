@@ -69,4 +69,5 @@ def prepare_data(df):
 def get_dataset_params(X,y):
     return {'n_cats':max(y)+1,
             'dims':X.shape[1],
+            'batch':X.shape[0],
             'class_weights':Counter(y)}

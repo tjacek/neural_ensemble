@@ -6,6 +6,7 @@ import tensorflow as tf
 from keras import callbacks
 import data,deep
 
+@tools.log_time(task='TRAIN')
 def single_exp(data_path,hyper_path,out_path,n_splits=10,n_repeats=10):
     X,y=data.get_dataset(data_path)
     hyper_params=parse_hyper(hyper_path)
@@ -21,7 +22,9 @@ def single_exp(data_path,hyper_path,out_path,n_splits=10,n_repeats=10):
         model=make_model(dataset_params,hyper_params)
         y_train = tf.keras.utils.to_categorical(y_train, 
         	                num_classes = dataset_params['n_cats'])
-        model.fit(X_train,y_train,epochs=150,callbacks=earlystopping)
+        batch=dataset_params['batch']
+        model.fit(X_train,y_train,batch_size=batch,epochs=150,
+            verbose=0,callbacks=earlystopping)
         return model
     tools.make_dir(out_path)
     for name_i,make_model_i in alg_dict.items():
@@ -53,9 +56,9 @@ if __name__ == '__main__':
     parser.add_argument("--n_splits", type=int, default=10)
     parser.add_argument("--n_repeats", type=int, default=10)
     parser.add_argument("--dir", type=int, default=0)
-#    parser.add_argument("--log", type=str, default='log.info')
+    parser.add_argument("--log", type=str, default='log.info')
     args = parser.parse_args()
-#    tools.start_log(args.log_path)
+    tools.start_log(args.log)
     if(args.dir>0):
         single_exp=tools.dir_fun(3)(single_exp)
     single_exp(args.data,args.hyper,args.models,args.n_splits,args.n_repeats)
