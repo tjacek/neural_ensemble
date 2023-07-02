@@ -69,11 +69,5 @@ if __name__ == '__main__':
     parser.add_argument("--dir", type=int, default=0)
     args = parser.parse_args()
     if(args.dir>0):
-        @tools.dir_fun#(single_exp)
-        def helper(in_path,out_path):
-            name_i=in_path.split('/')[-1]
-            model_i=f'{args.models}/{name_i}'
-            single_exp(in_path,model_i,out_path)
-        helper(args.data,args.pred)
-    else:
-        single_exp(args.data,args.models,args.pred)
+        single_exp=tools.dir_fun(3)(single_exp)
+    single_exp(args.data,args.models,args.pred)

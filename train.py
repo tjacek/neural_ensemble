@@ -53,13 +53,9 @@ if __name__ == '__main__':
     parser.add_argument("--n_splits", type=int, default=10)
     parser.add_argument("--n_repeats", type=int, default=10)
     parser.add_argument("--dir", type=int, default=0)
+#    parser.add_argument("--log", type=str, default='log.info')
     args = parser.parse_args()
+#    tools.start_log(args.log_path)
     if(args.dir>0):
-        @tools.dir_fun#(single_exp)
-        def helper(in_path,out_path):
-            name_i=in_path.split('/')[-1]
-            hyper_i=f'{args.hyper}/{name_i}'
-            single_exp(in_path,hyper_i,out_path,args.n_splits,args.n_repeats)
-        helper(args.data,args.models)
-    else:
-        single_exp(args.data,args.hyper,args.models,args.n_splits,args.n_repeats)
+        single_exp=tools.dir_fun(3)(single_exp)
+    single_exp(args.data,args.hyper,args.models,args.n_splits,args.n_repeats)

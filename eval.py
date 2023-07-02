@@ -10,9 +10,11 @@ import json
 def single_exp(pred_path,out_path):
     acc_dict=metric_dict(accuracy_score,pred_path)
     df=make_df(acc_dict)
-    for data_i in df.dataset.unique():
-        pvalue_df=get_pvalue(data_i,df,acc_dict)
-        summary(pvalue_df, stats_type=1)
+    df=df.sort_values(by=['mean'], ascending=False)
+    print(df)
+#    for data_i in df.dataset.unique():
+#        pvalue_df=get_pvalue(data_i,df,acc_dict)
+#        summary(pvalue_df, stats_type=1)
 
 def summary(df_i, stats_type=1):
     if(stats_type==1):
@@ -94,5 +96,5 @@ if __name__ == '__main__':
     parser.add_argument("--dir", type=int, default=0)
     args = parser.parse_args()
     if(args.dir>0):
-        single_exp=tools.dir_fun(single_exp)
+        single_exp=tools.dir_fun(2)(single_exp)
     single_exp(args.pred,'out')

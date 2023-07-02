@@ -12,14 +12,19 @@ def silence_warnings():
         pass
     warnings.warn = warn
 
-def dir_fun(fun):
-    @wraps(fun)
-    def helper(*args, **kwargs):
-        in_path= args[0]
-        for path_i in top_files(in_path):
-            new_args=list(args)
-            new_args[0]=path_i#f'{out_path}/{i}'
-            fun(*new_args,**kwargs)
+def dir_fun(n_paths=1):
+    def helper(fun):
+        @wraps(fun)
+        def decor_fun(*args, **kwargs):
+            path_args=args[:n_paths]
+            make_dir(path_args[-1])
+            for path_i in top_files(path_args[0]):
+                name_i=path_i.split('/')[-1]
+                new_args=list(args)
+                for j,arg_j in enumerate(path_args):
+                    new_args[j]=f'{arg_j}/{name_i}'
+                fun(*new_args,**kwargs)
+        return decor_fun
     return helper
 
 def make_dir(path):
@@ -45,6 +50,15 @@ def round_data(data,decimals=4):
 def get_dirs(path):
     return [path_i for path_i in top_files(path)
             if(os.path.isdir(path_i))]
+
+def start_log(log_path):
+    logging.basicConfig(filename=log_path,#'{}/time.log'.format(dir_path), 
+        level=logging.INFO,filemode='a', 
+        format='%(process)d-%(levelname)s-%(message)s')
+
+def log_time(txt,st):
+    logging.info(f'{txt} took {(time.time()-st):.4f}s')
+
 @dir_fun
 def test_fun(in_path):
     print(in_path)

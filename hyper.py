@@ -80,5 +80,5 @@ if __name__ == "__main__":
     parser.add_argument("--dir", type=int, default=0)
     args = parser.parse_args()
     if(args.dir>0):
-        single_exp=tools.dir_fun(single_exp)
+        single_exp=tools.dir_fun(2)(single_exp)
     single_exp(args.data,args.hyper,args.n_split,args.n_iter)
