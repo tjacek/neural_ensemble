@@ -27,6 +27,7 @@ class MultiKTBuilder(object):
         model.compile('adam', 'sparse_categorical_crossentropy', metrics=['accuracy'])
         return model
 
+@tools.log_time(task='HYPER')
 def single_exp(data_path,hyper_path,n_split,n_iter):
     X,y=data.get_dataset(data_path)
     data_params=data.get_dataset_params(X,y)
@@ -77,8 +78,10 @@ if __name__ == "__main__":
     parser.add_argument("--hyper", type=str, default='hyper')
     parser.add_argument("--n_split", type=int, default=10)
     parser.add_argument("--n_iter", type=int, default=10)
+    parser.add_argument("--log", type=str, default='log')
     parser.add_argument("--dir", type=int, default=0)
     args = parser.parse_args()
+    tools.start_log(args.log)
     if(args.dir>0):
         single_exp=tools.dir_fun(2)(single_exp)
     single_exp(args.data,args.hyper,args.n_split,args.n_iter)

@@ -8,6 +8,7 @@ from collections import defaultdict
 import json
 import data,deep,learn
 
+@tools.log_time(task='PRED')
 def single_exp(data_path,model_path,out_path):
     clfs=['RF','SVC']
     X,y=data.get_dataset(data_path)
@@ -66,8 +67,10 @@ if __name__ == '__main__':
     parser.add_argument("--data", type=str, default='data/cmc')
     parser.add_argument("--models", type=str, default='cmc')
     parser.add_argument("--pred", type=str, default='pred_cmc')
+    parser.add_argument("--log", type=str, default='log.info')
     parser.add_argument("--dir", type=int, default=0)
     args = parser.parse_args()
+    tools.start_log(args.log)
     if(args.dir>0):
         single_exp=tools.dir_fun(3)(single_exp)
     single_exp(args.data,args.models,args.pred)

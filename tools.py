@@ -1,5 +1,5 @@
 import os,warnings
-import logging#,time
+import logging,time
 from functools import wraps
 
 def silence_warnings():
@@ -51,13 +51,22 @@ def get_dirs(path):
     return [path_i for path_i in top_files(path)
             if(os.path.isdir(path_i))]
 
+def log_time(task='TRAIN'):
+    def helper(fun):
+        @wraps(fun)
+        def decor_fun(*args, **kwargs):
+            name_i=args[0].split('/')[-1]
+            start=time.time()
+            fun(*args,**kwargs)
+            diff=(time.time()-start)
+            logging.info(f'{task}-{name_i}-{diff:.4f}s')
+        return decor_fun
+    return helper
+
 def start_log(log_path):
     logging.basicConfig(filename=log_path,#'{}/time.log'.format(dir_path), 
         level=logging.INFO,filemode='a', 
         format='%(process)d-%(levelname)s-%(message)s')
-
-def log_time(txt,st):
-    logging.info(f'{txt} took {(time.time()-st):.4f}s')
 
 @dir_fun
 def test_fun(in_path):
