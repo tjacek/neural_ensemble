@@ -64,11 +64,12 @@ class BinaryEnsemble(object):
 
     def fit(self,X,y,epochs=150,batch_size=None, verbose=0,callbacks=None):
         y_multi=[y for i in range(self.n_clf)]
-        self.multi_output.fit(X,y_multi,batch_size=batch_size,epochs=epochs,
+        return self.multi_output.fit(X,y_multi,
+                            batch_size=batch_size,epochs=epochs,
                             verbose=verbose,callbacks=callbacks)
 
     def predict(self,X):
-        y_pred= self.multi_output.predict(X)
+        y_pred= self.multi_output.predict(X,verbose=0)
         n_samples,n_cats=y_pred[0].shape
         final_pred=[]
         for i in range(n_samples):
@@ -111,6 +112,9 @@ class BinaryLoss(object):
         class_weights[i]=cat_size_i
         class_weights=np.array(class_weights,dtype=np.float32)
         return weighted_binary_loss(class_weights)
+
+    def __str__(self):
+        return f'binary_losss({self.alpha})'
 
 def get_metric(name_i):
     if(name_i=='balanced_accuracy'):

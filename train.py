@@ -23,19 +23,30 @@ def single_exp(data_path,hyper_path,out_path,n_splits=10,n_repeats=10):
         y_train = tf.keras.utils.to_categorical(y_train, 
         	                num_classes = dataset_params['n_cats'])
         batch=dataset_params['batch']
-        model.fit(X_train,y_train,batch_size=batch,epochs=150,
-            verbose=0,callbacks=earlystopping)
-        return model
+        history=model.fit(X_train,y_train,batch_size=batch,
+            epochs=150,verbose=0,callbacks=earlystopping)
+        return model,history
     tools.make_dir(out_path)
     for name_i,make_model_i in alg_dict.items():
         tools.make_dir(f'{out_path}/{name_i}')
         for j,((train_ind,train_data),test) in enumerate(splits()):
             out_j=f'{out_path}/{name_i}/{j}'
             tools.make_dir(out_j)
-            model_j=train_model(*train_data,make_model_i)
+            model_j,history=train_model(*train_data,make_model_i)
+
             model_j.save(f'{out_j}/nn')
             np.save(f'{out_j}/train',train_ind)
             np.save(f'{out_j}/test',test[0])
+            acc_desc=accuracy_desc(history)
+            with open(f'{out_j}/acc_desc',"a") as f:
+                f.write(f'{str(acc_desc)}\n') 
+
+def accuracy_desc(history):
+    acc_desc={}
+    for key_i in history.history:
+        acc_i=history.history[key_i][-1]
+        acc_desc[key_i]=round(acc_i,4)
+    return acc_desc
 
 def parse_hyper(hyper_path):
     with open(hyper_path) as f:
