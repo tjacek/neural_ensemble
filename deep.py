@@ -6,64 +6,18 @@ from tensorflow.keras.layers import Dense,BatchNormalization,Concatenate
 from tensorflow.keras import Input, Model
 from sklearn.base import BaseEstimator, ClassifierMixin
 
-def simple_nn(params,hyper_params):
-    model=nn_builder(params,hyper_params)
-    model.compile(loss='categorical_crossentropy', 
-            optimizer='adam',metrics='accuracy')
-    return model
-
-def nn_builder(params,hyper_params,input_layer=None,as_model=True,i=0):
-    if(input_layer is None):
-        input_layer = Input(shape=(params['dims']))         
-    x_i=input_layer#Concatenate()([common,input_i])
-    for j,hidden_j in enumerate(hyper_params['layers']):
-        x_i=Dense(hidden_j,activation='relu',
-                    name=f"layer_{i}_{j}")(x_i)
-    if(hyper_params['layers']):
-        x_i=BatchNormalization(name=f'batch_{i}')(x_i)
-    x_i=Dense(params['n_cats'], activation='softmax',name=f'out_{i}')(x_i)
-    if(as_model):
-        return Model(inputs=input_layer, outputs=x_i)
-    return x_i
-
-class EnsembleBuilder(object):
-    def __init__(self,loss_type=0.5):
-        self.loss=get_loss(loss_type)
-
-    def __call__(self,params,hyper_params):
-        input_layer = Input(shape=(params['dims']))
-        single_cls=[]
-        for i in range(params['n_cats']):
-            nn_i=nn_builder(params,hyper_params,input_layer,False,i)
-            single_cls.append(nn_i)
-        binary_loss=BinaryLoss()
-        loss={}
-        class_dict=params['class_weights']
-        for i in range(params['n_cats']):        
-            loss[f'out_{i}']=binary_loss(i,class_dict)
-        metrics={f'out_{i}' : 'accuracy'
-                for i in range(params['n_cats'])}
-        model= Model(inputs=input_layer, outputs=single_cls)
-        model.compile(loss=loss, #loss='categorical_crossentropy',
-                      optimizer='adam',
-                      metrics=metrics)
-        return BinaryEnsemble(model)#,params['n_cats'])
-
-def get_loss(loss_type):
-    if(type(loss_type)==float):
-        return BinaryLoss(loss_type)
-    def helper(i,class_dict):
-        return 'categorical_crossentropy'
-    return helper
-
-class BinaryEnsemble(object):
-    def __init__(self,multi_output):
+class NeuralEnsemble(object):
+    def __init__(self,multi_output,labels=None):
+        if(labels is None):
+            labels=basic_labels
         self.multi_output=multi_output
+        self.labels=labels
         self.n_clf=self.multi_output.output_shape[0][1]
         self.extractor=None 
 
     def fit(self,X,y,epochs=150,batch_size=None, verbose=0,callbacks=None):
-        y_multi=[y for i in range(self.n_clf)]
+#        y_multi=[y for i in range(self.n_clf)]
+        y_multi=self.labels(y,self.n_clf)
         return self.multi_output.fit(X,y_multi,
                             batch_size=batch_size,epochs=epochs,
                             verbose=verbose,callbacks=callbacks)
@@ -98,7 +52,35 @@ class BinaryEnsemble(object):
     def save(self,out_path):
         self.multi_output.save(out_path)
 
-class BinaryLoss(object):
+    def __str__(self):
+        name = self.multilabels.__name__
+        return f'Loss:{str(self.loss)}Labels:\n{name}'
+
+class EnsembleBuilder(object):
+    def __init__(self,loss_type=0.5,label_type='basic'):
+        self.loss=get_loss(loss_type)
+        self.labels=get_labels(label_type)
+
+    def __call__(self,params,hyper_params):
+        input_layer = Input(shape=(params['dims']))
+        single_cls=[]
+        for i in range(params['n_cats']):
+            nn_i=nn_builder(params,hyper_params,input_layer,False,i)
+            single_cls.append(nn_i)
+        binary_loss=WeightedLoss()
+        loss={}
+        class_dict=params['class_weights']
+        for i in range(params['n_cats']):        
+            loss[f'out_{i}']=binary_loss(i,class_dict)
+        metrics={f'out_{i}' : 'accuracy'
+                for i in range(params['n_cats'])}
+        model= Model(inputs=input_layer, outputs=single_cls)
+        model.compile(loss=loss, #loss='categorical_crossentropy',
+                      optimizer='adam',
+                      metrics=metrics)
+        return NeuralEnsemble(model)
+
+class WeightedLoss(object):
     def __init__(self,alpha=0.5):
         self.alpha=alpha
 
@@ -114,7 +96,50 @@ class BinaryLoss(object):
         return weighted_binary_loss(class_weights)
 
     def __str__(self):
-        return f'binary_losss({self.alpha})'
+        return f'weighted_losss({self.alpha})'
+
+def get_loss(loss_type):
+    if(type(loss_type)==float):
+        return WeightedLoss(loss_type)
+    def helper(i,class_dict):
+        return 'categorical_crossentropy'
+    return helper
+
+def get_labels(label_type):
+    if(label_type=='basic'):
+        return basic_labels
+    if(label_type=='binary'):
+        return binary_labels
+
+def basic_labels(y,n_clf):
+    return [y for i in range(n_clf)]
+
+def binary_labels(y,n_clf):
+    binary_y=[]
+    for cat_i in range(n_clf):
+        y_i=[int(cat_i==y_j) for y_j in y]
+        binary_y.append(y_i)
+    return binary_y
+
+def simple_nn(params,hyper_params):
+    model=nn_builder(params,hyper_params)
+    model.compile(loss='categorical_crossentropy', 
+            optimizer='adam',metrics='accuracy')
+    return model
+
+def nn_builder(params,hyper_params,input_layer=None,as_model=True,i=0):
+    if(input_layer is None):
+        input_layer = Input(shape=(params['dims']))         
+    x_i=input_layer#Concatenate()([common,input_i])
+    for j,hidden_j in enumerate(hyper_params['layers']):
+        x_i=Dense(hidden_j,activation='relu',
+                    name=f"layer_{i}_{j}")(x_i)
+    if(hyper_params['layers']):
+        x_i=BatchNormalization(name=f'batch_{i}')(x_i)
+    x_i=Dense(params['n_cats'], activation='softmax',name=f'out_{i}')(x_i)
+    if(as_model):
+        return Model(inputs=input_layer, outputs=x_i)
+    return x_i
 
 def get_metric(name_i):
     if(name_i=='balanced_accuracy'):
@@ -145,10 +170,3 @@ def weighted_binary_loss( class_weights):
         )
         return losses
     return loss
-
-#def binary_weights(class_sizes,i):#,double=False ):
-#    rest=[value_j for j,value_j in class_sizes.items()
-#                  if(j!=i)]
-#    rest= sum(rest)
-#    weights=[1/rest, 1/class_sizes[i]]
-#    return np.array(weights,dtype=np.float32)/sum(weights)
