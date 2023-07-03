@@ -12,14 +12,13 @@ def single_exp(data_path,hyper_path,out_path,n_splits=10,n_repeats=10):
     hyper_params=parse_hyper(hyper_path)
     dataset_params=data.get_dataset_params(X,y)
     splits=data.gen_splits(X,y,n_splits=n_splits,n_repeats=n_repeats)
-#    alg_dict={'base':deep.simple_nn,
-#              'multi_ens':deep.EnsembleBuilder('multi'),
-#              'binary_ens(0.5)':deep.EnsembleBuilder(0.5),
-#             }
+
     alg_dict={ 'base':deep.simple_nn,
-               'multi_ens':deep.multi_ensemble,
-               'weighted_ens':deep.weighted_ensemble,
-               'binary_ens':deep.binary_ensemble
+               'multi_ens':deep.multi_ensemble(),
+               'weighted_ens-0.25':deep.weighted_ensemble(0.25),
+               'weighted_ens-0.5':deep.weighted_ensemble(0.50),
+               'binary_ens-0.25':deep.binary_ensemble(0.25),
+               'binary_ens-0.5':deep.binary_ensemble(0.5),
              }
     earlystopping = callbacks.EarlyStopping(monitor='accuracy',
                 mode="max", patience=5,restore_best_weights=True)

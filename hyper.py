@@ -61,7 +61,6 @@ def bayes_optim(X,y,data_params,n_split,n_iter):
     acc=get_metric_value(tuner,X,y)
     return best,relative,acc
 
-
 def get_metric_value(tuner,X,y):
     best_model= tuner.get_best_models(1)[0]
     metric_values= best_model.evaluate(X, y)

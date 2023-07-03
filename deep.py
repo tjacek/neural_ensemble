@@ -53,57 +53,60 @@ class NeuralEnsemble(object):
     def __str__(self):
         return f'type:{self.ens_type}\nn_clf:{self.n_clf}'
 
-class BinaryLoss(object):
-    def __init__(self,alpha=0.5):
-        self.alpha=alpha
+class EnsembleFactory(object):
+    def __init__(self,loss_fun,labels,ens_type,output_cats=None):
+        self.loss_fun=loss_fun
+        self.labels=labels
+        self.ens_type=ens_type
+        self.output_cats=output_cats
 
-    def __call__(self,i,class_dict):
-        one_i=class_dict[i]
-        other_i=sum(class_dict.values())-one_i
-        cat_size_i  = self.alpha*(1/one_i)
-        other_size_i= (1.0-self.alpha) * (1/other_i)
-        class_weights=[other_size_i,cat_size_i]
-        class_weights=np.array(class_weights,dtype=np.float32)
-        return weighted_binary_loss(class_weights)
+    def __call__(self,params,hyper_params):
+        if(self.output_cats is None):
+            self.output_cats=params['n_cats']
+        model=ensemble_builder(params,hyper_params,
+                self.loss_fun,output_cats=self.output_cats)
+        return NeuralEnsemble(model,
+                              self.labels,
+                              self.ens_type,
+                              params['n_cats'])      
 
-    def __str__(self):
-        return f'binary_losss({self.alpha})'
-
-class WeightedLoss(object):
-    def __init__(self,alpha=0.5):
-        self.alpha=alpha
-
-    def __call__(self,i,class_dict):
-        one_i=class_dict[i]
-        other_i=sum(class_dict.values())-one_i
-        cat_size_i  = self.alpha*(1/one_i)
-        other_size_i= (1.0-self.alpha) * (1/other_i)
-        class_weights= [other_size_i for i in range(len(class_dict) )]
-        class_weights[i]=cat_size_i
-        class_weights=np.array(class_weights,dtype=np.float32)
-        return weighted_binary_loss(class_weights)
-
-    def __str__(self):
-        return f'weighted_losss({self.alpha})'
-
-def multi_ensemble(params,hyper_params):
+def multi_ensemble():
     def loss_fun(i,class_dict):
         return 'categorical_crossentropy'
-    model=ensemble_builder(params,hyper_params,
-                        loss_fun,output_cats=params['n_cats'])
-    return NeuralEnsemble(model,basic_labels,'multi',params['n_cats'])
+    return EnsembleFactory(loss_fun=loss_fun,
+                           labels=basic_labels,
+                           ens_type='multi',
+                           output_cats=None)
+#    model=ensemble_builder(params,hyper_params,
+#                        loss_fun,output_cats=params['n_cats'])
+#    return NeuralEnsemble(model,basic_labels,'multi',params['n_cats'])
 
+def weighted_ensemble(alpha=0.5):
+    def loss_fun(i,class_dict):
+        return weighted_loss(i,class_dict,alpha)
+    return EnsembleFactory(loss_fun=loss_fun,
+                           labels=basic_labels,
+                           ens_type='weighted',
+                           output_cats=None)
 
-def weighted_ensemble(params,hyper_params):
-    loss_fun=WeightedLoss(0.5)
-    model=ensemble_builder(params,hyper_params,
-                        loss_fun,output_cats=params['n_cats'])
-    return NeuralEnsemble(model,basic_labels,'weighted',params['n_cats'])
+def binary_ensemble(alpha=0.5):
+    def loss_fun(i,class_dict):
+        return binary_loss(i,class_dict,alpha)
+    return EnsembleFactory(loss_fun=loss_fun,
+                           labels=binary_labels,
+                           ens_type='binary',
+                           output_cats=2)
 
-def binary_ensemble(params,hyper_params):
-    loss_fun=BinaryLoss(0.5)
-    model=ensemble_builder(params,hyper_params,loss_fun,output_cats=2)
-    return NeuralEnsemble(model,binary_labels,'binary',params['n_cats'])
+#def weighted_ensemble(params,hyper_params):
+#    loss_fun=WeightedLoss(0.5)
+#    model=ensemble_builder(params,hyper_params,
+#                        loss_fun,output_cats=params['n_cats'])
+#    return NeuralEnsemble(model,basic_labels,'weighted',params['n_cats'])
+
+#def binary_ensemble(params,hyper_params):
+#    loss_fun=BinaryLoss(0.5)
+#    model=ensemble_builder(params,hyper_params,loss_fun,output_cats=2)
+#    return NeuralEnsemble(model,binary_labels,'binary',params['n_cats'])
 
 def ensemble_builder(params,hyper_params,binary_loss,output_cats=2):
     input_layer = Input(shape=(params['dims']))
@@ -122,6 +125,7 @@ def ensemble_builder(params,hyper_params,binary_loss,output_cats=2):
     return model
 
 def read_ensemble(in_path):
+    print(in_path)
     nn = tf.keras.models.load_model(f'{in_path}/nn',compile=False)
     with open(f'{in_path}/ens_desc',"r") as f:
         raw= f.read().split('\n')
@@ -166,6 +170,25 @@ def nn_builder(params,hyper_params,input_layer=None,as_model=True,i=0,n_cats=Non
     if(as_model):
         return Model(inputs=input_layer, outputs=x_i)
     return x_i
+
+def binary_loss(i,class_dict,alpha):
+    one_i=class_dict[i]
+    other_i=sum(class_dict.values())-one_i
+    cat_size_i  = alpha*(1/one_i)
+    other_size_i= (1.0-alpha) * (1/other_i)
+    class_weights=[other_size_i,cat_size_i]
+    class_weights=np.array(class_weights,dtype=np.float32)
+    return weighted_binary_loss(class_weights)
+
+def weighted_loss(i,class_dict,alpha):
+    one_i=class_dict[i]
+    other_i=sum(class_dict.values())-one_i
+    cat_size_i  = alpha*(1/one_i)
+    other_size_i= (1.0-alpha) * (1/other_i)
+    class_weights= [other_size_i for i in range(len(class_dict) )]
+    class_weights[i]=cat_size_i
+    class_weights=np.array(class_weights,dtype=np.float32)
+    return weighted_binary_loss(class_weights)
 
 def weighted_binary_loss( class_weights):
     def loss(y_obs,y_pred):        
