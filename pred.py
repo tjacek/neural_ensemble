@@ -45,7 +45,7 @@ def get_model_paths(model_path):
 #                nn_j=deep.BinaryEnsemble(nn_j)
                 nn_j=deep.read_ensemble(model_j)
             else:
-                n_j = tf.keras.models.load_model(f'{model_j}/nn',compile=False)
+                nn_j = tf.keras.models.load_model(f'{model_j}/nn',compile=False)
             test_ind=np.load(f'{model_j}/test.npy')
             train_ind=np.load(f'{model_j}/train.npy')
             split_j=data.DataSplit(train_ind,test_ind)

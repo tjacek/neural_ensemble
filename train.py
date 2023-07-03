@@ -16,7 +16,10 @@ def single_exp(data_path,hyper_path,out_path,n_splits=10,n_repeats=10):
 #              'multi_ens':deep.EnsembleBuilder('multi'),
 #              'binary_ens(0.5)':deep.EnsembleBuilder(0.5),
 #             }
-    alg_dict={ 'binary_ens':deep.binary_ensemble
+    alg_dict={ 'base':deep.simple_nn,
+               'multi_ens':deep.multi_ensemble,
+               'weighted_ens':deep.weighted_ensemble,
+               'binary_ens':deep.binary_ensemble
              }
     earlystopping = callbacks.EarlyStopping(monitor='accuracy',
                 mode="max", patience=5,restore_best_weights=True)

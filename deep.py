@@ -67,16 +67,51 @@ class BinaryLoss(object):
         return weighted_binary_loss(class_weights)
 
     def __str__(self):
+        return f'binary_losss({self.alpha})'
+
+class WeightedLoss(object):
+    def __init__(self,alpha=0.5):
+        self.alpha=alpha
+
+    def __call__(self,i,class_dict):
+        one_i=class_dict[i]
+        other_i=sum(class_dict.values())-one_i
+        cat_size_i  = self.alpha*(1/one_i)
+        other_size_i= (1.0-self.alpha) * (1/other_i)
+        class_weights= [other_size_i for i in range(len(class_dict) )]
+        class_weights[i]=cat_size_i
+        class_weights=np.array(class_weights,dtype=np.float32)
+        return weighted_binary_loss(class_weights)
+
+    def __str__(self):
         return f'weighted_losss({self.alpha})'
 
+def multi_ensemble(params,hyper_params):
+    def loss_fun(i,class_dict):
+        return 'categorical_crossentropy'
+    model=ensemble_builder(params,hyper_params,
+                        loss_fun,output_cats=params['n_cats'])
+    return NeuralEnsemble(model,basic_labels,'multi',params['n_cats'])
+
+
+def weighted_ensemble(params,hyper_params):
+    loss_fun=WeightedLoss(0.5)
+    model=ensemble_builder(params,hyper_params,
+                        loss_fun,output_cats=params['n_cats'])
+    return NeuralEnsemble(model,basic_labels,'weighted',params['n_cats'])
+
 def binary_ensemble(params,hyper_params):
+    loss_fun=BinaryLoss(0.5)
+    model=ensemble_builder(params,hyper_params,loss_fun,output_cats=2)
+    return NeuralEnsemble(model,binary_labels,'binary',params['n_cats'])
+
+def ensemble_builder(params,hyper_params,binary_loss,output_cats=2):
     input_layer = Input(shape=(params['dims']))
-    binary_loss=BinaryLoss(0.5)
     class_dict=params['class_weights']
     single_cls,loss,metrics=[],{},{}
     for i in range(params['n_cats']):
         nn_i=nn_builder(params,hyper_params,input_layer,
-            as_model=False,i=i,n_cats=2)
+            as_model=False,i=i,n_cats=output_cats)
         single_cls.append(nn_i)
         loss[f'out_{i}']=binary_loss(i,class_dict)
         metrics[f'out_{i}']= 'accuracy'
@@ -84,7 +119,7 @@ def binary_ensemble(params,hyper_params):
     model.compile(loss=loss,
                   optimizer='adam',
                   metrics=metrics)
-    return NeuralEnsemble(model,binary_labels,'binary',params['n_cats'])
+    return model
 
 def read_ensemble(in_path):
     nn = tf.keras.models.load_model(f'{in_path}/nn',compile=False)
@@ -94,6 +129,9 @@ def read_ensemble(in_path):
         n_clf=int(raw[1].split(':')[-1])
         if(ens_type=='binary'):
             return NeuralEnsemble(nn,binary_labels,'binary',n_clf)
+        if(ens_type=='weighted'):
+            return NeuralEnsemble(nn,basic_labels,'weighted',n_clf)
+        return NeuralEnsemble(nn,basic_labels,'multi',n_clf)
 
 def basic_labels(y,n_clf):
     return [y for i in range(n_clf)]
