@@ -51,7 +51,7 @@ class NeuralEnsemble(object):
         self.multi_output.save(out_path)
 
     def __str__(self):
-        return self.ens_type
+        return f'type:{self.ens_type}\nn_clf:{self.n_clf}'
 
 class BinaryLoss(object):
     def __init__(self,alpha=0.5):
@@ -71,22 +71,29 @@ class BinaryLoss(object):
 
 def binary_ensemble(params,hyper_params):
     input_layer = Input(shape=(params['dims']))
-    single_cls=[]
-    for i in range(params['n_cats']):
-            nn_i=nn_builder(params,hyper_params,input_layer,
-                as_model=False,i=i,n_cats=2)
-            single_cls.append(nn_i)
     binary_loss=BinaryLoss(0.5)
     class_dict=params['class_weights']
-    loss={ f'out_{i}':binary_loss(i,class_dict)
-                for i in range(params['n_cats'])}
-    metrics={f'out_{i}' : 'accuracy'
-                for i in range(params['n_cats'])}
+    single_cls,loss,metrics=[],{},{}
+    for i in range(params['n_cats']):
+        nn_i=nn_builder(params,hyper_params,input_layer,
+            as_model=False,i=i,n_cats=2)
+        single_cls.append(nn_i)
+        loss[f'out_{i}']=binary_loss(i,class_dict)
+        metrics[f'out_{i}']= 'accuracy'
     model= Model(inputs=input_layer, outputs=single_cls)
     model.compile(loss=loss,
                   optimizer='adam',
                   metrics=metrics)
     return NeuralEnsemble(model,binary_labels,'binary',params['n_cats'])
+
+def read_ensemble(in_path):
+    nn = tf.keras.models.load_model(f'{in_path}/nn',compile=False)
+    with open(f'{in_path}/ens_desc',"r") as f:
+        raw= f.read().split('\n')
+        ens_type=raw[0].split(':')[-1]
+        n_clf=int(raw[1].split(':')[-1])
+        if(ens_type=='binary'):
+            return NeuralEnsemble(nn,binary_labels,'binary',n_clf)
 
 def basic_labels(y,n_clf):
     return [y for i in range(n_clf)]

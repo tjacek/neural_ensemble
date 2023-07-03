@@ -12,9 +12,11 @@ def single_exp(data_path,hyper_path,out_path,n_splits=10,n_repeats=10):
     hyper_params=parse_hyper(hyper_path)
     dataset_params=data.get_dataset_params(X,y)
     splits=data.gen_splits(X,y,n_splits=n_splits,n_repeats=n_repeats)
-    alg_dict={'base':deep.simple_nn,
-              'multi_ens':deep.EnsembleBuilder('multi'),
-              'binary_ens(0.5)':deep.EnsembleBuilder(0.5),
+#    alg_dict={'base':deep.simple_nn,
+#              'multi_ens':deep.EnsembleBuilder('multi'),
+#              'binary_ens(0.5)':deep.EnsembleBuilder(0.5),
+#             }
+    alg_dict={ 'binary_ens':deep.binary_ensemble
              }
     earlystopping = callbacks.EarlyStopping(monitor='accuracy',
                 mode="max", patience=5,restore_best_weights=True)
@@ -31,15 +33,19 @@ def single_exp(data_path,hyper_path,out_path,n_splits=10,n_repeats=10):
         tools.make_dir(f'{out_path}/{name_i}')
         for j,((train_ind,train_data),test) in enumerate(splits()):
             out_j=f'{out_path}/{name_i}/{j}'
-            tools.make_dir(out_j)
             model_j,history=train_model(*train_data,make_model_i)
-
-            model_j.save(f'{out_j}/nn')
+            save_model(out_j,model_j,history)
             np.save(f'{out_j}/train',train_ind)
             np.save(f'{out_j}/test',test[0])
-            acc_desc=accuracy_desc(history)
-            with open(f'{out_j}/acc_desc',"a") as f:
-                f.write(f'{str(acc_desc)}\n') 
+            
+def save_model(out_j,model_j,history):
+    tools.make_dir(out_j)
+    model_j.save(f'{out_j}/nn')
+    acc_desc=accuracy_desc(history)
+    with open(f'{out_j}/acc_stats',"a") as f:
+        f.write(f'{str(acc_desc)}\n') 
+    with open(f'{out_j}/ens_desc',"a") as f:
+        f.write(f'{str(model_j)}') 
 
 def accuracy_desc(history):
     acc_desc={}
