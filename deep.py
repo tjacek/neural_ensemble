@@ -7,17 +7,15 @@ from tensorflow.keras import Input, Model
 from sklearn.base import BaseEstimator, ClassifierMixin
 
 class NeuralEnsemble(object):
-    def __init__(self,multi_output,labels=None):
-        if(labels is None):
-            labels=basic_labels
+    def __init__(self,multi_output,prepare_labels,ens_type,n_clf):
         self.multi_output=multi_output
-        self.labels=labels
-        self.n_clf=self.multi_output.output_shape[0][1]
+        self.prepare_labels=prepare_labels
+        self.ens_type=ens_type
+        self.n_clf=n_clf #self.multi_output.output_shape[0][1]
         self.extractor=None 
 
     def fit(self,X,y,epochs=150,batch_size=None, verbose=0,callbacks=None):
-#        y_multi=[y for i in range(self.n_clf)]
-        y_multi=self.labels(y,self.n_clf)
+        y_multi=self.prepare_labels(y,self.n_clf)
         return self.multi_output.fit(X,y_multi,
                             batch_size=batch_size,epochs=epochs,
                             verbose=verbose,callbacks=callbacks)
@@ -53,63 +51,42 @@ class NeuralEnsemble(object):
         self.multi_output.save(out_path)
 
     def __str__(self):
-        name = self.multilabels.__name__
-        return f'Loss:{str(self.loss)}Labels:\n{name}'
+        return self.ens_type
 
-class EnsembleBuilder(object):
-    def __init__(self,loss_type=0.5,label_type='basic'):
-        self.loss=get_loss(loss_type)
-        self.labels=get_labels(label_type)
-
-    def __call__(self,params,hyper_params):
-        input_layer = Input(shape=(params['dims']))
-        single_cls=[]
-        for i in range(params['n_cats']):
-            nn_i=nn_builder(params,hyper_params,input_layer,False,i)
-            single_cls.append(nn_i)
-        binary_loss=WeightedLoss()
-        loss={}
-        class_dict=params['class_weights']
-        for i in range(params['n_cats']):        
-            loss[f'out_{i}']=binary_loss(i,class_dict)
-        metrics={f'out_{i}' : 'accuracy'
-                for i in range(params['n_cats'])}
-        model= Model(inputs=input_layer, outputs=single_cls)
-        model.compile(loss=loss, #loss='categorical_crossentropy',
-                      optimizer='adam',
-                      metrics=metrics)
-        return NeuralEnsemble(model)
-
-class WeightedLoss(object):
+class BinaryLoss(object):
     def __init__(self,alpha=0.5):
         self.alpha=alpha
 
     def __call__(self,i,class_dict):
-        other_i=[ size_j  
-                for cat_j,size_j in class_dict.items()
-                    if(cat_j!=i)]
-        cat_size_i  = self.alpha*(1/class_dict[i])
-        other_size_i= (1.0-self.alpha) *  (1/sum(other_i))
-        class_weights= [other_size_i for i in range(len(class_dict) )]
-        class_weights[i]=cat_size_i
+        one_i=class_dict[i]
+        other_i=sum(class_dict.values())-one_i
+        cat_size_i  = self.alpha*(1/one_i)
+        other_size_i= (1.0-self.alpha) * (1/other_i)
+        class_weights=[other_size_i,cat_size_i]
         class_weights=np.array(class_weights,dtype=np.float32)
         return weighted_binary_loss(class_weights)
 
     def __str__(self):
         return f'weighted_losss({self.alpha})'
 
-def get_loss(loss_type):
-    if(type(loss_type)==float):
-        return WeightedLoss(loss_type)
-    def helper(i,class_dict):
-        return 'categorical_crossentropy'
-    return helper
-
-def get_labels(label_type):
-    if(label_type=='basic'):
-        return basic_labels
-    if(label_type=='binary'):
-        return binary_labels
+def binary_ensemble(params,hyper_params):
+    input_layer = Input(shape=(params['dims']))
+    single_cls=[]
+    for i in range(params['n_cats']):
+            nn_i=nn_builder(params,hyper_params,input_layer,
+                as_model=False,i=i,n_cats=2)
+            single_cls.append(nn_i)
+    binary_loss=BinaryLoss(0.5)
+    class_dict=params['class_weights']
+    loss={ f'out_{i}':binary_loss(i,class_dict)
+                for i in range(params['n_cats'])}
+    metrics={f'out_{i}' : 'accuracy'
+                for i in range(params['n_cats'])}
+    model= Model(inputs=input_layer, outputs=single_cls)
+    model.compile(loss=loss,
+                  optimizer='adam',
+                  metrics=metrics)
+    return NeuralEnsemble(model,binary_labels,'binary',params['n_cats'])
 
 def basic_labels(y,n_clf):
     return [y for i in range(n_clf)]
@@ -117,7 +94,9 @@ def basic_labels(y,n_clf):
 def binary_labels(y,n_clf):
     binary_y=[]
     for cat_i in range(n_clf):
-        y_i=[int(cat_i==y_j) for y_j in y]
+        y_i=[y_j[cat_i] for y_j in y]
+        y_i = tf.keras.utils.to_categorical(y_i, 
+                            num_classes = 2)
         binary_y.append(y_i)
     return binary_y
 
@@ -127,36 +106,21 @@ def simple_nn(params,hyper_params):
             optimizer='adam',metrics='accuracy')
     return model
 
-def nn_builder(params,hyper_params,input_layer=None,as_model=True,i=0):
+def nn_builder(params,hyper_params,input_layer=None,as_model=True,i=0,n_cats=None):
     if(input_layer is None):
-        input_layer = Input(shape=(params['dims']))         
+        input_layer = Input(shape=(params['dims']))
+    if(n_cats is None):
+        n_cats=params['n_cats']
     x_i=input_layer#Concatenate()([common,input_i])
     for j,hidden_j in enumerate(hyper_params['layers']):
         x_i=Dense(hidden_j,activation='relu',
                     name=f"layer_{i}_{j}")(x_i)
     if(hyper_params['layers']):
         x_i=BatchNormalization(name=f'batch_{i}')(x_i)
-    x_i=Dense(params['n_cats'], activation='softmax',name=f'out_{i}')(x_i)
+    x_i=Dense(n_cats, activation='softmax',name=f'out_{i}')(x_i)
     if(as_model):
         return Model(inputs=input_layer, outputs=x_i)
     return x_i
-
-def get_metric(name_i):
-    if(name_i=='balanced_accuracy'):
-        return BalancedAccuracy()
-    return name_i
-
-class BalancedAccuracy(keras.metrics.SparseCategoricalAccuracy):
-    def __init__(self, name='balanced_accuracy ', dtype=None):
-        super().__init__(name, dtype=dtype)
-
-    def update_state(self, y_true, y_pred, sample_weight=None):
-        y_flat = tf.argmax(y_true,axis=1)
-        y_true_int = tf.cast(y_flat, tf.int32)
-        cls_counts = tf.math.bincount(y_true_int)
-        cls_counts = tf.math.reciprocal_no_nan(tf.cast(cls_counts, self.dtype))
-        weight = tf.gather(cls_counts, y_true_int)
-        return super().update_state(y_flat, y_pred, sample_weight=weight)
 
 def weighted_binary_loss( class_weights):
     def loss(y_obs,y_pred):        
