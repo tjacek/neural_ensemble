@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 def comput_rank(result_path):
     result_df=pd.read_csv(result_path)
@@ -19,6 +20,9 @@ def comput_rank(result_path):
         rank_j.reverse()
         all_ranks.append('\n{}:\n{}'.format(data_i,'\n'.join(rank_j)))
     print('\n'.join(all_ranks))
+
+def borda_count(ranks):
+    return np.sum([(1/r) for r in ranks])
 
 if __name__ == "__main__":
     result_path= '../../uci/ova_hyper/result.csv'
