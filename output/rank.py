@@ -1,29 +1,25 @@
 import pandas as pd
 import numpy as np
+from collections import defaultdict
 
-def comput_rank(result_path):
+def comput_rank(result_path,metric_col='mean'):
     result_df=pd.read_csv(result_path)
-    no_ensemble=set(['pca-only','common'])
-    all_ranks=[]
+    ranks=defaultdict(lambda :[])
     for data_i in result_df['dataset'].unique():
         df_i= result_df[result_df['dataset']==data_i]
-        order_i= df_i['acc_mean'].argsort()
-        rank_j=[]
-        for j in order_i:
-            row_j=df_i.iloc[[j]]
-            var_j=row_j[['ens_type','clf_type','acc_mean']]
-            var_j=var_j.to_numpy().tolist()
-            var_j=[str(v) for v in var_j[0]]
-            if(var_j[0] in no_ensemble):
-                var_j[0]=f' {var_j[0]}'
-            rank_j.append(','.join(var_j))
-        rank_j.reverse()
-        all_ranks.append('\n{}:\n{}'.format(data_i,'\n'.join(rank_j)))
-    print('\n'.join(all_ranks))
+        df_i= df_i.sort_values(by=metric_col,ascending=False)
+        for i,clf_i in enumerate(df_i['clf']):
+            ranks[clf_i].append(i+1)
+    lines=[]
+    for data_i,rank_i in ranks.items():
+        lines.append([data_i,borda_count(rank_i)])
+    borda_df = pd.DataFrame(lines,columns=['dataset','borda'])
+    borda_df= borda_df.sort_values(by='borda')
+    print(borda_df)
 
 def borda_count(ranks):
     return np.sum([(1/r) for r in ranks])
 
 if __name__ == "__main__":
-    result_path= '../../uci/ova_hyper/result.csv'
+    result_path= 'result.csv'
     comput_rank(result_path)
