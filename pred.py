@@ -30,12 +30,15 @@ def single_exp(data_path,model_path,out_path):
         pred_dict[name_i].append((y_pred,test.y))
     tools.make_dir(out_path)
     for name_i,pred_i in pred_dict.items():
-        with open(f'{out_path}/{name_i}', 'wb') as f:
-            all_pred=[ (test_i.tolist(),pred_i.tolist()) 
+        save_pred(f'{out_path}/{name_i}',pred_i)
+
+def save_pred(out_path,pred_i):        
+    with open(out_path, 'wb') as f:
+        all_pred=[ (test_i.tolist(),pred_i.tolist()) 
                         for test_i,pred_i in pred_i]
-            json_str = json.dumps(all_pred, default=str)         
-            json_bytes = json_str.encode('utf-8') 
-            f.write(json_bytes)
+        json_str = json.dumps(all_pred, default=str)         
+        json_bytes = json_str.encode('utf-8') 
+        f.write(json_bytes)
 
 def get_model_paths(model_path):
     for path_i in tools.get_dirs(model_path):
@@ -50,6 +53,8 @@ def get_model_paths(model_path):
             train_ind=np.load(f'{model_j}/train.npy')
             split_j=data.DataSplit(train_ind,test_ind)
             yield name_i,nn_j,split_j
+
+#def load_model():
 
 def necscf(train,test,cs_train,cs_test,clf_type):
     votes=[]

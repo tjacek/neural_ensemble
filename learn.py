@@ -21,6 +21,6 @@ def get_clf(name_i):
         return SVC(probability=True)
     if(name_i=="RF"):
         return ensemble.RandomForestClassifier(class_weight='balanced_subsample')
-    if(name_i=="LR-imb"):
+    if(name_i=="LR"):
         return LogisticRegression(solver='liblinear',
             class_weight='balanced')
