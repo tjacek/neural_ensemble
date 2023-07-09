@@ -30,7 +30,7 @@ for type_j in types:
 
 #print(df_dict['NN'].to_latex())
 
-clf='RF'
+clf='SVC'
 
 def get_alpha(raw):
     digits=re.findall(r'\d+',raw)

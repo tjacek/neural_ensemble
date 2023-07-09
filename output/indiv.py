@@ -1,53 +1,56 @@
-import tools
-import argparse
 import numpy as np
-from sklearn.metrics import accuracy_score
-from sklearn import preprocessing
-import data,learn,pred
+import pandas as pd
+import re
+import tools
 
-def beter_acc(data_path,model_path,clf_type='RF'):
-    X,y=data.get_dataset(data_path)
-    better=[]
-    for nn_i,split_i in read_models(model_path):
-        train,test= split_i.get_dataset(X,y)
-        common_acc= learn.fit_clf(train,test,
-            clf_type,hard=True,acc=True)
-        ens_acc= necscf(train,test,nn_i,clf_type)
-        print((common_acc,ens_acc))
-        if(ens_acc>common_acc):
-            better.append(ens_acc)
-    print(len(better))
+def get_alpha(raw):
+    digits=re.findall(r'\d+',raw)
+    if(len(digits)>0):
+        return f'0.{digits[1]}'
+    return '-'
 
-def get_full(train ,nn,scale=True):
-    cs_train=nn.extract(train.X)
-    if(scale):
-        cs_train=[preprocessing.scale(cs_i)
-                    for cs_i in cs_train]
-    return [np.concatenate([train.X,cs_i],axis=1)
-             for cs_i in cs_train]
+def ens_quality(in_path,clf_i):    
+    lines=[]
+    for data_i in tools.top_files(in_path):
+        acc_i=tools.metric_dict(data_i,'acc',False)
+        data_i= data_i.split('/')[-1]
+        names=[key_j for key_j in acc_i.keys()
+               if(clf_i in key_j and key_j!=clf_i)]
+        clf_acc=acc_i[clf_i]
+        def helper(name_k):
+            comp_k=[ int(ens_t>clf_t)
+                for clf_t,ens_t in zip(clf_acc,acc_i[name_k])]
+            return np.mean(comp_k)
+        for name_k in names:
+            lines.append([data_i,clf_i,name_k,helper(name_k)])	
+    cols=['dataset','clf','cs','quality']    
+    df = pd.DataFrame(lines,columns=cols)
+    df['alpha']=df['cs'].apply(get_alpha)
+    df['cs']=df['cs'].apply(lambda x:x.split('_')[0])
+    return df
 
-def read_models(in_path):
-    for path_i in tools.top_files(in_path):
-        yield pred.read_model(path_i)
+in_path='pred'
+clf_i='RF'
+df=ens_quality(in_path,clf_i)
+df_i=df[(df['cs']=='binary') &
+        (df['alpha']=='0.25')]
+print(df_i[['dataset','quality']].to_csv())
 
-def necscf(train,test,nn,clf_type):
-    full_train,full_test=get_full(train,nn),get_full(test,nn)
-    votes=[]
-    for train_i,test_i in zip(full_train,full_test):
-        clf_i=learn.get_clf(clf_type)
-        clf_i.fit(train_i,train.y)
-        y_pred=clf_i.predict_proba(test_i)
-        votes.append(y_pred)
-    votes=np.array(votes)
-    votes=np.sum(votes,axis=0)
-    y_pred= np.argmax(votes,axis=1)
-    return accuracy_score(y_pred,test.y)
+#df1=df[df['cs']=='multi']['quality']
+#print(f'multi,{df1.mean():4f}')
 
+#df1=df[(df['cs']=='weighted') &
+#         (df['alpha']=='0.25') ]['quality']
+#print(f'weighted/0.25,{df1.mean():.4f}')
 
-if __name__ == '__main__':
-    data_path="10_10/models/solar-flare/binary_ens(0.5)"
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type=str, default='data/solar-flare')
-    parser.add_argument("--model", type=str, default=data_path)
-    args = parser.parse_args()
-    beter_acc(args.data,args.model)
+#df1=df[(df['cs']=='weighted') &
+#         (df['alpha']=='0.5') ]['quality']
+#print(f'weighted/0.5,{df1.mean():.4f}')
+
+#df1=df[(df['cs']=='binary') &
+#         (df['alpha']=='0.25') ]['quality']
+#print(f'binary/0.25,{df1.mean():.4f}')
+
+#df1=df[(df['cs']=='binary') &
+#         (df['alpha']=='0.5') ]['quality']
+#print(f'binary/0.5,{df1.mean():.4f}')
