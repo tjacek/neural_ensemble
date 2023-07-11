@@ -8,18 +8,22 @@ import data,deep
 
 @tools.log_time(task='TRAIN')
 def single_exp(data_path,hyper_path,out_path,n_splits=10,n_repeats=10):
+    print(data_path)
     X,y=data.get_dataset(data_path)
     hyper_params=parse_hyper(hyper_path)
     dataset_params=data.get_dataset_params(X,y)
     splits=data.gen_splits(X,y,n_splits=n_splits,n_repeats=n_repeats)
-
+#    alg_dict={ 'base':deep.simple_nn,
+#               'multi_ens':deep.multi_ensemble(),
+#               'weighted_ens-0.25':deep.weighted_ensemble(0.25),
+#               'weighted_ens-0.5':deep.weighted_ensemble(0.50),
+#               'binary_ens-0.25':deep.binary_ensemble(0.25),
+#               'binary_ens-0.5':deep.binary_ensemble(0.5),
+#             }
     alg_dict={ 'base':deep.simple_nn,
-               'multi_ens':deep.multi_ensemble(),
-               'weighted_ens-0.25':deep.weighted_ensemble(0.25),
-               'weighted_ens-0.5':deep.weighted_ensemble(0.50),
-               'binary_ens-0.25':deep.binary_ensemble(0.25),
-               'binary_ens-0.5':deep.binary_ensemble(0.5),
-             }
+               'multi-ens':deep.multi_ensemble(),
+               'binary-ens-0.25':deep.binary_ensemble(0.25)
+    }
     earlystopping = callbacks.EarlyStopping(monitor='accuracy',
                 mode="max", patience=5,restore_best_weights=True)
     def train_model(X_train,y_train,make_model):
@@ -42,7 +46,7 @@ def single_exp(data_path,hyper_path,out_path,n_splits=10,n_repeats=10):
             
 def save_model(out_j,model_j,history):
     tools.make_dir(out_j)
-    model_j.save(f'{out_j}/nn')
+    model_j.save(f'{out_j}/nn.h5')
     acc_desc=accuracy_desc(history)
     with open(f'{out_j}/acc_stats',"a") as f:
         f.write(f'{str(acc_desc)}\n') 
@@ -69,13 +73,13 @@ def parse_hyper(hyper_path):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type=str, default='data')
-    parser.add_argument("--hyper", type=str, default='hyper')
-    parser.add_argument("--models", type=str, default='models')
-    parser.add_argument("--n_splits", type=int, default=10)
-    parser.add_argument("--n_repeats", type=int, default=10)
+    parser.add_argument("--data", type=str, default='../data')
+    parser.add_argument("--hyper", type=str, default='../test/hyper')
+    parser.add_argument("--models", type=str, default='../test/models')
+    parser.add_argument("--n_splits", type=int, default=3)
+    parser.add_argument("--n_repeats", type=int, default=3)
     parser.add_argument("--dir", type=int, default=0)
-    parser.add_argument("--log", type=str, default='log.info')
+    parser.add_argument("--log", type=str, default='../test/log.info')
     args = parser.parse_args()
     tools.start_log(args.log)
     if(args.dir>0):
