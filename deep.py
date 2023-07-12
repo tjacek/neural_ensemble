@@ -72,6 +72,18 @@ class EnsembleFactory(object):
                               self.labels,
                               self.ens_type,
                               params['n_cats'])      
+def get_ensemble(ens_type):
+    if(ens_type=='base'):
+        return simple_nn
+    if(ens_type=='multi'):
+        return multi_ensemble()
+    if(type(ens_type)==tuple):
+        ens_type,alpha=ens_type
+        if(ens_type=='weighted'):
+            return weighted_ensemble(alpha)
+        elif(ens_type=='binary'):
+            return binary_ensemble(alpha)
+    raise Exception(f"Ensemble {ens_type} not implemented") 
 
 def multi_ensemble():
     def loss_fun(i,class_dict):
