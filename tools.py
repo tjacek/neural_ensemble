@@ -1,5 +1,6 @@
 import os,warnings
 import logging,time
+import re
 from functools import wraps
 
 def silence_warnings():
@@ -71,6 +72,10 @@ def start_log(log_path):
 @dir_fun
 def test_fun(in_path):
     print(in_path)
+
+def has_number(txt):
+    digits=re.findall(r'\d+',txt)
+    return (len(digits)>0)
 
 if __name__ == "__main__":
     test_fun('data')
