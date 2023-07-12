@@ -6,59 +6,61 @@ import tensorflow as tf
 from keras import callbacks
 import data,deep
 
+class ExpFactory(object):
+    def __init__(self,dataset_params,hyper_params):
+        self.dataset_params=dataset_params
+        self.hyper_params=hyper_params	
+        self.early_stop = callbacks.EarlyStopping(monitor='accuracy',
+                                                  mode="max", 
+                                                  patience=5,
+                                                  restore_best_weights=True)
+
+    def __call__(self,X,y,split,make_model):
+        X_train,y_train=split.get_train(X,y)
+        model=make_model(self.dataset_params,self.hyper_params)
+        y_train = tf.keras.utils.to_categorical(y_train, 
+        	                                    num_classes = self.dataset_params['n_cats'])
+        history=model.fit(X_train,y_train,
+        	              batch_size=self.dataset_params['batch'],
+                          epochs=150,
+                          verbose=0,
+                          callbacks=self.early_stop)
+        return Exp(split,model,self.hyper_params)
+
+class Exp(object):
+    def __init__(self,split,model,hyper):
+        self.split=split
+        self.model=model
+        self.hyper=hyper
+
+    def save(self,out_path):
+        self.model.save_weights(f'{out_path}/weights')
+        np.save(f'{out_path}/train',self.split.train_ind)
+        np.save(f'{out_path}/test',self.split.test_ind)
+        with open(f'{out_path}/hyper.txt',"a") as f:
+            f.write(f'{str(self.hyper)}\n') 
+
 @tools.log_time(task='TRAIN')
 def single_exp(data_path,hyper_path,out_path,n_splits=10,n_repeats=10):
     print(data_path)
     X,y=data.get_dataset(data_path)
     hyper_params=parse_hyper(hyper_path)
     dataset_params=data.get_dataset_params(X,y)
-    splits=data.gen_splits(X,y,n_splits=n_splits,n_repeats=n_repeats)
-#    alg_dict={ 'base':deep.simple_nn,
-#               'multi_ens':deep.multi_ensemble(),
-#               'weighted_ens-0.25':deep.weighted_ensemble(0.25),
-#               'weighted_ens-0.5':deep.weighted_ensemble(0.50),
-#               'binary_ens-0.25':deep.binary_ensemble(0.25),
-#               'binary_ens-0.5':deep.binary_ensemble(0.5),
-#             }
+    exp_factory=ExpFactory(dataset_params,hyper_params)
+    all_splits=data.gen_splits(X,y,
+    	                       n_splits=n_splits,
+    	                       n_repeats=n_repeats)
     alg_dict={ 'base':deep.simple_nn,
                'multi-ens':deep.multi_ensemble(),
                'binary-ens-0.25':deep.binary_ensemble(0.25)
-    }
-    earlystopping = callbacks.EarlyStopping(monitor='accuracy',
-                mode="max", patience=5,restore_best_weights=True)
-    def train_model(X_train,y_train,make_model):
-        model=make_model(dataset_params,hyper_params)
-        y_train = tf.keras.utils.to_categorical(y_train, 
-        	                num_classes = dataset_params['n_cats'])
-        batch=dataset_params['batch']
-        history=model.fit(X_train,y_train,batch_size=batch,
-            epochs=150,verbose=0,callbacks=earlystopping)
-        return model,history
+             }
     tools.make_dir(out_path)
-    for name_i,make_model_i in alg_dict.items():
+    for name_i,alg_i in alg_dict.items(): 
         tools.make_dir(f'{out_path}/{name_i}')
-        for j,((train_ind,train_data),test) in enumerate(splits()):
+        for j,split_j in enumerate(all_splits.splits):
             out_j=f'{out_path}/{name_i}/{j}'
-            model_j,history=train_model(*train_data,make_model_i)
-            save_model(out_j,model_j,history)
-            np.save(f'{out_j}/train',train_ind)
-            np.save(f'{out_j}/test',test[0])
-            
-def save_model(out_j,model_j,history):
-    tools.make_dir(out_j)
-    model_j.save(f'{out_j}/nn.h5')
-    acc_desc=accuracy_desc(history)
-    with open(f'{out_j}/acc_stats',"a") as f:
-        f.write(f'{str(acc_desc)}\n') 
-    with open(f'{out_j}/ens_desc',"a") as f:
-        f.write(f'{str(model_j)}') 
-
-def accuracy_desc(history):
-    acc_desc={}
-    for key_i in history.history:
-        acc_i=history.history[key_i][-1]
-        acc_desc[key_i]=round(acc_i,4)
-    return acc_desc
+            exp_j= exp_factory(X,y,split_j,alg_i)
+            exp_j.save(out_j)
 
 def parse_hyper(hyper_path):
     with open(hyper_path) as f:
@@ -74,12 +76,12 @@ def parse_hyper(hyper_path):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", type=str, default='../data')
-    parser.add_argument("--hyper", type=str, default='../test/hyper')
-    parser.add_argument("--models", type=str, default='../test/models')
+    parser.add_argument("--hyper", type=str, default='../test3/hyper')
+    parser.add_argument("--models", type=str, default='../test3/models')
     parser.add_argument("--n_splits", type=int, default=3)
     parser.add_argument("--n_repeats", type=int, default=3)
     parser.add_argument("--dir", type=int, default=0)
-    parser.add_argument("--log", type=str, default='../test/log.info')
+    parser.add_argument("--log", type=str, default='../test3/log.info')
     args = parser.parse_args()
     tools.start_log(args.log)
     if(args.dir>0):

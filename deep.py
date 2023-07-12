@@ -37,7 +37,7 @@ class NeuralEnsemble(object):
             layers=[self.multi_output.get_layer(name_i).output 
                     for name_i in penult]
             self.extractor=Model(inputs=self.multi_output.input,outputs=layers)
-        return self.extractor.predict(X)
+        return self.extractor.predict(X,verbose=0)
 
     def get_full(self,train,scale=True):
         cs_train=self.extract(train.X)
@@ -46,6 +46,9 @@ class NeuralEnsemble(object):
                     for cs_i in cs_train]
         return [np.concatenate([train.X,cs_i],axis=1)
                 for cs_i in cs_train]
+    
+    def save_weights(self,out_path):
+        self.multi_output.save_weights(out_path)
 
     def save(self,out_path):
         self.multi_output.save(out_path)
@@ -77,9 +80,6 @@ def multi_ensemble():
                            labels=basic_labels,
                            ens_type='multi',
                            output_cats=None)
-#    model=ensemble_builder(params,hyper_params,
-#                        loss_fun,output_cats=params['n_cats'])
-#    return NeuralEnsemble(model,basic_labels,'multi',params['n_cats'])
 
 def weighted_ensemble(alpha=0.5):
     def loss_fun(i,class_dict):
@@ -96,17 +96,6 @@ def binary_ensemble(alpha=0.5):
                            labels=binary_labels,
                            ens_type='binary',
                            output_cats=2)
-
-#def weighted_ensemble(params,hyper_params):
-#    loss_fun=WeightedLoss(0.5)
-#    model=ensemble_builder(params,hyper_params,
-#                        loss_fun,output_cats=params['n_cats'])
-#    return NeuralEnsemble(model,basic_labels,'weighted',params['n_cats'])
-
-#def binary_ensemble(params,hyper_params):
-#    loss_fun=BinaryLoss(0.5)
-#    model=ensemble_builder(params,hyper_params,loss_fun,output_cats=2)
-#    return NeuralEnsemble(model,binary_labels,'binary',params['n_cats'])
 
 def ensemble_builder(params,hyper_params,binary_loss,output_cats=2):
     input_layer = Input(shape=(params['dims']))
@@ -126,7 +115,7 @@ def ensemble_builder(params,hyper_params,binary_loss,output_cats=2):
 
 def read_ensemble(in_path):
     print(in_path)
-    nn = tf.keras.models.load_model(f'{in_path}/nn',compile=False)
+    nn = tf.keras.models.load_model(f'{in_path}/nn.h5',compile=False)
     with open(f'{in_path}/ens_desc',"r") as f:
         raw= f.read().split('\n')
         ens_type=raw[0].split(':')[-1]
