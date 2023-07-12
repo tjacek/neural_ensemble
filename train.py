@@ -33,12 +33,15 @@ class ExpFactory(object):
         	       self.dataset_params)
 
 class Exp(object):
-    def __init__(self,split,model,ens_type,hyper,data):
+    def __init__(self,split,model,ens_type,hyper,params):
         self.split=split
         self.model=model
         self.ens_type=ens_type
         self.hyper=hyper
-        self.data=data
+        self.params=params
+
+    def is_ens(self):
+    	return isinstance(self.model,deep.NeuralEnsemble) 
 
     def save(self,out_path):
         self.model.save_weights(f'{out_path}/weights')
@@ -47,7 +50,23 @@ class Exp(object):
         with open(f'{out_path}/info',"a") as f:
             f.write(f'{self.ens_type}\n')
             f.write(f'{str(self.hyper)}\n') 
-            f.write(f'{str(self.data)}\n') 
+            f.write(f'{str(self.params)}\n') 
+
+def read_exp(in_path):
+    print(in_path)
+    train_ind=np.load(f'{in_path}/train.npy')
+    test_ind=np.load(f'{in_path}/test.npy')
+    split=data.DataSplit(train_ind,test_ind)
+    with open(f'{in_path}/info',"r") as f:
+        lines=f.readlines()
+        ens_type= lines[0].strip()
+        if(tools.has_number(ens_type)):
+            ens_type=eval(ens_type)	
+        make_model=deep.get_ensemble(ens_type)
+        hyper,params= eval(lines[1]),eval(lines[2])
+        model=make_model(params,hyper)
+        model.load_weights(f'{in_path}/weights')
+        return Exp(split,model,ens_type,hyper,params)
 
 @tools.log_time(task='TRAIN')
 def single_exp(data_path,hyper_path,out_path,n_splits=10,n_repeats=10):
@@ -59,10 +78,6 @@ def single_exp(data_path,hyper_path,out_path,n_splits=10,n_repeats=10):
     all_splits=data.gen_splits(X,y,
     	                       n_splits=n_splits,
     	                       n_repeats=n_repeats)
-#    alg_dict={ 'base':deep.simple_nn,
-#               'multi-ens':deep.multi_ensemble(),
-#               'binary-ens-0.25':deep.binary_ensemble(0.25)
-#             }
     algs=['base','multi',('binary',0.25)]
     tools.make_dir(out_path)
     for alg_i in algs:

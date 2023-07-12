@@ -6,7 +6,7 @@ import tensorflow as tf
 from keras import callbacks
 from collections import defaultdict
 import json
-import data,deep,learn
+import data,deep,learn,train
 
 @tools.log_time(task='PRED')
 def single_exp(data_path,model_path,out_path):
@@ -14,7 +14,9 @@ def single_exp(data_path,model_path,out_path):
     X,y=data.get_dataset(data_path)
     pred_dict=defaultdict(lambda:[])
     for name_i,exp_path_i in exp_paths(model_path):
-    	print(exp_path_i)
+        exp_i=train.read_exp(exp_path_i)
+        print(exp_i.is_ens())
+        print(exp_path_i)
 
 def exp_paths(model_path):
     for path_i in tools.get_dirs(model_path):
