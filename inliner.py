@@ -1,24 +1,50 @@
 import tools
 tools.silence_warnings()
 import argparse
+import numpy as np
+from collections import defaultdict
 from sklearn.neighbors import KNeighborsClassifier
 import data,pred
 
 @tools.log_time(task='INLINER')
 def single_exp(data_path,model_path,out_path):
-    neigh = KNeighborsClassifier(n_neighbors=3)
-    clfs=['RF','SVC']
+    clfs=['RF']#,'SVC']
     X,y=data.get_dataset(data_path)
-    for name_i,model_i,split_i in pred.get_model_paths(model_path):
-        if('ens' in name_i):
-            train,test=split_i.get_dataset(X,y)
-            cs_train=model_i.extract(train.X)
-            cs_test=model_i.extract(test.X)
-            for cs_j in cs_train:
-                neigh.fit(cs_j,train.y)
-                y_j = neigh.predict(test.X)
-#            for clf_k in clfs:
-#                pred_k=pred=necscf(train,test,cs_train,cs_test,clf_k)         print(y_j)
+    pred_dict=defaultdict(lambda:[])
+    for name_i,exp_i in pred.get_exps(model_path):
+        if(exp_i.is_ens()):
+            train_i,test_i=exp_i.get_features(X,y)
+            for clf_k,pred_k in inliner_voting(train_i,test_i,clfs):
+                id_k=f'{name_i}-{clf_k}-inliner'
+                pred_dict[id_k].append((pred_k,test_i.y))
+    tools.make_dir(out_path)
+    for name_i,pred_i in pred_dict.items():
+        pred.save_pred(f'{out_path}/{name_i}',pred_i)
+
+def inliner_voting(train_i,test_i,clfs):
+    neigh = KNeighborsClassifier(n_neighbors=3)
+    y_near=[]
+    for cs_j in train_i.cs:
+        neigh.fit(cs_j,train_i.y)
+        y_near.append(neigh.predict(test_i.X))
+    y_near=list(zip(*y_near))
+    n_samples=test_i.y.shape[0]
+    for clf_j in clfs:
+        votes=pred.necscf(train_i,test_i,clf_j,True)
+        votes=[[ vote_t[k,:] for vote_t in votes]
+                    for k in range(n_samples)]
+        y_pred=[]
+        for k,vote_k in enumerate(votes):
+            print(y_near[k])
+            pred_k=np.argmax(vote_k,1)
+            s_vote=[ vote_k[t] 
+                     for t,(pred,near) in enumerate(zip(pred_k,y_near[k]))
+                         if(pred==near)]
+            if(len(s_vote)==0):
+                s_vote=vote_k
+            s_vote=np.sum(s_vote,axis=1)
+            y_pred.append(np.argmax(s_vote,axis=0))
+        yield clf_j,np.array(y_pred)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
