@@ -13,6 +13,34 @@ class NoEnsemble(object):
             pred_i=clf_i.predict(test.X)
             yield clf_type_i,pred_i
 
+class BasicVariant(object):
+    def __init__(self,clfs):
+        self.clfs=clfs
+
+    def __call__(self,train,test):
+        for clf_type_i in self.clfs:
+            pred_i=necscf(train,test,clf_type_i)
+            id_i=f'{clf_type_i}-necscf'
+            yield id_i,pred_i
+
+class BinaryVariant(object):
+    def __init__(self,clfs):
+        self.clfs=clfs
+
+    def __call__(self,train,test):
+        for cls_type_i in self.clfs:
+            votes=[]
+            for train_j,test_j in zip(train.cs,test.cs):
+                clf_j=learn.get_clf(clf_type_i)
+                clf_j.fit(train_j,train.y)
+                y_pred=clf_j.predict_proba(test_j)
+                votes.append(y_pred)
+            votes=np.array(votes)
+            votes=np.sum(votes,axis=0)
+            y_pred=np.argmax(votes,axis=1)
+            id_i=f'{clf_type_i}-binary'
+            yield id_i,y_pred
+
 def necscf(train,test,clf_type,votes=False):
     votes=[]
     for cs_train_i,cs_test_i in zip(train.cs,test.cs):
