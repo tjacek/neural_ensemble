@@ -29,20 +29,24 @@ class NeuralEnsemble(object):
             final_pred.append(np.sum(ballot_i,axis=0))
         return final_pred
 
-    def extract(self,X):
+    def extract(self,X,scale=False):
         if(self.extractor is None):
             names=[ layer.name for layer in self.multi_output.layers]
             penult=names[-6:-3]
             layers=[self.multi_output.get_layer(name_i).output 
                     for name_i in penult]
             self.extractor=Model(inputs=self.multi_output.input,outputs=layers)
-        return self.extractor.predict(X,verbose=0)
+        feats= self.extractor.predict(X,verbose=0)
+        if(scale):
+            feats=[preprocessing.scale(feat_i)
+                      for feat_i in feats]
+        return feats
 
     def get_full(self,train,scale=True):
-        cs_train=self.extract(train.X)
-        if(scale):
-            cs_train=[preprocessing.scale(cs_i)
-                    for cs_i in cs_train]
+        cs_train=self.extract(train.X,scale)
+#        if(scale):
+#            cs_train=[preprocessing.scale(cs_i)
+#                    for cs_i in cs_train]
         return [np.concatenate([train.X,cs_i],axis=1)
                 for cs_i in cs_train]
     
