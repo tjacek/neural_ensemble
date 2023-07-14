@@ -4,6 +4,7 @@ import argparse
 import numpy as np
 import tensorflow as tf 
 from keras import callbacks
+from collections import namedtuple
 import data,deep
 
 class ExpFactory(object):
@@ -42,6 +43,15 @@ class Exp(object):
 
     def is_ens(self):
     	return isinstance(self.model,deep.NeuralEnsemble) 
+    
+    def get_features(self,X,y):
+        train,test=self.split.get_dataset(X,y)
+        if(self.is_ens()):
+            cs_train=self.model.extract(train.X)
+            cs_test=self.model.extract(test.X)
+            train=data.EnsDataset(train.X,train.y,cs_train)
+            test=data.EnsDataset(test.X,test.y,cs_test)
+        return train,test
 
     def save(self,out_path):
         self.model.save_weights(f'{out_path}/weights')
@@ -53,7 +63,6 @@ class Exp(object):
             f.write(f'{str(self.params)}\n') 
 
 def read_exp(in_path):
-    print(in_path)
     train_ind=np.load(f'{in_path}/train.npy')
     test_ind=np.load(f'{in_path}/test.npy')
     split=data.DataSplit(train_ind,test_ind)
