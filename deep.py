@@ -4,7 +4,6 @@ import keras
 from sklearn import preprocessing
 from tensorflow.keras.layers import Dense,BatchNormalization,Concatenate
 from tensorflow.keras import Input, Model
-from sklearn.base import BaseEstimator, ClassifierMixin
 
 class NeuralEnsemble(object):
     def __init__(self,multi_output,prepare_labels,ens_type,n_clf):
@@ -128,18 +127,18 @@ def ensemble_builder(params,hyper_params,binary_loss,output_cats=2):
                   metrics=metrics)
     return model
 
-def read_ensemble(in_path):
-    print(in_path)
-    nn = tf.keras.models.load_model(f'{in_path}/nn.h5',compile=False)
-    with open(f'{in_path}/ens_desc',"r") as f:
-        raw= f.read().split('\n')
-        ens_type=raw[0].split(':')[-1]
-        n_clf=int(raw[1].split(':')[-1])
-        if(ens_type=='binary'):
-            return NeuralEnsemble(nn,binary_labels,'binary',n_clf)
-        if(ens_type=='weighted'):
-            return NeuralEnsemble(nn,basic_labels,'weighted',n_clf)
-        return NeuralEnsemble(nn,basic_labels,'multi',n_clf)
+#def read_ensemble(in_path):
+#    print(in_path)
+#    nn = tf.keras.models.load_model(f'{in_path}/nn.h5',compile=False)
+#    with open(f'{in_path}/ens_desc',"r") as f:
+#        raw= f.read().split('\n')
+#        ens_type=raw[0].split(':')[-1]
+#        n_clf=int(raw[1].split(':')[-1])
+#        if(ens_type=='binary'):
+#            return NeuralEnsemble(nn,binary_labels,'binary',n_clf)
+#        if(ens_type=='weighted'):
+#            return NeuralEnsemble(nn,basic_labels,'weighted',n_clf)
+#        return NeuralEnsemble(nn,basic_labels,'multi',n_clf)
 
 def basic_labels(y,n_clf):
     return [y for i in range(n_clf)]
