@@ -8,7 +8,7 @@ from collections import Counter#defaultdict
 #import tensorflow as tf 
 
 Dataset=namedtuple('Dataset','X y')
-
+EnsDataset=namedtuple('EnsDataset','X y cs')
 
 class AllSplits(object):
     def __init__(self,X,y,splits):
