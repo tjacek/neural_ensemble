@@ -4,37 +4,8 @@ import tensorflow.keras
 import tensorflow as tf
 from tensorflow.keras import Input, Model
 import keras_tuner as kt
-from sklearn.base import BaseEstimator, ClassifierMixin
 import argparse
 import data,deep,learn
-
-class ScikitAdapter(BaseEstimator, ClassifierMixin):
-    def __init__(self, alpha, hyper):
-        self.alpha = alpha
-        self.hyper = hyper
-        self.neural_ensemble=None 
-        self.clfs=[]
-
-    def fit(self,X,targets):
-        ens_factory=deep.get_ensemble('weighted')
-        params=get_dataset_params(X) 
-        self.neural_ensemble=ens_factory(params,self.hyper)
-        self.neural_ensemble.fit(self,X,targets)
-        full=self.neural_ensemble.get_full(X) #.extract(X)
-        for full_i in full:
-            clf_i=learn.get_clf('RF')
-            clf_i.fit(full_i,targets)
-            self.clfs.append(clf_i)
-
-    def predict_proba(self,X):    
-        votes=[clf_i.predict_proba(X) 
-             for clf_i in self.clfs]
-        votes=np.array(votes)
-        return np.sum(votes,axis=0)
-
-    def predict(self,X):
-        prob=self.predict_proba(X)
-        return np.argmax(prob,axis=1)
 
 class MultiKTBuilder(object): 
     def __init__(self,params):#,hidden=[(0.25,5),(0.25,5)]):
