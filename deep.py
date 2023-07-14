@@ -47,6 +47,9 @@ class NeuralEnsemble(object):
         return [np.concatenate([train.X,cs_i],axis=1)
                 for cs_i in cs_train]
     
+    def load_weights(self,in_path):
+        self.multi_output.load_weights(in_path)
+
     def save_weights(self,out_path):
         self.multi_output.save_weights(out_path)
 
