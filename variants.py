@@ -38,7 +38,7 @@ class BinaryVariant(object):
             votes=np.array(votes)
             votes=np.sum(votes,axis=0)
             y_pred=np.argmax(votes,axis=1)
-            id_i=f'{clf_type_i}-binary'
+            id_i=f'{clf_type_i}-cs'
             yield id_i,y_pred
 
 def necscf(train,test,clf_type,get_votes=False):

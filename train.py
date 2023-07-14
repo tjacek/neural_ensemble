@@ -87,7 +87,12 @@ def single_exp(data_path,hyper_path,out_path,n_splits=10,n_repeats=10):
     all_splits=data.gen_splits(X,y,
     	                       n_splits=n_splits,
     	                       n_repeats=n_repeats)
-    algs=['base','multi',('binary',0.25)]
+    algs=['base',
+          'multi',
+          ('binary',0.25),
+          ('binary',0.5),
+          ('weighted',0.25),
+          ('weighted',0.5)]
     tools.make_dir(out_path)
     for alg_i in algs:
         name_i=get_name(alg_i)
