@@ -92,7 +92,7 @@ def get_mean_dict(single,df,dataset):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--pred", type=str, default='10_10/pred')
+    parser.add_argument("--pred", type=str, default='../test3/pred')
     parser.add_argument("--dir", type=int, default=0)
     args = parser.parse_args()
     if(args.dir>0):

@@ -28,7 +28,7 @@ class BinaryVariant(object):
         self.clfs=clfs
 
     def __call__(self,train,test):
-        for cls_type_i in self.clfs:
+        for clf_type_i in self.clfs:
             votes=[]
             for train_j,test_j in zip(train.cs,test.cs):
                 clf_j=learn.get_clf(clf_type_i)
@@ -41,7 +41,7 @@ class BinaryVariant(object):
             id_i=f'{clf_type_i}-binary'
             yield id_i,y_pred
 
-def necscf(train,test,clf_type,votes=False):
+def necscf(train,test,clf_type,get_votes=False):
     votes=[]
     for cs_train_i,cs_test_i in zip(train.cs,test.cs):
         full_train_i=np.concatenate([train.X,cs_train_i],axis=1)       
@@ -50,7 +50,7 @@ def necscf(train,test,clf_type,votes=False):
         full_test_i=np.concatenate([test.X,cs_test_i],axis=1)
         y_pred=clf_i.predict_proba(full_test_i)
         votes.append(y_pred)
-    if(votes):
+    if(get_votes):
         return votes
     votes=np.array(votes)
     votes=np.sum(votes,axis=0)
