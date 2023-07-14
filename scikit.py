@@ -1,3 +1,6 @@
+import tools
+tools.silence_warnings()
+import argparse
 from sklearn.model_selection import RepeatedStratifiedKFold
 from skopt import BayesSearchCV
 from skopt.space import Real, Categorical, Integer
@@ -40,3 +43,14 @@ def alpha_optim(hyper,n_split,n_repeats, n_iter):
     search = BayesSearchCV(estimator=clf,verbose=0,n_iter=self.n_iter,
                 search_spaces=search_spaces,n_jobs=1,cv=cv_gen,
                 scoring=self.scoring)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--data", type=str, default='data')# /wine-quality-red')
+    parser.add_argument("--hyper", type=str, default='hyper')
+    parser.add_argument("--n_split", type=int, default=10)
+    parser.add_argument("--n_iter", type=int, default=10)
+    parser.add_argument("--log", type=str, default='log')
+    parser.add_argument("--dir", type=int, default=0)
+    args = parser.parse_args()
+    tools.start_log(args.log)
