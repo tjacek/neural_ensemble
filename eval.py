@@ -3,15 +3,17 @@ tools.silence_warnings()
 import argparse
 import numpy as np
 import pandas as pd
-from sklearn.metrics import accuracy_score,balanced_accuracy_score#,f1_score
+#from sklearn.metrics import accuracy_score,balanced_accuracy_score#,f1_score
 from scipy import stats
+from  summary.metric_dict import make_acc_dict
 import json
 
 def single_exp(pred_path,out_path):
-    acc_dict=metric_dict(accuracy_score,pred_path)
-    df=make_df(acc_dict)
-    df=df.sort_values(by=['mean'], ascending=False)
-    print(df)
+    acc_dict=make_acc_dict(pred_path,'acc')
+    print(acc_dict.to_df())
+#    df=make_df(acc_dict)
+#    df=df.sort_values(by=['mean'], ascending=False)
+#    print(df)
 #    for data_i in df.dataset.unique():
 #        pvalue_df=get_pvalue(data_i,df,acc_dict)
 #        summary(pvalue_df, stats_type=1)
@@ -38,25 +40,25 @@ def make_df(acc_dict):
     cols=['dataset','clf','mean','std']
     return pd.DataFrame(lines,columns=cols)
 
-def metric_dict(metric_i,pred_path):
-    metric_dict={}
-    for path_i in tools.top_files(pred_path):
-        all_pred=read_pred(path_i)
-        id_i=get_id(path_i)
-        line_i=[get_id(path_i)]
-        acc=[ metric_i(test_i,pred_i) 
-                for test_i,pred_i in all_pred]
-        metric_dict[id_i]=acc
-    return metric_dict
+#def metric_dict(metric_i,pred_path):
+#    metric_dict={}
+#    for path_i in tools.top_files(pred_path):
+#        all_pred=read_pred(path_i)
+#        id_i=get_id(path_i)
+#        line_i=[get_id(path_i)]
+#        acc=[ metric_i(test_i,pred_i) 
+#                for test_i,pred_i in all_pred]
+#        metric_dict[id_i]=acc
+#    return metric_dict
 
-def read_pred(path_i):
-    with open(path_i, 'r') as f:        
-        json_bytes = f.read()                      
-        return json.loads(json_bytes)
+#def read_pred(path_i):
+#    with open(path_i, 'r') as f:        
+#        json_bytes = f.read()                      
+#        return json.loads(json_bytes)
 
-def get_id(path_i):
-    raw=path_i.split('/')
-    return f'{raw[-2]},{raw[-1]}'
+#def get_id(path_i):
+#    raw=path_i.split('/')
+#    return f'{raw[-2]},{raw[-1]}'
 
 def get_pvalue(dataset,df,acc_dict):
     single,ens=[],[]
@@ -92,7 +94,7 @@ def get_mean_dict(single,df,dataset):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--pred", type=str, default='../test3/pred')
+    parser.add_argument("--pred", type=str, default='../10_10/pred')
     parser.add_argument("--dir", type=int, default=0)
     args = parser.parse_args()
     if(args.dir>0):
