@@ -1,4 +1,4 @@
-import os
+import os,re
 import json
 import numpy as np
 import pandas as pd
@@ -16,8 +16,45 @@ class MetricDict(dict):
             line_i+=[round(stat_j(metric_i),4) 
                         for stat_j in stats]
             lines.append(line_i)
-        cols=['dataset','clf','mean','std']
-        return pd.DataFrame(lines,columns=cols)
+        cols=['dataset','id','mean','std']
+        df=pd.DataFrame(lines,columns=cols)
+        df['clf']=df['id'].apply(get_clf)
+        df['cs']=df['id'].apply(get_cs)
+        df['alpha']=df['id'].apply(get_alpha)
+        df['variant']=df['id'].apply(get_variant)
+        df.drop('id', inplace=True, axis=1)
+        return df
+
+def get_clf(id_i):
+    if('RF' in id_i):
+        return 'RF'
+    if('SVC' in id_i):
+        return 'SVC'
+    if('LR' in id_i):
+        return 'LR'
+    return "-"
+
+def get_cs(id_i):
+    if('weighted' in id_i):
+        return 'weighted'
+    if('binary' in id_i):
+        return 'binary'
+    if('multi' in id_i):
+        return 'multi'
+    return "-"
+
+def get_alpha(raw):
+    digits=re.findall(r'\d+',raw)
+    if(len(digits)>0):
+        return f'0.{digits[1]}'
+    return '-'
+
+def get_variant(id_i):
+    if('necscf' in id_i):
+        return 'necscf'
+    if('cs' in id_i):
+        return 'cs'
+    return "-"
 
 def make_acc_dict(pred_path,metric_i='acc'):
     if(metric_i=='acc'):
