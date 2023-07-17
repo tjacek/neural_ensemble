@@ -19,12 +19,14 @@ def dir_fun(n_paths=1):
         def decor_fun(*args, **kwargs):
             path_args=args[:n_paths]
             make_dir(path_args[-1])
+            path_dir={}
             for path_i in top_files(path_args[0]):
                 name_i=path_i.split('/')[-1]
                 new_args=list(args)
                 for j,arg_j in enumerate(path_args):
                     new_args[j]=f'{arg_j}/{name_i}'
-                fun(*new_args,**kwargs)
+                path_dir[path_i]= fun(*new_args,**kwargs)
+            return path_dir
         return decor_fun
     return helper
 

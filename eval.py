@@ -11,6 +11,9 @@ import json
 def single_exp(pred_path,out_path):
     acc_dict=make_acc_dict(pred_path,'acc')
     df_dict=summary(acc_dict)
+    return list(df_dict.values())[0]
+
+def sig_stats(df_dict):
     clfs=list(df_dict.values())[0]['clf'].unique()
     counter_dict={clf_i:[0,0,0,0] for clf_i in clfs }
     for data_i,df_i in df_dict.items():
@@ -18,7 +21,6 @@ def single_exp(pred_path,out_path):
             clf_j,sig_j,diff_j=row_j['clf'],row_j['sig'],row_j['diff']
             if(diff_j<0):
                 diff_j=0
-            print(clf_j,sig_j,diff_j,int(sig_j)*2+diff_j)
             index=int(sig_j)*2+ int(diff_j)
             counter_dict[clf_j][index]+=1
     print(counter_dict)
@@ -78,9 +80,10 @@ def show_impr(s_df):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--pred", type=str, default='../10_10/pred')
+    parser.add_argument("--pred", type=str, default='../s_10_10/pred')
     parser.add_argument("--dir", type=int, default=0)
     args = parser.parse_args()
     if(args.dir>0):
         single_exp=tools.dir_fun(2)(single_exp)
-    single_exp(args.pred,'out')
+    df_dict=single_exp(args.pred,'out')
+    sig_stats(df_dict)
