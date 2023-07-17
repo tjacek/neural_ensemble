@@ -2,13 +2,14 @@ import os,re
 import json
 import numpy as np
 import pandas as pd
+from scipy import stats
 from sklearn.metrics import accuracy_score,balanced_accuracy_score
 
 class MetricDict(dict):
     def __init__(self, arg=[]):
         super(MetricDict, self).__init__(arg)
 
-    def to_df(self):
+    def to_df(self,drop=False):
         lines=[]
         stats=[np.mean,np.std]
         for id_i,metric_i in self.items():
@@ -22,15 +23,22 @@ class MetricDict(dict):
         df['cs']=df['id'].apply(get_cs)
         df['alpha']=df['id'].apply(get_alpha)
         df['variant']=df['id'].apply(get_variant)
-        df.drop('id', inplace=True, axis=1)
+        if(drop):
+            df.drop('id', inplace=True, axis=1)
         return df
-
-    def dataset_dfs(self):
-        df=self.to_df()
+    
+    def dataset_dfs(self,drop=False):
+        df=self.to_df(drop=drop)
         data_dict={}
         for data_i in df['dataset'].unique():
             data_dict[data_i]= df[ df['dataset']==data_i]
         return data_dict
+
+    def pvalue(self,id_x,id_y):
+        r=stats.ttest_ind(self[id_x], 
+                self[id_y], equal_var=False)
+        p_value=round(r[1],4)
+        return p_value
 
 def get_clf(id_i):
     if('RF' in id_i):
