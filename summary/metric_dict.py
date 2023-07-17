@@ -61,6 +61,8 @@ def get_variant(id_i):
         return 'necscf'
     if('cs' in id_i):
         return 'cs'
+    if('inliner' in id_i):
+        return 'inliner'
     return "-"
 
 def make_acc_dict(pred_path,metric_i='acc'):
