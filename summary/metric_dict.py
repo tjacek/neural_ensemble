@@ -25,6 +25,13 @@ class MetricDict(dict):
         df.drop('id', inplace=True, axis=1)
         return df
 
+    def dataset_dfs(self):
+        df=self.to_df()
+        data_dict={}
+        for data_i in df['dataset'].unique():
+            data_dict[data_i]= df[ df['dataset']==data_i]
+        return data_dict
+
 def get_clf(id_i):
     if('RF' in id_i):
         return 'RF'

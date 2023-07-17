@@ -10,36 +10,32 @@ import json
 
 def single_exp(pred_path,out_path):
     acc_dict=make_acc_dict(pred_path,'acc')
-    df=acc_dict.to_df()
-#    df=make_df(acc_dict)
-    df=df.sort_values(by=['dataset','mean'], ascending=False)
-    print(df)
+#    df=acc_dict.to_df()
+#    df=df.sort_values(by=['dataset','mean'], ascending=False)
+#    print(df)
+#    data_dict=acc_dict.dataset_dfs()
+    summary(acc_dict)
 #    for data_i in df.dataset.unique():
 #        pvalue_df=get_pvalue(data_i,df,acc_dict)
 #        summary(pvalue_df, stats_type=1)
 
-def summary(df_i, stats_type=1):
-    if(stats_type==1):
-        print(df_i[ (df_i.improv==True) &
-                    (df_i.pvalue<0.05)])
-    elif(stats_type==2):
-        print(df_i[ (df_i.improv==True) &
-              (df_i.pvalue>0.05)])
-    else:
-        print(df_i[ (df_i.improv==False) &
-                    (df_i.pvalue<0.05)])
-
-def make_df(acc_dict):
-    lines=[]
-    stats=[np.mean,np.std]
-    for id_i,metric_i in acc_dict.items():
-        line_i=id_i.split(',')
-        line_i+=[round(stat_j(metric_i),4) 
-                        for stat_j in stats]
-        lines.append(line_i)
-    cols=['dataset','clf','mean','std']
-    return pd.DataFrame(lines,columns=cols)
-
+def summary(acc_dict):
+    data_dict=acc_dict.dataset_dfs()
+    for data,df_i in data_dict.items():
+        lines=[]
+        variant_df=df_i[df_i['variant']=='-']
+        for index, row in variant_df.iterrows():
+            lines.append(row.tolist())
+        for clf_j in df_i['clf'].unique():
+            df_j=df_i[(df_i['clf']==clf_j) &
+                       (df_i['variant']!='-')]
+            df_j=df_j.sort_values(by='mean',ascending=False)
+            line_j=df_j.iloc[0].tolist()
+            lines.append(line_j)
+        cols=['dataset','mean','std','clf','cs','alpha','variant']
+        s_df=pd.DataFrame(lines,columns=cols)
+        s_df=s_df.sort_values(by='mean',ascending=False)
+        print(s_df)
 
 def get_pvalue(dataset,df,acc_dict):
     single,ens=[],[]
