@@ -9,7 +9,7 @@ class MetricDict(dict):
     def __init__(self, arg=[]):
         super(MetricDict, self).__init__(arg)
 
-    def to_df(self,drop=False):
+    def to_df(self,drop=False,transform=None):
         lines=[]
         stats=[np.mean,np.std]
         for id_i,metric_i in self.items():
@@ -19,16 +19,20 @@ class MetricDict(dict):
             lines.append(line_i)
         cols=['dataset','id','mean','std']
         df=pd.DataFrame(lines,columns=cols)
-        df['clf']=df['id'].apply(get_clf)
-        df['cs']=df['id'].apply(get_cs)
-        df['alpha']=df['id'].apply(get_alpha)
-        df['variant']=df['id'].apply(get_variant)
+        col_dict={ 'clf': GenCol(['RF','SVC','LR']),
+                    'cs': GenCol(['weighted','binary','multi']),
+               'variant': GenCol(['necscf','cs','inliner']),
+                  'alpha':get_alpha}
+        for col_i,fun_i in col_dict.items():
+            df[col_i]=df['id'].apply(fun_i)
         if(drop):
             df.drop('id', inplace=True, axis=1)
+        if(not (transform is None)):
+            df=transform(df)
         return df
     
-    def dataset_dfs(self,drop=False):
-        df=self.to_df(drop=drop)
+    def dataset_dfs(self,drop=False,transform=None):
+        df=self.to_df(drop=drop,transform=transform)
         data_dict={}
         for data_i in df['dataset'].unique():
             data_dict[data_i]= df[ df['dataset']==data_i]
@@ -40,38 +44,22 @@ class MetricDict(dict):
         p_value=round(r[1],4)
         return p_value
 
-def get_clf(id_i):
-    if('RF' in id_i):
-        return 'RF'
-    if('SVC' in id_i):
-        return 'SVC'
-    if('LR' in id_i):
-        return 'LR'
-    return "-"
+class GenCol(object):
+    def __init__(self,seqs,default='-'):
+        self.seqs=seqs
+        self.default=default
 
-def get_cs(id_i):
-    if('weighted' in id_i):
-        return 'weighted'
-    if('binary' in id_i):
-        return 'binary'
-    if('multi' in id_i):
-        return 'multi'
-    return "-"
+    def __call__(self,id_i):
+        for seq_i in self.seqs:
+            if(seq_i in id_i):
+                return seq_i
+        return self.default
 
 def get_alpha(raw):
     digits=re.findall(r'\d+',raw)
     if(len(digits)>0):
         return f'0.{digits[1]}'
     return '-'
-
-def get_variant(id_i):
-    if('necscf' in id_i):
-        return 'necscf'
-    if('cs' in id_i):
-        return 'cs'
-    if('inliner' in id_i):
-        return 'inliner'
-    return "-"
 
 def make_acc_dict(pred_path,metric_i='acc'):
     if(metric_i=='acc'):

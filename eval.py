@@ -3,14 +3,15 @@ tools.silence_warnings()
 import argparse
 import numpy as np
 import pandas as pd
-#from sklearn.metrics import accuracy_score,balanced_accuracy_score#,f1_score
 from scipy import stats
 from  summary.metric_dict import make_acc_dict
 import json
 
 def single_exp(pred_path,out_path):
+    def helper(df):
+        return df[df['variant']!='inliner']
     acc_dict=make_acc_dict(pred_path,'acc')
-    df_dict=summary(acc_dict)
+    df_dict=summary(acc_dict,None)
     return list(df_dict.values())[0]
 
 def sig_stats(df_dict):
@@ -25,8 +26,8 @@ def sig_stats(df_dict):
             counter_dict[clf_j][index]+=1
     print(counter_dict)
 
-def summary(acc_dict):
-    data_dict=acc_dict.dataset_dfs()
+def summary(acc_dict,transform=None):
+    data_dict=acc_dict.dataset_dfs(transform=transform)
     df_dict={}
     for data,df_i in data_dict.items():
         lines=[]
@@ -64,7 +65,7 @@ def add_pvalues(data,s_df,acc_dict,verbose=False):
     s_df=s_df[s_df['pvalue']!='-']
     s_df['sig']=s_df['pvalue'].apply(lambda p: p<0.05)
     if(verbose):
-        print(s_df)
+        print(s_df.to_latex())
     return s_df
 
 def show_impr(s_df):
@@ -80,7 +81,7 @@ def show_impr(s_df):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--pred", type=str, default='../s_10_10/pred')
+    parser.add_argument("--pred", type=str, default='../10_10/pred')
     parser.add_argument("--dir", type=int, default=0)
     args = parser.parse_args()
     if(args.dir>0):
