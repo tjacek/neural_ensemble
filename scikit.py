@@ -1,7 +1,9 @@
 import tools
 tools.silence_warnings()
 import argparse
+import numpy as np
 from sklearn.model_selection import RepeatedStratifiedKFold
+from sklearn.model_selection import GridSearchCV
 from skopt import BayesSearchCV
 from skopt.space import Real, Categorical, Integer
 from sklearn.base import BaseEstimator, ClassifierMixin
@@ -25,9 +27,10 @@ class ScikitAdapter(BaseEstimator, ClassifierMixin):
             clf_i.fit(full_i,targets)
             self.clfs.append(clf_i)
 
-    def predict_proba(self,X):    
-        votes=[clf_i.predict_proba(X) 
-             for clf_i in self.clfs]
+    def predict_proba(self,X):
+        full=self.neural_ensemble.get_full(X)
+        votes=[clf_i.predict_proba(full_i) 
+             for clf_i,full_i in zip(self.clfs,full)]
         votes=np.array(votes)
         return np.sum(votes,axis=0)
 
@@ -35,22 +38,38 @@ class ScikitAdapter(BaseEstimator, ClassifierMixin):
         prob=self.predict_proba(X)
         return np.argmax(prob,axis=1)
 
+class BayesCallback(object):
+    def __init__(self):
+        self.count=0
+
+    def __call__(self,optimal_result):
+        print(f"Iteration {self.count}")
+        print(f"Best params so far {optimal_result.x}")
+        print(f'Score {round(optimal_result.fun,4)}')
+        self.count+=1
+
 def alpha_optim(data_path,hyper_path,n_split,n_repeats, n_iter):
     X,y=data.get_dataset(data_path)
     hyper_dict=train.parse_hyper(hyper_path)
-    search_spaces={'alpha': Real(0.1, 0.9, prior='uniform')}
-#                   'hyper':Categorical([hyper_dict])}
     cv_gen=RepeatedStratifiedKFold(n_splits=n_split, 
                                    n_repeats=n_repeats, 
                                    random_state=1)
-    search = BayesSearchCV(estimator=ScikitAdapter(0.5,hyper_dict),
-                           n_iter=n_iter,
-                           search_spaces=search_spaces,
-                           cv=cv_gen,
-                           scoring='accuracy',
-                           verbose=0,
-                           n_jobs=1,)
-    search.fit(X,y)#,callback=callback) 
+    search_spaces={'alpha':[0.1*(i+1) for i in range(9)]}
+
+    search=GridSearchCV(estimator=ScikitAdapter(0.5,hyper_dict),
+                        param_grid=search_spaces,
+                        verbose=1)
+
+#    search_spaces={'alpha': Real(0.1, 0.9, prior='uniform')}
+#    search = BayesSearchCV(estimator=ScikitAdapter(0.5,hyper_dict),
+#                           n_iter=n_iter,
+#                           search_spaces=search_spaces,
+#                           cv=cv_gen,
+#                           scoring='accuracy',
+#                           verbose=0,
+#                           n_jobs=1,)
+    search.fit(X,y) #,callback=BayesCallback()) 
+    print(search.cv_results_)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
