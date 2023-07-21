@@ -49,7 +49,9 @@ class BayesCallback(object):
         print(f'Score {round(optimal_result.fun,4)}')
         self.count+=1
 
-def alpha_optim(data_path,hyper_path,n_split,n_repeats, n_iter):
+def single_exp(data_path,hyper_path,n_split,n_repeats):
+    print(data_path)
+    print(hyper_path)
     X,y=data.get_dataset(data_path)
     hyper_dict=train.parse_hyper(hyper_path)
     cv_gen=RepeatedStratifiedKFold(n_splits=n_split, 
@@ -58,11 +60,14 @@ def alpha_optim(data_path,hyper_path,n_split,n_repeats, n_iter):
     search=  grid_search(cv_gen,hyper_dict)
     search.fit(X,y) #,callback=BayesCallback()) 
     df= pd.DataFrame(search.cv_results_)
-    print(df['mean_test_score'])
-    print(search.cv_results_.keys())
+    best_estm=search.best_estimator_
+    best_params= best_estm.get_params(deep=True)
+#    print(df['mean_test_score'])
+#    print(search.cv_results_.keys())
     best_score=round(search.best_score_,4)
-    print(best_score)
-
+    return best_params['alpha'],best_score
+#    print(best_score)
+#    print(best_params)
 
 def grid_search(cv_gen,hyper_dict):
     search_spaces={'alpha':[0.1*(i+1) for i in range(9)]}
@@ -85,12 +90,26 @@ def bayes_search(cv_gen,hyper_dict,n_iter=5):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type=str, default='../data/cleveland')
-    parser.add_argument("--hyper", type=str, default='../test3/hyper/cleveland')
+    parser.add_argument("--data", type=str, default='../data')
+    parser.add_argument("--hyper", type=str, default='../test3/hyper')
     parser.add_argument("--n_split", type=int, default=3)
     parser.add_argument("--n_iter", type=int, default=3)
-    parser.add_argument("--log", type=str, default='log')
+#    parser.add_argument("--log", type=str, default='log')
     parser.add_argument("--dir", type=int, default=0)
     args = parser.parse_args()
 #    tools.start_log(args.log)
-    alpha_optim(args.data,args.hyper,args.n_split,args.n_iter,5)
+    if(args.dir>0):
+        multi_exp=tools.dir_fun(2)(single_exp)
+        path_dir=multi_exp(args.data,
+                           args.hyper,
+                           args.n_split,
+                           args.n_iter)
+        print(path_dir)
+        for path_i,value_i in path_dir.items():
+            name_i=path_i.split('/')[-1]
+            print(f'{name_i},{value_i[0]},{value_i[1]}')
+    else:
+        single_exp(args.data,
+                   args.hyper,
+                   args.n_split,
+                   args.n_iter)
