@@ -43,11 +43,12 @@ class NeuralEnsemble(object):
         return feats
 
     def get_full(self,train,scale=True):
-        cs_train=self.extract(train.X,scale)
-#        if(scale):
-#            cs_train=[preprocessing.scale(cs_i)
-#                    for cs_i in cs_train]
-        return [np.concatenate([train.X,cs_i],axis=1)
+        if isinstance(train,np.ndarray):
+            X=train
+        else:
+            X=train.X
+        cs_train=self.extract(X,scale)
+        return [np.concatenate([X,cs_i],axis=1)
                 for cs_i in cs_train]
     
     def load_weights(self,in_path):

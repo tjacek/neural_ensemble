@@ -64,7 +64,7 @@ def single_exp(data_path,hyper_path,n_split,n_repeats):
     best_estm=search.best_estimator_
     best_params= best_estm.get_params(deep=True)
     best_score=round(search.best_score_,4)
-    print(best_params)
+    print(df['mean_test_score'])
     return best_params['alpha'],best_score
 
 def multi_exp(args,out_path):
