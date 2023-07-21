@@ -60,9 +60,10 @@ def log_time(task='TRAIN'):
         def decor_fun(*args, **kwargs):
             name_i=args[0].split('/')[-1]
             start=time.time()
-            fun(*args,**kwargs)
+            result=fun(*args,**kwargs)
             diff=(time.time()-start)
             logging.info(f'{task}-{name_i}-{diff:.4f}s')
+            return result
         return decor_fun
     return helper
 

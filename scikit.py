@@ -49,6 +49,7 @@ class BayesCallback(object):
         print(f'Score {round(optimal_result.fun,4)}')
         self.count+=1
 
+@tools.log_time(task='ALPHA')
 def single_exp(data_path,hyper_path,n_split,n_repeats):
     print(data_path)
     print(hyper_path)
@@ -62,12 +63,21 @@ def single_exp(data_path,hyper_path,n_split,n_repeats):
     df= pd.DataFrame(search.cv_results_)
     best_estm=search.best_estimator_
     best_params= best_estm.get_params(deep=True)
-#    print(df['mean_test_score'])
-#    print(search.cv_results_.keys())
     best_score=round(search.best_score_,4)
+    print(best_params)
     return best_params['alpha'],best_score
-#    print(best_score)
-#    print(best_params)
+
+def multi_exp(args,out_path):
+#    raise Exception(out_path)
+    for path_i in tools.top_files(args.data):
+        with open(out_path,"a") as f:
+            name_i=path_i.split('/')[-1]    
+            hyper_i=f'{args.hyper}/{name_i}'  
+            alpha_i,best_i=single_exp(path_i,
+                                      hyper_i,
+                                      args.n_split,
+                                      args.n_iter)
+            f.write(f'{name_i},{alpha_i},{best_i}\n') 
 
 def grid_search(cv_gen,hyper_dict):
     search_spaces={'alpha':[0.1*(i+1) for i in range(9)]}
@@ -85,7 +95,7 @@ def bayes_search(cv_gen,hyper_dict,n_iter=5):
                            cv=cv_gen,
                            scoring='accuracy',
                            verbose=0,
-                           n_jobs=1,)
+                           n_jobs=1)
     return search
 
 if __name__ == "__main__":
@@ -94,20 +104,13 @@ if __name__ == "__main__":
     parser.add_argument("--hyper", type=str, default='../test3/hyper')
     parser.add_argument("--n_split", type=int, default=3)
     parser.add_argument("--n_iter", type=int, default=3)
-#    parser.add_argument("--log", type=str, default='log')
+    parser.add_argument("--out_path", type=str, default='alpha.csv')
+    parser.add_argument("--log", type=str, default='log')
     parser.add_argument("--dir", type=int, default=0)
     args = parser.parse_args()
-#    tools.start_log(args.log)
+    tools.start_log(args.log)
     if(args.dir>0):
-        multi_exp=tools.dir_fun(2)(single_exp)
-        path_dir=multi_exp(args.data,
-                           args.hyper,
-                           args.n_split,
-                           args.n_iter)
-        print(path_dir)
-        for path_i,value_i in path_dir.items():
-            name_i=path_i.split('/')[-1]
-            print(f'{name_i},{value_i[0]},{value_i[1]}')
+        multi_exp(args,args.out_path)
     else:
         single_exp(args.data,
                    args.hyper,
