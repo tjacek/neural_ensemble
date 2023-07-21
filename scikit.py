@@ -7,6 +7,7 @@ from sklearn.model_selection import GridSearchCV
 from skopt import BayesSearchCV
 from skopt.space import Real, Categorical, Integer
 from sklearn.base import BaseEstimator, ClassifierMixin
+import pandas as pd
 import data,deep,learn,train
 
 class ScikitAdapter(BaseEstimator, ClassifierMixin):
@@ -54,22 +55,33 @@ def alpha_optim(data_path,hyper_path,n_split,n_repeats, n_iter):
     cv_gen=RepeatedStratifiedKFold(n_splits=n_split, 
                                    n_repeats=n_repeats, 
                                    random_state=1)
-    search_spaces={'alpha':[0.1*(i+1) for i in range(9)]}
+    search=  grid_search(cv_gen,hyper_dict)
+    search.fit(X,y) #,callback=BayesCallback()) 
+    df= pd.DataFrame(search.cv_results_)
+    print(df['mean_test_score'])
+    print(search.cv_results_.keys())
+    best_score=round(search.best_score_,4)
+    print(best_score)
 
+
+def grid_search(cv_gen,hyper_dict):
+    search_spaces={'alpha':[0.1*(i+1) for i in range(9)]}
     search=GridSearchCV(estimator=ScikitAdapter(0.5,hyper_dict),
                         param_grid=search_spaces,
-                        verbose=1)
+                        cv=cv_gen,
+                        verbose=0)
+    return search
 
-#    search_spaces={'alpha': Real(0.1, 0.9, prior='uniform')}
-#    search = BayesSearchCV(estimator=ScikitAdapter(0.5,hyper_dict),
-#                           n_iter=n_iter,
-#                           search_spaces=search_spaces,
-#                           cv=cv_gen,
-#                           scoring='accuracy',
-#                           verbose=0,
-#                           n_jobs=1,)
-    search.fit(X,y) #,callback=BayesCallback()) 
-    print(search.cv_results_)
+def bayes_search(cv_gen,hyper_dict,n_iter=5):
+    search_spaces={'alpha': Real(0.1, 0.9, prior='uniform')}
+    search = BayesSearchCV(estimator=ScikitAdapter(0.5,hyper_dict),
+                           n_iter=n_iter,
+                           search_spaces=search_spaces,
+                           cv=cv_gen,
+                           scoring='accuracy',
+                           verbose=0,
+                           n_jobs=1,)
+    return search
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
