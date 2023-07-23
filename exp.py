@@ -3,6 +3,7 @@ tools.silence_warnings()
 import numpy as np
 import tensorflow as tf 
 from keras import callbacks
+import deep
 
 class ExpFactory(object):
     def __init__(self,dataset_params,hyper_params):
