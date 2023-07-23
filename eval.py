@@ -40,11 +40,12 @@ def summary(acc_dict,transform=None):
             df_j=df_j.sort_values(by='mean',ascending=False)
             line_j=df_j.iloc[0].tolist()
             lines.append(line_j)
-        cols=['dataset','id', 'mean','std','clf','cs','alpha','variant']
+        cols=['dataset','id', 'mean','std','clf','cs','variant']#'alpha','variant']
         s_df=pd.DataFrame(lines,columns=cols)
         s_df=s_df.sort_values(by='mean',ascending=False)
         s_df=add_pvalues(data,s_df,acc_dict)
         s_df=show_impr(s_df)
+        print(s_df)
         df_dict[data]=s_df
     return df_dict
 
@@ -80,8 +81,9 @@ def show_impr(s_df):
     return s_df
 
 if __name__ == '__main__':
+    dir_path='../optim_alpha/s_10_10'
     parser = argparse.ArgumentParser()
-    parser.add_argument("--pred", type=str, default='../10_10/pred')
+    parser.add_argument("--pred", type=str, default=f'{dir_path}/pred')
     parser.add_argument("--dir", type=int, default=0)
     args = parser.parse_args()
     if(args.dir>0):
