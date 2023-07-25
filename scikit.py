@@ -2,8 +2,8 @@ import tools
 tools.silence_warnings()
 import argparse
 import numpy as np
-import sklearn
-raise Exception(sklearn.__version__)
+#import sklearn
+#raise Exception(sklearn.__version__)
 from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn.model_selection import GridSearchCV
 from skopt import BayesSearchCV
@@ -64,7 +64,7 @@ def single_exp(data_path,hyper_path,n_split,n_repeats):
     X,y=data.get_dataset(data_path)
     hyper_dict=parse_hyper(hyper_path)
 
-    test_clone(hyper_dict,n_iter=10)
+    test_clone(X,y,hyper_dict,n_iter=10)
 
     cv_gen=RepeatedStratifiedKFold(n_splits=n_split, 
                                    n_repeats=n_repeats, 
@@ -109,21 +109,25 @@ def bayes_search(cv_gen,hyper_dict,n_iter=5):
     return search
 
 
-def test_clone(hyper_dict,n_iter=10):
+def test_clone(X,y, hyper_dict,n_iter=10):
     import inspect
     from sklearn.base import clone
     build_time,scikit_obj=[],[]
     for i in range(n_iter):
         start=time()
         scikit_clf_i=ScikitAdapter(0.5,hyper_dict)
+        scikit_clf_i.fit(X,y)
         scikit_obj.append(scikit_clf_i)
         build_time.append(time()-start)
+        print(build_time[-1])
     print(f'{np.mean(build_time):.4}')
     clone_time,clonned_obj=[],[]
     for scikit_clf_i in scikit_obj:
         start=time()
         clonned_obj.append( clone(scikit_clf_i))
         clone_time.append(time()-start)
+        print(clone_time[-1])
+
     print(f'{np.mean(clone_time):.4}')
     raise Exception('OK')
 

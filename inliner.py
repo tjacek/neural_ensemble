@@ -5,8 +5,7 @@ import numpy as np
 from collections import defaultdict
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score
-
-import data,pred
+import data,pred,variants
 
 @tools.log_time(task='INLINER')
 def single_exp(data_path,model_path,out_path):
@@ -41,8 +40,8 @@ class InlinerVariant(object):
             y_near.append(neigh.predict(test_i.cs[j]))
         y_near=list(zip(*y_near))
         n_samples=test_i.y.shape[0]
-        for clf_j in clfs:
-            votes=pred.necscf(train_i,test_i,clf_j,True)
+        for clf_j in self.clfs:
+            votes=variants.necscf(train_i,test_i,clf_j,True)
             votes=[[ vote_t[k,:] for vote_t in votes]
                     for k in range(n_samples)]
             y_pred=[]
@@ -51,19 +50,20 @@ class InlinerVariant(object):
                 s_vote=[ vote_k[t] 
                      for t,(pred,near) in enumerate(zip(pred_k,y_near[k]))
                          if(pred==near)]
-                if(len(s_vote)<thres):
+                if(len(s_vote)<self.thres):
                     s_vote=vote_k
                 s_vote=np.sum(s_vote,axis=0)
                 y_pred.append(np.argmax(s_vote,axis=0))
             yield f'{clf_j}-inliner',np.array(y_pred)
 
 if __name__ == '__main__':
+    dir_path='../optim_alpha/r_10_10'
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type=str, default='../data')
-    parser.add_argument("--models", type=str, default='../test3/models')
-    parser.add_argument("--pred", type=str, default='../test3/pred')
+    parser.add_argument("--data", type=str, default='../r_uci')
+    parser.add_argument("--models", type=str, default=f'{dir_path}/models')
+    parser.add_argument("--pred", type=str, default=f'{dir_path}/pred')
     parser.add_argument("--log", type=str, default='log.info')
-    parser.add_argument("--dir", type=int, default=0)
+    parser.add_argument("--dir", type=int, default=1)
     args = parser.parse_args()
     tools.start_log(args.log)
     if(args.dir>0):

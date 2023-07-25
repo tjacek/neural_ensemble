@@ -1,6 +1,7 @@
 import tools
 tools.silence_warnings()
 import argparse
+import os
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -81,12 +82,11 @@ def show_impr(s_df):
     return s_df
 
 if __name__ == '__main__':
-    dir_path='../optim_alpha/s_10_10'
+    dir_path='../optim_alpha/r_10_10'
     parser = argparse.ArgumentParser()
     parser.add_argument("--pred", type=str, default=f'{dir_path}/pred')
-    parser.add_argument("--dir", type=int, default=0)
     args = parser.parse_args()
-    if(args.dir>0):
+    if(os.path.isdir(args.pred)):
         single_exp=tools.dir_fun(2)(single_exp)
     df_dict=single_exp(args.pred,'out')
     sig_stats(df_dict)
