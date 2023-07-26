@@ -2,32 +2,32 @@ import tools
 tools.silence_warnings()
 import argparse
 import numpy as np
-#import sklearn
-#raise Exception(sklearn.__version__)
 from sklearn.model_selection import RepeatedStratifiedKFold
-from sklearn.model_selection import GridSearchCV
-from skopt import BayesSearchCV
-from skopt.space import Real, Categorical, Integer
-from sklearn.base import BaseEstimator, ClassifierMixin
-from time import time
 import pandas as pd
 import data,deep,learn,train
 
 class ScikitAdapter(BaseEstimator, ClassifierMixin):
-    def __init__(self, alpha=0.5, hyper=None):
+    def __init__(self, alpha=0.5, 
+                       hyper=None,
+                       ens_type='weighted',
+                       clf_type='RF'):
         self.alpha = alpha
         self.hyper = hyper
+        self.ens_type=ens_type
+        self.clf_type=clf_type
         self.neural_ensemble=None 
         self.clfs=[]
 
     def fit(self,X,targets):
-        ens_factory=deep.get_ensemble(('weighted',self.alpha))
+        ens_factory=deep.get_ensemble((self.ens_type,self.alpha))
         params=data.get_dataset_params(X,targets) 
         self.neural_ensemble=ens_factory(params,self.hyper)
         self.neural_ensemble.fit(X,targets)
         full=self.neural_ensemble.get_full(X) #.extract(X)
+        if(len(self.clfs)>0):
+            self.clfs=[]
         for full_i in full:
-            clf_i=learn.get_clf('RF')
+            clf_i=learn.get_clf(self.clf_type)
             clf_i.fit(full_i,targets)
             self.clfs.append(clf_i)
 
@@ -42,118 +42,19 @@ class ScikitAdapter(BaseEstimator, ClassifierMixin):
         prob=self.predict_proba(X)
         return np.argmax(prob,axis=1)
 
-    def __sklearn_clone__(self):
-        print('clone')
-        return ScikitAdapter(self.alpha,self.hyper)
-#        raise Exception('clone')
-
-class BayesCallback(object):
-    def __init__(self):
-        self.count=0
-
-    def __call__(self,optimal_result):
-        print(f"Iteration {self.count}")
-        print(f"Best params so far {optimal_result.x}")
-        print(f'Score {round(optimal_result.fun,4)}')
-        self.count+=1
-
-@tools.log_time(task='ALPHA')
-def single_exp(data_path,hyper_path,n_split,n_repeats):
-    print(data_path)
-    print(hyper_path)
-    X,y=data.get_dataset(data_path)
-    hyper_dict=parse_hyper(hyper_path)
-
-    test_clone(X,y,hyper_dict,n_iter=10)
-
-    cv_gen=RepeatedStratifiedKFold(n_splits=n_split, 
-                                   n_repeats=n_repeats, 
-                                   random_state=1)
-    search=  grid_search(cv_gen,hyper_dict)
-    search.fit(X,y) #,callback=BayesCallback()) 
-    df= pd.DataFrame(search.cv_results_)
-    best_estm=search.best_estimator_
-    best_params= best_estm.get_params(deep=True)
-    best_score=round(search.best_score_,4)
-    print(df['mean_test_score'])
-    return best_params['alpha'],best_score
-
-def multi_exp(args,out_path):
-    for path_i in tools.top_files(args.data):
-        with open(out_path,"a") as f:
-            name_i=path_i.split('/')[-1]    
-            hyper_i=f'{args.hyper}/{name_i}'  
-            alpha_i,best_i=single_exp(path_i,
-                                      hyper_i,
-                                      args.n_split,
-                                      args.n_iter)
-            f.write(f'{name_i},{alpha_i},{best_i}\n') 
-
-def grid_search(cv_gen,hyper_dict):
-    search_spaces={'alpha':[0.1*(i+1) for i in range(9)]}
-    search=GridSearchCV(estimator=ScikitAdapter(0.5,hyper_dict),
-                        param_grid=search_spaces,
-                        cv=cv_gen,
-                        verbose=0)
-    return search
-
-def bayes_search(cv_gen,hyper_dict,n_iter=5):
-    search_spaces={'alpha': Real(0.1, 0.9, prior='uniform')}
-    search = BayesSearchCV(estimator=ScikitAdapter(0.5,hyper_dict),
-                           n_iter=n_iter,
-                           search_spaces=search_spaces,
-                           cv=cv_gen,
-                           scoring='accuracy',
-                           verbose=0,
-                           n_jobs=1)
-    return search
-
-
-def test_clone(X,y, hyper_dict,n_iter=10):
-    import inspect
-    from sklearn.base import clone
-    build_time,scikit_obj=[],[]
-    for i in range(n_iter):
-        start=time()
-        scikit_clf_i=ScikitAdapter(0.5,hyper_dict)
-        scikit_clf_i.fit(X,y)
-        scikit_obj.append(scikit_clf_i)
-        build_time.append(time()-start)
-        print(build_time[-1])
-    print(f'{np.mean(build_time):.4}')
-    clone_time,clonned_obj=[],[]
-    for scikit_clf_i in scikit_obj:
-        start=time()
-        clonned_obj.append( clone(scikit_clf_i))
-        clone_time.append(time()-start)
-        print(clone_time[-1])
-
-    print(f'{np.mean(clone_time):.4}')
-    raise Exception('OK')
-
-def parse_hyper(hyper_path):
-    with open(hyper_path) as f:
-        line = eval(f.readlines()[-1])
-        hyper_dict=line[0]
-        layers= [key_i for key_i in hyper_dict
-                   if('unit' in key_i)]
-        layers.sort()
-        return { 'batch':hyper_dict['batch'],
-                 'layers':[hyper_dict[name_j] 
-                            for name_j in layers] }
-
 if __name__ == "__main__":
+    dir_path='../optim_alpha/s_10_10'
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type=str, default='../r_uci')
-    parser.add_argument("--hyper", type=str, default='../10_10/hyper')
+    parser.add_argument("--data", type=str, default='../data')
+    parser.add_argument("--hyper", type=str, default=f'{dir_path}/hyper.csv')
     parser.add_argument("--n_split", type=int, default=10)
     parser.add_argument("--n_iter", type=int, default=3)
     parser.add_argument("--out_path", type=str, default='alpha.csv')
     parser.add_argument("--log", type=str, default='log')
-    parser.add_argument("--dir", type=int, default=0)
+#    parser.add_argument("--dir", type=int, default=1)
     args = parser.parse_args()
     tools.start_log(args.log)
-    if(args.dir>0):
+    if(os.path.isdir( args.dir)):
         multi_exp(args,args.out_path)
     else:
         single_exp(args.data,
