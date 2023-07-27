@@ -4,6 +4,7 @@ import argparse
 import numpy as np
 import os
 from sklearn.model_selection import RepeatedStratifiedKFold
+from sklearn.model_selection import GridSearchCV
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.metrics import accuracy_score
 import pandas as pd
@@ -66,7 +67,16 @@ class CustomSearch(object):
                 pred_y=scikit_i.predict(test_X)
                 score_i.append(self.score(test_y,pred_y))
             if(self.verbose):
-                print(f'{alpha_i}:{np.mean(score_i):.4f}')
+                print(f'{alpha_i:.4f}:{np.mean(score_i):.4f}')
+
+def grid_search(cv,hyper,alpha,verbose=0):
+    search_spaces={'alpha':alpha}
+    search=GridSearchCV(estimator=ScikitAdapter(0.5,hyper),
+                        param_grid=search_spaces,
+                        cv=cv,
+                        n_jobs=4,
+                        verbose=verbose)
+    return search
 
 def alpha_exp(data_path,hyper_path,n_splits,n_repeats,out_path):
     hyper_df=pd.read_csv(hyper_path)
@@ -80,12 +90,12 @@ def alpha_exp(data_path,hyper_path,n_splits,n_repeats,out_path):
         cv = RepeatedStratifiedKFold(n_splits=n_splits, 
                                      n_repeats=n_repeats, 
                                      random_state=4)
-        custom_search=CustomSearch(cv=cv,
-                                   hyper=hyper_i,
-                                   alpha=alpha,
-                                   verbose=1)
-        custom_search.fit(X,y)
-        print(custom_search)
+        search=grid_search( cv=cv,
+                            hyper=hyper_i,
+                            alpha=alpha,
+                            verbose=1)
+        search.fit(X,y)
+        print(search)
     if(os.path.isdir(data_path)):
         helper=tools.dir_fun(2)(helper)
     helper(data_path)
