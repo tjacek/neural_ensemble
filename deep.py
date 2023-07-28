@@ -4,6 +4,7 @@ import keras
 from sklearn import preprocessing
 from tensorflow.keras.layers import Dense,BatchNormalization,Concatenate
 from tensorflow.keras import Input, Model
+import loss
 
 class NeuralEnsemble(object):
     def __init__(self,multi_output,prepare_labels,ens_type,n_clf):
@@ -35,7 +36,8 @@ class NeuralEnsemble(object):
             penult=names[-6:-3]
             layers=[self.multi_output.get_layer(name_i).output 
                     for name_i in penult]
-            self.extractor=Model(inputs=self.multi_output.input,outputs=layers)
+            self.extractor=Model(inputs=self.multi_output.input,
+                                 outputs=layers)
         feats= self.extractor.predict(X,verbose=0)
         if(scale):
             feats=[preprocessing.scale(feat_i)
@@ -79,42 +81,22 @@ class EnsembleFactory(object):
                               self.labels,
                               self.ens_type,
                               params['n_cats'])      
+
 def get_ensemble(ens_type):
     if(ens_type=='base'):
         return simple_nn
-    if(ens_type=='multi'):
-        return multi_ensemble()
+    loss_fun=loss.get_loss(ens_type)
     if(type(ens_type)==tuple):
         ens_type,alpha=ens_type
-        if(ens_type=='weighted'):
-            return weighted_ensemble(alpha)
-        elif(ens_type=='binary'):
-            return binary_ensemble(alpha)
-    raise Exception(f"Ensemble {ens_type} not implemented") 
-
-def multi_ensemble():
-    def loss_fun(i,class_dict):
-        return 'categorical_crossentropy'
+    if(ens_type=='binary'):
+        return EnsembleFactory(loss_fun=loss_fun,
+                               labels=binary_labels,
+                               ens_type='binary',
+                               output_cats=2)
     return EnsembleFactory(loss_fun=loss_fun,
                            labels=basic_labels,
-                           ens_type='multi',
+                           ens_type=ens_type,
                            output_cats=None)
-
-def weighted_ensemble(alpha=0.5):
-    def loss_fun(i,class_dict):
-        return weighted_loss(i,class_dict,alpha)
-    return EnsembleFactory(loss_fun=loss_fun,
-                           labels=basic_labels,
-                           ens_type='weighted',
-                           output_cats=None)
-
-def binary_ensemble(alpha=0.5):
-    def loss_fun(i,class_dict):
-        return binary_loss(i,class_dict,alpha)
-    return EnsembleFactory(loss_fun=loss_fun,
-                           labels=binary_labels,
-                           ens_type='binary',
-                           output_cats=2)
 
 def ensemble_builder(params,hyper_params,binary_loss,output_cats=2):
     input_layer = Input(shape=(params['dims']))
@@ -131,19 +113,6 @@ def ensemble_builder(params,hyper_params,binary_loss,output_cats=2):
                   optimizer='adam',
                   metrics=metrics)
     return model
-
-#def read_ensemble(in_path):
-#    print(in_path)
-#    nn = tf.keras.models.load_model(f'{in_path}/nn.h5',compile=False)
-#    with open(f'{in_path}/ens_desc',"r") as f:
-#        raw= f.read().split('\n')
-#        ens_type=raw[0].split(':')[-1]
-#        n_clf=int(raw[1].split(':')[-1])
-#        if(ens_type=='binary'):
-#            return NeuralEnsemble(nn,binary_labels,'binary',n_clf)
-#        if(ens_type=='weighted'):
-#            return NeuralEnsemble(nn,basic_labels,'weighted',n_clf)
-#        return NeuralEnsemble(nn,basic_labels,'multi',n_clf)
 
 def basic_labels(y,n_clf):
     return [y for i in range(n_clf)]
@@ -178,35 +147,3 @@ def nn_builder(params,hyper_params,input_layer=None,as_model=True,i=0,n_cats=Non
     if(as_model):
         return Model(inputs=input_layer, outputs=x_i)
     return x_i
-
-def binary_loss(i,class_dict,alpha):
-    one_i=class_dict[i]
-    other_i=sum(class_dict.values())-one_i
-    cat_size_i  = alpha*(1/one_i)
-    other_size_i= (1.0-alpha) * (1/other_i)
-    class_weights=[other_size_i,cat_size_i]
-    class_weights=np.array(class_weights,dtype=np.float32)
-    return weighted_binary_loss(class_weights)
-
-def weighted_loss(i,class_dict,alpha):
-    one_i=class_dict[i]
-    other_i=sum(class_dict.values())-one_i
-    cat_size_i  = alpha*(1/one_i)
-    other_size_i= (1.0-alpha) * (1/other_i)
-    class_weights= [other_size_i for i in range(len(class_dict) )]
-    class_weights[i]=cat_size_i
-    class_weights=np.array(class_weights,dtype=np.float32)
-    return weighted_binary_loss(class_weights)
-
-def weighted_binary_loss( class_weights):
-    def loss(y_obs,y_pred):        
-        y_obs = tf.dtypes.cast(y_obs,tf.int32)
-        hothot=  tf.dtypes.cast( y_obs,tf.float32)
-        weights = tf.math.multiply(class_weights,hothot)
-        weights = tf.reduce_sum(weights,axis=-1)
-        y_obs= tf.argmax(y_obs,axis=1)
-        losses = tf.compat.v1.losses.sparse_softmax_cross_entropy(
-            labels=y_obs, logits=y_pred,weights=weights
-        )
-        return losses
-    return loss
