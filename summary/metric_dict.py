@@ -3,6 +3,7 @@ import json
 import numpy as np
 import pandas as pd
 from scipy import stats
+from collections import defaultdict
 from sklearn.metrics import accuracy_score,balanced_accuracy_score
 
 class MetricDict(dict):
@@ -21,8 +22,8 @@ class MetricDict(dict):
         df=pd.DataFrame(lines,columns=cols)
         col_dict={ 'clf': GenCol(['RF','SVC','LR']),
                     'cs': GenCol(['weighted','binary','multi']),
-               'variant': GenCol(['necscf','cs','inliner']),
-                  'alpha':get_alpha}
+               'variant': GenCol(['necscf','cs','inliner'])}
+#                  'alpha':get_alpha}
         for col_i,fun_i in col_dict.items():
             df[col_i]=df['id'].apply(fun_i)
         if(drop):
@@ -37,6 +38,13 @@ class MetricDict(dict):
         for data_i in df['dataset'].unique():
             data_dict[data_i]= df[ df['dataset']==data_i]
         return data_dict
+
+    def by_clf(self,drop=False,transform=None):
+        clf_dict=defaultdict(lambda:{})
+        for name_i,data_i in self.dataset_dfs(drop,transform).items():
+            for clf_j in data_i['clf'].unique():
+                clf_dict[name_i][clf_j]=data_i[data_i['clf']==clf_j]
+        return clf_dict
 
     def pvalue(self,id_x,id_y):
         r=stats.ttest_ind(self[id_x], 
