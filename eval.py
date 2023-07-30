@@ -5,14 +5,15 @@ import os
 import numpy as np
 import pandas as pd
 from scipy import stats
+from collections import defaultdict
 from  summary.metric_dict import make_acc_dict
 import json
 
 def single_exp(pred_path,out_path):
     def helper(df):
-        return df[df['variant']!='inliner']
+        return df[df['clf']!='LR']
     acc_dict=make_acc_dict(pred_path,'acc')
-    df_dict=summary(acc_dict,None)
+    df_dict=summary(acc_dict,helper)
     return list(df_dict.values())[0]
 
 def sig_stats(df_dict):
@@ -28,6 +29,33 @@ def sig_stats(df_dict):
     print(counter_dict)
 
 def summary(acc_dict,transform=None):
+    data_dict=acc_dict.by_clf(transform=transform)
+    df_dict={}#defaultdict(lambda:{})
+    for data,clf_dict in data_dict.items():
+        lines=[]
+        for clf_j,df_j in clf_dict.items():
+            inliner_j= df_j[ df_j['variant']=='inliner']                              
+            other_j= df_j[ df_j['variant']!='inliner']
+            lines+=[best(inliner_j),best(other_j)]
+        cols=['dataset','id', 'mean','std','clf','cs','variant']
+        s_df=pd.DataFrame(lines,
+                          columns=cols)
+        s_df=s_df.sort_values(by='mean',
+                              ascending=False)
+#        s_df=add_pvalues(data,s_df,acc_dict)
+#        print(s_df)
+#        s_df=show_impr(s_df)
+        df_dict[data]=s_df
+    print(df_dict)
+    return df_dict
+
+
+def best(df_j):
+    df_j=df_j.sort_values(by='mean',
+                          ascending=False)
+    return df_j.iloc[0].tolist()
+
+def _summary(acc_dict,transform=None):
     data_dict=acc_dict.dataset_dfs(transform=transform)
     df_dict={}
     for data,df_i in data_dict.items():
@@ -38,12 +66,15 @@ def summary(acc_dict,transform=None):
         for clf_j in df_i['clf'].unique():
             df_j=df_i[(df_i['clf']==clf_j) &
                        (df_i['variant']!='-')]
-            df_j=df_j.sort_values(by='mean',ascending=False)
+            df_j=df_j.sort_values(by='mean',
+                                  ascending=False)
             line_j=df_j.iloc[0].tolist()
             lines.append(line_j)
         cols=['dataset','id', 'mean','std','clf','cs','variant']#'alpha','variant']
-        s_df=pd.DataFrame(lines,columns=cols)
-        s_df=s_df.sort_values(by='mean',ascending=False)
+        s_df=pd.DataFrame(lines,
+                          columns=cols)
+        s_df=s_df.sort_values(by='mean',
+                              ascending=False)
         s_df=add_pvalues(data,s_df,acc_dict)
         s_df=show_impr(s_df)
         print(s_df)
@@ -89,4 +120,4 @@ if __name__ == '__main__':
     if(os.path.isdir(args.pred)):
         single_exp=tools.dir_fun(2)(single_exp)
     df_dict=single_exp(args.pred,'out')
-    sig_stats(df_dict)
+#    sig_stats(df_dict)
