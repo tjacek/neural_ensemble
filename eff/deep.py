@@ -4,6 +4,7 @@ import keras
 from sklearn import preprocessing
 from tensorflow.keras.layers import Dense,BatchNormalization,Concatenate
 from tensorflow.keras import Input, Model
+from keras import callbacks
 import data
 
 class NeuralEnsemble(object):
@@ -11,9 +12,16 @@ class NeuralEnsemble(object):
         self.model=model
         self.split=None
 
-    def fit(self,X,y):
-        self.split.check()
-        
+    def fit(self,X,y,batch_size,epochs=150,verbose=0,callbacks=None):
+        X,y=self.split.get_train(X,y)
+        y=[ tf.keras.utils.to_categorical(y_i) 
+              for y_i in y]
+        self.model.fit(x=X,
+                       y=y,
+                       batch_size=batch_size,
+                       epochs=epochs,
+                       verbose=verbose,
+                       callbacks=callbacks)
 
 def nn_builder(params,hyper_params,n_splits=10):
     outputs,inputs=[],[]
@@ -32,22 +40,30 @@ def nn_builder(params,hyper_params,n_splits=10):
 
 def train(in_path):
     dataset=data.get_dataset(in_path)
+    all_splits=dataset.get_splits()
+
     params=dataset.get_params()
+#    raise Exception(all_splits[0].get_sizes())
     hyper_params={'layers':[20,20],'batch':True}
     model=nn_builder(params,hyper_params,n_splits=10)
-#    model.summary()
+    metrics={f'out_{i}':'accuracy' for i in range(10)}
     model.compile(loss='categorical_crossentropy',
                   optimizer='adam',
-                  metrics='accuracy')
+                  metrics=metrics)
     deep_ens=NeuralEnsemble(model)
-    all_splits=dataset.get_splits()
     deep_ens.split=all_splits[0]
-    deep_ens.fit(dataset.X,dataset.y)  
+
+    early_stop = callbacks.EarlyStopping(monitor='accuracy',
+                                         mode="max", 
+                                         patience=5,
+                                         restore_best_weights=True)
+    deep_ens.fit(X=dataset.X,
+                 y=dataset.y,
+                 epochs=150,
+                 batch_size=params['batch'],
+                 verbose=1,
+                 callbacks=early_stop)  
       
 if __name__ == "__main__":
     in_path='../../uci/cleveland'
     train(in_path)
-#    X=[full.X for i in range(10)]
-#    y=[tf.keras.utils.to_categorical(full.y, 
-#                                     num_classes = params['n_cats'])
-#            for i in range(10)]

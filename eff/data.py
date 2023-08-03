@@ -18,6 +18,7 @@ class Dataset(object):
         for train_i,test_i in cv.split(self.X,self.y):
             current.append((train_i,test_i))
             if(len(current)==n_splits):
+                current= list(equalize(current))
                 splits.append(DataSplit(current))
                 current=[]
         return splits
@@ -33,12 +34,20 @@ class DataSplit(object):
         self.indices=indices
     
     def check(self):
-        test=[ test_i for train_i,test_i in self.indices]
-        print(test)
+        test=set()
+        for train_i,test_i in self.indices:
+            test.update(list(test_i))
+        print(len(test))
 
-#    def split_data(X,y):
-#        splits=[ X[train_ind],y[train_ind]
-#            for train_ind,t]
+    def get_sizes(self):
+        return [ train_i.shape[0]#,test_i.shape[0]) 
+                for train_i,test_i in self.indices]
+
+    def get_train(self,X,y):
+        splits=[ (X[train_ind],y[train_ind])
+                    for train_ind,test_ind in self.indices]
+        X,y=list(zip(*splits))
+        return X,y
 
 def get_dataset(data_path):
     df=pd.read_csv(data_path,header=None) 
@@ -53,3 +62,17 @@ def prepare_data(df):
     y=y.to_numpy()
     y=[cats[y_i] for y_i in y]
     return Dataset(X,np.array(y))
+
+def equalize(single_split):
+    sizes=[train_i.shape[0] 
+        for train_i,test_i in single_split]
+    final_size=max(sizes)
+    for train_i,test_i in single_split:
+        if(train_i.shape[0]<final_size):
+            diff_i= final_size - train_i.shape[0]
+            new_elem=[np.random.choice(train_i) 
+                        for j in range(diff_i)]
+            new_train= list(train_i)+new_elem
+            yield np.array(new_train),test_i
+        else:
+            yield train_i,test_i
