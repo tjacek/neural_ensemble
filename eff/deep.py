@@ -6,6 +6,11 @@ from tensorflow.keras.layers import Dense,BatchNormalization,Concatenate
 from tensorflow.keras import Input, Model
 import data
 
+class NeuralEnsemble(object):
+    def __init__(self,model):
+        self.model=model
+        self.split=None
+
 def nn_builder(params,hyper_params,n_splits=10):
     outputs,inputs=[],[]
     for i in range(n_splits):
@@ -30,3 +35,11 @@ if __name__ == "__main__":
     hyper_params={'layers':[20,20],'batch':True}
     model=nn_builder(params,hyper_params,n_splits=10)
     model.summary()
+    model.compile(loss='categorical_crossentropy',
+                  optimizer='adam',
+                  metrics='accuracy')
+    X=[full.X for i in range(10)]
+    y=[tf.keras.utils.to_categorical(full.y, 
+                                     num_classes = params['n_cats'])
+            for i in range(10)]
+    model.fit(X,y)
