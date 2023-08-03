@@ -11,6 +11,10 @@ class NeuralEnsemble(object):
         self.model=model
         self.split=None
 
+    def fit(self,X,y):
+        self.split.check()
+        
+
 def nn_builder(params,hyper_params,n_splits=10):
     outputs,inputs=[],[]
     for i in range(n_splits):
@@ -26,20 +30,24 @@ def nn_builder(params,hyper_params,n_splits=10):
         outputs.append(x_i)
     return Model(inputs=inputs, outputs=outputs)
 
-#def train(in):
-
-if __name__ == "__main__":
-    in_path='../../uci/cleveland'
-    full=data.get_dataset(in_path)
-    params=full.get_params()
+def train(in_path):
+    dataset=data.get_dataset(in_path)
+    params=dataset.get_params()
     hyper_params={'layers':[20,20],'batch':True}
     model=nn_builder(params,hyper_params,n_splits=10)
-    model.summary()
+#    model.summary()
     model.compile(loss='categorical_crossentropy',
                   optimizer='adam',
                   metrics='accuracy')
-    X=[full.X for i in range(10)]
-    y=[tf.keras.utils.to_categorical(full.y, 
-                                     num_classes = params['n_cats'])
-            for i in range(10)]
-    model.fit(X,y)
+    deep_ens=NeuralEnsemble(model)
+    all_splits=dataset.get_splits()
+    deep_ens.split=all_splits[0]
+    deep_ens.fit(dataset.X,dataset.y)  
+      
+if __name__ == "__main__":
+    in_path='../../uci/cleveland'
+    train(in_path)
+#    X=[full.X for i in range(10)]
+#    y=[tf.keras.utils.to_categorical(full.y, 
+#                                     num_classes = params['n_cats'])
+#            for i in range(10)]
