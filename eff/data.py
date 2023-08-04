@@ -43,11 +43,17 @@ class DataSplit(object):
         return [ train_i.shape[0]#,test_i.shape[0]) 
                 for train_i,test_i in self.indices]
 
-    def get_train(self,X,y):
-        splits=[ (X[train_ind],y[train_ind])
-                    for train_ind,test_ind in self.indices]
-        X,y=list(zip(*splits))
-        return X,y
+    def get_data(self,X,y=None,train=True):
+        train=int(not train)
+        if(y is None):
+            splits=[ X[ind[train]]
+                       for ind in self.indices]
+            return splits
+        else:
+            splits=[ (X[ind[train]],y[ind[train]])
+                    for ind in self.indices]
+            X,y=list(zip(*splits))
+            return X,y
 
 def get_dataset(data_path):
     df=pd.read_csv(data_path,header=None) 
