@@ -12,8 +12,8 @@ class NeuralEnsemble(object):
         self.model=model
         self.split=None
 
-    def fit(self,X,y,batch_size,epochs=150,verbose=0,callbacks=None):
-        X,y=self.split.get_train(X,y)
+    def fit(self,x,y,batch_size,epochs=150,verbose=0,callbacks=None):
+        X,y=self.split.get_data(x,y,train=True)
         y=[ tf.keras.utils.to_categorical(y_i) 
               for y_i in y]
         self.model.fit(x=X,
@@ -23,18 +23,33 @@ class NeuralEnsemble(object):
                        verbose=verbose,
                        callbacks=callbacks)
 
+    def predict(self,x,verbose=0):
+        X=self.split.get_data(x,train=False)
+        for i,x_i in enumerate(X):
+            input_i= self.model.get_layer(f'input_{i}')
+            output_i= self.model.get_layer(f'output_{i}')
+            model_i=Model(inputs=input_i.input,
+                          outputs=output_i.output)
+            y_i=model_i.predict(x_i,verbose=verbose)
+            print(y_i.shape)
+#        y_pred= self.model.predict(X,verbose=verbose)
+
 def nn_builder(params,hyper_params,n_splits=10):
     outputs,inputs=[],[]
     for i in range(n_splits):
-        input_layer = Input(shape=(params['dims']))
+        input_layer = Input(shape=(params['dims']),
+                            name=f'input_{i}')
         inputs.append(input_layer)
         x_i=input_layer
         for j,hidden_j in enumerate(hyper_params['layers']):
-            x_i=Dense(hidden_j,activation='relu',
-                    name=f"layer_{i}_{j}")(x_i)
+            x_i=Dense(hidden_j,
+                      activation='relu',
+                      name=f"layer_{i}_{j}")(x_i)
         if(hyper_params['batch']):
             x_i=BatchNormalization(name=f'batch_{i}')(x_i)
-        x_i=Dense(params['n_cats'], activation='softmax',name=f'out_{i}')(x_i)
+        x_i=Dense(params['n_cats'], 
+                  activation='softmax',
+                  name=f'output_{i}')(x_i)
         outputs.append(x_i)
     return Model(inputs=inputs, outputs=outputs)
 
@@ -46,7 +61,7 @@ def train(in_path):
 #    raise Exception(all_splits[0].get_sizes())
     hyper_params={'layers':[20,20],'batch':True}
     model=nn_builder(params,hyper_params,n_splits=10)
-    metrics={f'out_{i}':'accuracy' for i in range(10)}
+    metrics={f'output_{i}':'accuracy' for i in range(10)}
     model.compile(loss='categorical_crossentropy',
                   optimizer='adam',
                   metrics=metrics)
@@ -57,12 +72,14 @@ def train(in_path):
                                          mode="max", 
                                          patience=5,
                                          restore_best_weights=True)
-    deep_ens.fit(X=dataset.X,
+    deep_ens.fit(x=dataset.X,
                  y=dataset.y,
                  epochs=150,
                  batch_size=params['batch'],
                  verbose=1,
-                 callbacks=early_stop)  
+                 callbacks=early_stop)
+
+    deep_ens.predict(x=dataset.X)
       
 if __name__ == "__main__":
     in_path='../../uci/cleveland'
