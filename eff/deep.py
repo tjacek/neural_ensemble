@@ -5,12 +5,13 @@ from sklearn import preprocessing
 from tensorflow.keras.layers import Dense,BatchNormalization,Concatenate
 from tensorflow.keras import Input, Model
 from keras import callbacks
-import data
+import data,tools
 
 class NeuralEnsemble(object):
     def __init__(self,model):
         self.model=model
         self.split=None
+        self.pred_models=None
 
     def fit(self,x,y,batch_size,epochs=150,verbose=0,callbacks=None):
         X,y=self.split.get_data(x,y,train=True)
@@ -25,14 +26,25 @@ class NeuralEnsemble(object):
 
     def predict(self,x,verbose=0):
         X=self.split.get_data(x,train=False)
+        if(self.pred_models is None):    
+            self.pred_models=[]
+            for i,x_i in enumerate(X):
+                input_i= self.model.get_layer(f'input_{i}')
+                output_i= self.model.get_layer(f'output_{i}')
+                model_i=Model(inputs=input_i.input,
+                              outputs=output_i.output)
+                self.pred_models.append(model_i)
+        y=[]
         for i,x_i in enumerate(X):
-            input_i= self.model.get_layer(f'input_{i}')
-            output_i= self.model.get_layer(f'output_{i}')
-            model_i=Model(inputs=input_i.input,
-                          outputs=output_i.output)
-            y_i=model_i.predict(x_i,verbose=verbose)
-            print(y_i.shape)
-#        y_pred= self.model.predict(X,verbose=verbose)
+            y_i=self.pred_models[i].predict(x_i,
+                                            verbose=verbose)
+            y.append(y_i)
+        y=np.concatenate(y,axis=0)
+        return y
+
+    def predict_classes(self,x,verbose=0):
+        prob= self.predict(x,verbose=0)
+        return np.argmax(prob,axis=1)
 
 def nn_builder(params,hyper_params,n_splits=10):
     outputs,inputs=[],[]
@@ -58,7 +70,6 @@ def train(in_path):
     all_splits=dataset.get_splits()
 
     params=dataset.get_params()
-#    raise Exception(all_splits[0].get_sizes())
     hyper_params={'layers':[20,20],'batch':True}
     model=nn_builder(params,hyper_params,n_splits=10)
     metrics={f'output_{i}':'accuracy' for i in range(10)}
@@ -79,8 +90,10 @@ def train(in_path):
                  verbose=1,
                  callbacks=early_stop)
 
-    deep_ens.predict(x=dataset.X)
-      
+    y_pred=deep_ens.predict_classes(x=dataset.X)
+    acc=tools.get_metric('acc')
+    print(acc(y_pred,dataset.y))
+
 if __name__ == "__main__":
     in_path='../../uci/cleveland'
     train(in_path)
