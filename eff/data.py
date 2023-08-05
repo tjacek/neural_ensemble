@@ -3,6 +3,7 @@ import pandas as pd
 from sklearn import preprocessing
 from collections import Counter#defaultdict
 from sklearn.model_selection import RepeatedStratifiedKFold
+import tools
 
 class Dataset(object):
     def __init__(self,X,y,cs=None):
@@ -51,6 +52,12 @@ class DataSplit(object):
                     for ind in self.indices]
             X,y=list(zip(*splits))
             return X,y
+    
+    def save(self,out_path):
+        tools.make_dir(out_path)
+        for i,(train_i,test_i) in enumerate(self.indices):
+            np.save(f'{out_path}/train{i}',train_i)
+            np.save(f'{out_path}/test{i}',test_i)
 
     def check(self):
         test=set()

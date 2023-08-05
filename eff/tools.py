@@ -24,3 +24,15 @@ def get_hyper(name_i,hyper_df):
     hyper_i['layers']=[hyper_i[name_j] 
                           for name_j in layers]
     return hyper_i
+
+def make_dir(path):
+    if(not os.path.isdir(path)):
+        os.mkdir(path)
+
+def top_files(path):
+    if(type(path)==str):
+        paths=[ path+'/'+file_i for file_i in os.listdir(path)]
+    else:
+        paths=path
+    paths=sorted(paths)
+    return paths

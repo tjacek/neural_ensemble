@@ -7,6 +7,7 @@ from sklearn import preprocessing
 from tensorflow.keras.layers import Dense,BatchNormalization,Concatenate
 from tensorflow.keras import Input, Model
 from keras import callbacks
+import gzip
 import data
 
 class NeuralEnsemble(object):
@@ -47,6 +48,15 @@ class NeuralEnsemble(object):
     def predict_classes(self,x,verbose=0):
         prob= self.predict(x,verbose=0)
         return np.argmax(prob,axis=1)
+
+    def save(self,out_path):
+        tools.make_dir(out_path)
+        self.split.save(f'{out_path}/splits')
+        weights=self.model.get_weights()
+        tools.make_dir(f'{out_path}/weights')
+        for i,weight_i in enumerate(weights):
+            np.savez_compressed(f'{out_path}/weights/{i}',
+                                weight_i)          
 
 def nn_builder(params,hyper_params,n_splits=10):
     outputs,inputs=[],[]
