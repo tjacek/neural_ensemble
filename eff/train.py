@@ -5,7 +5,7 @@ from keras import callbacks
 import argparse
 import data,deep,tools
 
-def train_exp(data_path,hyper_path,out_path,n_splits=10,n_repeats=10):
+def train_exp(data_path,hyper_path,model_path,n_splits=10,n_repeats=10):
     dataset=data.get_dataset(data_path)
     all_splits=dataset.get_splits(n_splits=n_splits,
                                   n_repeats=n_repeats)
@@ -17,7 +17,7 @@ def train_exp(data_path,hyper_path,out_path,n_splits=10,n_repeats=10):
                                          mode="max", 
                                          patience=5,
                                          restore_best_weights=True)
-    tools.make_dir(out_path)
+    tools.make_dir(model_path)
     for i,split_i in enumerate(all_splits):
         deep_ens=deep.build_ensemble(params=params,
                                      hyper_params=hyper_dict,
@@ -28,7 +28,12 @@ def train_exp(data_path,hyper_path,out_path,n_splits=10,n_repeats=10):
                      batch_size=params['batch'],
                      verbose=1,
                      callbacks=early_stop)
-        deep_ens.save(f'{out_path}/{i}')
+        deep_ens.save(f'{model_path}/{i}')
+
+def pred_exp(data_path,hyper_path,model_path):
+    for model_path_i in tools.top_files(model_path):
+        model_i=deep.read_ens(model_path_i)
+        print(model_i)
 
 if __name__ == '__main__':
     dir_path='../../optim_alpha/s_10_10'
@@ -41,6 +46,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
     train_exp(data_path=args.data,
               hyper_path=args.hyper,
-              out_path=args.models,
+              model_path=args.models,
               n_splits=args.n_splits,
               n_repeats=args.n_repeats)

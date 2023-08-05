@@ -55,15 +55,26 @@ class DataSplit(object):
     
     def save(self,out_path):
         tools.make_dir(out_path)
+        tools.make_dir(f'{out_path}/train')
+        tools.make_dir(f'{out_path}/test')
         for i,(train_i,test_i) in enumerate(self.indices):
-            np.save(f'{out_path}/train{i}',train_i)
-            np.save(f'{out_path}/test{i}',test_i)
+            np.save(f'{out_path}/train/{i}',train_i)
+            np.save(f'{out_path}/test/{i}',test_i)
 
     def check(self):
         test=set()
         for train_i,test_i in self.indices:
             test.update(list(test_i))
         print(len(test))
+
+def read_split(in_path):
+    print(in_path)
+    indices=[]
+    for i,path_i in enumerate(tools.top_files(in_path)):
+        train_i=np.load(f'{path_i}/train{i}')
+        test_i=np.load(f'{path_i}/test{i}')
+        indices.append((train_i,test_i))
+    return DataSplit(indices)
 
 def get_dataset(data_path):
     df=pd.read_csv(data_path,header=None) 

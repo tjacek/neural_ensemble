@@ -58,6 +58,10 @@ class NeuralEnsemble(object):
             np.savez_compressed(f'{out_path}/weights/{i}',
                                 weight_i)          
 
+def read_ens(in_path):
+    split=data.read_split(f'{in_path}/splits')
+    print(split)
+    
 def nn_builder(params,hyper_params,n_splits=10):
     outputs,inputs=[],[]
     for i in range(n_splits):
