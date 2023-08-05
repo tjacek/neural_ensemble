@@ -1,3 +1,5 @@
+import tools
+tools.silence_warnings()
 import numpy as np
 import tensorflow as tf
 import keras
@@ -5,7 +7,7 @@ from sklearn import preprocessing
 from tensorflow.keras.layers import Dense,BatchNormalization,Concatenate
 from tensorflow.keras import Input, Model
 from keras import callbacks
-import data,tools
+import data
 
 class NeuralEnsemble(object):
     def __init__(self,model):
@@ -65,20 +67,26 @@ def nn_builder(params,hyper_params,n_splits=10):
         outputs.append(x_i)
     return Model(inputs=inputs, outputs=outputs)
 
+
+def build_ensemble(params,hyper_params,split):
+    model=nn_builder(params,hyper_params,n_splits=len(split))
+    metrics={f'output_{i}':'accuracy' 
+        for i in range(len(split))}
+    model.compile(loss='categorical_crossentropy',
+                  optimizer='adam',
+                  metrics=metrics)
+    deep_ens=NeuralEnsemble(model)
+    deep_ens.split=split
+    return deep_ens
+
 def train(in_path):
     dataset=data.get_dataset(in_path)
     all_splits=dataset.get_splits()
 
     params=dataset.get_params()
     hyper_params={'layers':[20,20],'batch':True}
-    model=nn_builder(params,hyper_params,n_splits=10)
-    metrics={f'output_{i}':'accuracy' for i in range(10)}
-    model.compile(loss='categorical_crossentropy',
-                  optimizer='adam',
-                  metrics=metrics)
-    deep_ens=NeuralEnsemble(model)
-    deep_ens.split=all_splits[0]
 
+    deep_ens=build_ensemble(params,hyper_params,all_split[0])
     early_stop = callbacks.EarlyStopping(monitor='accuracy',
                                          mode="max", 
                                          patience=5,

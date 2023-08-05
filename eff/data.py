@@ -33,12 +33,9 @@ class DataSplit(object):
     def __init__(self,indices):
         self.indices=indices
     
-    def check(self):
-        test=set()
-        for train_i,test_i in self.indices:
-            test.update(list(test_i))
-        print(len(test))
-
+    def __len__(self):
+        return len(self.indices)
+    
     def get_sizes(self):
         return [ train_i.shape[0]#,test_i.shape[0]) 
                 for train_i,test_i in self.indices]
@@ -54,6 +51,12 @@ class DataSplit(object):
                     for ind in self.indices]
             X,y=list(zip(*splits))
             return X,y
+
+    def check(self):
+        test=set()
+        for train_i,test_i in self.indices:
+            test.update(list(test_i))
+        print(len(test))
 
 def get_dataset(data_path):
     df=pd.read_csv(data_path,header=None) 

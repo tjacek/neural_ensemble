@@ -3,7 +3,7 @@ tools.silence_warnings()
 import pandas as pd
 from keras import callbacks
 import argparse
-import data,tools
+import data,deep,tools
 
 def train_exp(data_path,hyper_path,n_splits=10,n_repeats=10):
     dataset=data.get_dataset(data_path)
@@ -13,7 +13,22 @@ def train_exp(data_path,hyper_path,n_splits=10,n_repeats=10):
     hyper_df=pd.read_csv(hyper_path)
     name_i=data_path.split('/')[-1]
     hyper_dict=tools.get_hyper(name_i,hyper_df)
-    print(hyper_dict)
+    early_stop = callbacks.EarlyStopping(monitor='accuracy',
+                                         mode="max", 
+                                         patience=5,
+                                         restore_best_weights=True)
+    for split_i in all_splits:
+        deep_ens=deep.build_ensemble(params=params,
+                                     hyper_params=hyper_dict,
+                                     split=split_i)
+        deep_ens.fit(x=dataset.X,
+                     y=dataset.y,
+                     epochs=150,
+                     batch_size=params['batch'],
+                     verbose=1,
+                     callbacks=early_stop)
+#    print(hyper_dict)
+#    print(len(all_splits))
 
 if __name__ == '__main__':
     dir_path='../../optim_alpha/s_10_10'
