@@ -1,6 +1,7 @@
 import os,warnings
 import logging,time
 import tensorflow as tf
+import re
 from sklearn.metrics import accuracy_score
 
 def get_metric(metric_type):
@@ -34,5 +35,15 @@ def top_files(path):
         paths=[ path+'/'+file_i for file_i in os.listdir(path)]
     else:
         paths=path
-    paths=sorted(paths)
+    paths.sort(key=natural_keys)# =sorted(paths)
     return paths
+
+def atof(text):
+    try:
+        retval = float(text)
+    except ValueError:
+        retval = text
+    return retval
+
+def natural_keys(text):
+    return [ atof(c) for c in re.split(r'[+-]?([0-9]+(?:[.][0-9]*)?|[.][0-9]+)', text) ]

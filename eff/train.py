@@ -31,9 +31,13 @@ def train_exp(data_path,hyper_path,model_path,n_splits=10,n_repeats=10):
         deep_ens.save(f'{model_path}/{i}')
 
 def pred_exp(data_path,hyper_path,model_path):
+    dataset=data.get_dataset(data_path)
+    accuracy=tools.get_metric('acc')
     for model_path_i in tools.top_files(model_path):
-        model_i=deep.read_ens(model_path_i)
-        print(model_i)
+        deep_ens=deep.read_ens(model_path_i)
+        y_pred=deep_ens.predict_classes(dataset.X)
+        acc_i=accuracy(dataset.y,y_pred)
+        print(acc_i) 
 
 if __name__ == '__main__':
     dir_path='../../optim_alpha/s_10_10'
@@ -44,8 +48,8 @@ if __name__ == '__main__':
     parser.add_argument("--n_splits", type=int, default=10)
     parser.add_argument("--n_repeats", type=int, default=10)
     args = parser.parse_args()
-    train_exp(data_path=args.data,
+    pred_exp(data_path=args.data,
               hyper_path=args.hyper,
-              model_path=args.models,
-              n_splits=args.n_splits,
-              n_repeats=args.n_repeats)
+              model_path=args.models)#,
+#              n_splits=args.n_splits,
+#              n_repeats=args.n_repeats)

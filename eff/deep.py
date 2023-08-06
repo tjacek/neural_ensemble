@@ -11,8 +11,10 @@ import gzip
 import data
 
 class NeuralEnsemble(object):
-    def __init__(self,model):
+    def __init__(self,model,params,hyper_params):
         self.model=model
+        self.params=params
+        self.hyper_params=hyper_params
         self.split=None
         self.pred_models=None
 
@@ -57,11 +59,25 @@ class NeuralEnsemble(object):
         for i,weight_i in enumerate(weights):
             np.savez_compressed(f'{out_path}/weights/{i}',
                                 weight_i)          
+        with open(f'{out_path}/params',"a") as f:
+            f.write(f'{str(self.params)}') 
+        with open(f'{out_path}/hyper_params',"a") as f:
+            f.write(f'{str(self.hyper_params)}') 
 
 def read_ens(in_path):
     split=data.read_split(f'{in_path}/splits')
-    print(split)
-    
+    weights=[]
+    for path_i in tools.top_files(f'{in_path}/weights'):
+        weights.append(np.load(path_i)['arr_0'] )
+    with open(f'{in_path}/params',"r") as f:
+        params= eval(f.read())
+    with open(f'{in_path}/hyper_params',"r") as f:
+        hyper_params= eval(f.read())
+    deep_ens=build_ensemble(params,hyper_params,split)
+    deep_ens.model.set_weights(weights)
+#    raise Exception(dir(deep_ens.model))
+    return deep_ens
+
 def nn_builder(params,hyper_params,n_splits=10):
     outputs,inputs=[],[]
     for i in range(n_splits):
@@ -89,7 +105,9 @@ def build_ensemble(params,hyper_params,split):
     model.compile(loss='categorical_crossentropy',
                   optimizer='adam',
                   metrics=metrics)
-    deep_ens=NeuralEnsemble(model)
+    deep_ens=NeuralEnsemble(model=model,
+                            params=params,
+                            hyper_params=hyper_params)
     deep_ens.split=split
     return deep_ens
 

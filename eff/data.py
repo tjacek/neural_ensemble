@@ -67,13 +67,12 @@ class DataSplit(object):
             test.update(list(test_i))
         print(len(test))
 
-def read_split(in_path):
-    print(in_path)
-    indices=[]
-    for i,path_i in enumerate(tools.top_files(in_path)):
-        train_i=np.load(f'{path_i}/train{i}')
-        test_i=np.load(f'{path_i}/test{i}')
-        indices.append((train_i,test_i))
+def read_split(in_path):    
+    train_ind=[np.load(path_i)
+        for path_i in tools.top_files(f'{in_path}/train')]
+    test_ind=[np.load(path_i)
+        for path_i in tools.top_files(f'{in_path}/test')]
+    indices=list(zip(train_ind,test_ind))
     return DataSplit(indices)
 
 def get_dataset(data_path):
