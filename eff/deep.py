@@ -7,7 +7,7 @@ from sklearn import preprocessing
 from tensorflow.keras.layers import Dense,BatchNormalization,Concatenate
 from tensorflow.keras import Input, Model
 from keras import callbacks
-import gzip
+#import gzip
 import data
 
 class NeuralEnsemble(object):
@@ -17,6 +17,9 @@ class NeuralEnsemble(object):
         self.hyper_params=hyper_params
         self.split=split
         self.pred_models=None
+    
+    def get_type(self):
+        raise NotImplementedError
 
     def fit(self,x,y,batch_size,epochs=150,verbose=0,callbacks=None):
         raise NotImplementedError
@@ -40,11 +43,15 @@ class NeuralEnsemble(object):
             f.write(f'{str(self.params)}') 
         with open(f'{out_path}/hyper_params',"a") as f:
             f.write(f'{str(self.hyper_params)}') 
-
+        with open(f'{out_path}/type',"a") as f:
+            f.write(self.get_type()) 
 
 class BaseNN(NeuralEnsemble):
     def __init__(self, model,params,hyper_params,split):
         super().__init__(model,params,hyper_params,split)
+
+    def get_type(self):
+        return 'base'
 
     def fit(self,x,y,batch_size,epochs=150,verbose=0,callbacks=None):
         X,y=self.split.get_data(x,y,train=True)
@@ -75,7 +82,7 @@ class BaseNN(NeuralEnsemble):
         y=np.concatenate(y,axis=0)
         return y
 
-def read_ens(in_path):
+def read_deep(in_path,builder=None):
     split=data.read_split(f'{in_path}/splits')
     weights=[]
     for path_i in tools.top_files(f'{in_path}/weights'):
@@ -84,9 +91,26 @@ def read_ens(in_path):
         params= eval(f.read())
     with open(f'{in_path}/hyper_params',"r") as f:
         hyper_params= eval(f.read())
-    deep_ens=build_ensemble(params,hyper_params,split)
+#    with open(f'{in_path}/type',"r") as f:
+#        ens_type= f.read()
+#    builder=get_builder(ens_type)
+    if(builder is None):
+        builder=make_base
+    deep_ens=builder(params,hyper_params,split)
     deep_ens.model.set_weights(weights)
-#    raise Exception(dir(deep_ens.model))
+    return deep_ens
+
+def make_base(params,hyper_params,split):
+    model=nn_builder(params,hyper_params,n_splits=len(split))
+    metrics={f'output_{i}':'accuracy' 
+        for i in range(len(split))}
+    model.compile(loss='categorical_crossentropy',
+                  optimizer='adam',
+                  metrics=metrics)
+    deep_ens=BaseNN(model=model,
+                    params=params,
+                    hyper_params=hyper_params,
+                    split=split)
     return deep_ens
 
 def nn_builder(params,hyper_params,n_splits=10):
@@ -107,20 +131,6 @@ def nn_builder(params,hyper_params,n_splits=10):
                   name=f'output_{i}')(x_i)
         outputs.append(x_i)
     return Model(inputs=inputs, outputs=outputs)
-
-
-def build_ensemble(params,hyper_params,split):
-    model=nn_builder(params,hyper_params,n_splits=len(split))
-    metrics={f'output_{i}':'accuracy' 
-        for i in range(len(split))}
-    model.compile(loss='categorical_crossentropy',
-                  optimizer='adam',
-                  metrics=metrics)
-    deep_ens=BaseNN(model=model,
-                    params=params,
-                    hyper_params=hyper_params,
-                    split=split)
-    return deep_ens
 
 def train(in_path):
     dataset=data.get_dataset(in_path)

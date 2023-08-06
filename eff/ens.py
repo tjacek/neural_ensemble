@@ -7,6 +7,9 @@ class MultiEns(deep.NeuralEnsemble):
     def __init__(self, model,params,hyper_params,split):
         super().__init__(model,params,hyper_params,split)
 
+    def get_type(self):
+        return 'multi'
+
     def fit(self,x,y,batch_size,epochs=150,verbose=0,callbacks=None):
         X,y=self.split.get_data(x,y,train=True)
         y=[ tf.keras.utils.to_categorical(y_i) 
@@ -18,6 +21,20 @@ class MultiEns(deep.NeuralEnsemble):
                        epochs=epochs,
                        verbose=verbose,
                        callbacks=callbacks)
+
+def read_ens(in_path):    
+    with open(f'{in_path}/type',"r") as f:
+        ens_type= f.read()
+    builder=get_builder(ens_type)    
+    return deep.read_deep(in_path=in_path,
+                          builder=builder)
+
+def get_builder(ens_type:str):
+    if(ens_type=='base'):
+        return deep.make_base
+    if(ens_type=='multi'):
+        return build_multi
+    raise Exception(f'Type {ens_type} unknown')
 
 def build_multi(params,hyper_params,split):
     model=ens_builder(params,
