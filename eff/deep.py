@@ -11,12 +11,40 @@ import gzip
 import data
 
 class NeuralEnsemble(object):
-    def __init__(self,model,params,hyper_params):
+    def __init__(self,model,params,hyper_params,split):
         self.model=model
         self.params=params
         self.hyper_params=hyper_params
-        self.split=None
+        self.split=split
         self.pred_models=None
+
+    def fit(self,x,y,batch_size,epochs=150,verbose=0,callbacks=None):
+        raise NotImplementedError
+    
+    def predict(self,x,verbose=0):
+        raise NotImplementedError
+
+    def predict_classes(self,x,verbose=0):
+        prob= self.predict(x,verbose=verbose)
+        return np.argmax(prob,axis=1)
+
+    def save(self,out_path):
+        tools.make_dir(out_path)
+        self.split.save(f'{out_path}/splits')
+        weights=self.model.get_weights()
+        tools.make_dir(f'{out_path}/weights')
+        for i,weight_i in enumerate(weights):
+            np.savez_compressed(f'{out_path}/weights/{i}',
+                                weight_i)          
+        with open(f'{out_path}/params',"a") as f:
+            f.write(f'{str(self.params)}') 
+        with open(f'{out_path}/hyper_params',"a") as f:
+            f.write(f'{str(self.hyper_params)}') 
+
+
+class BaseNN(NeuralEnsemble):
+    def __init__(self, model,params,hyper_params,split):
+        super().__init__(model,params,hyper_params,split)
 
     def fit(self,x,y,batch_size,epochs=150,verbose=0,callbacks=None):
         X,y=self.split.get_data(x,y,train=True)
@@ -46,23 +74,6 @@ class NeuralEnsemble(object):
             y.append(y_i)
         y=np.concatenate(y,axis=0)
         return y
-
-    def predict_classes(self,x,verbose=0):
-        prob= self.predict(x,verbose=0)
-        return np.argmax(prob,axis=1)
-
-    def save(self,out_path):
-        tools.make_dir(out_path)
-        self.split.save(f'{out_path}/splits')
-        weights=self.model.get_weights()
-        tools.make_dir(f'{out_path}/weights')
-        for i,weight_i in enumerate(weights):
-            np.savez_compressed(f'{out_path}/weights/{i}',
-                                weight_i)          
-        with open(f'{out_path}/params',"a") as f:
-            f.write(f'{str(self.params)}') 
-        with open(f'{out_path}/hyper_params',"a") as f:
-            f.write(f'{str(self.hyper_params)}') 
 
 def read_ens(in_path):
     split=data.read_split(f'{in_path}/splits')
@@ -105,10 +116,10 @@ def build_ensemble(params,hyper_params,split):
     model.compile(loss='categorical_crossentropy',
                   optimizer='adam',
                   metrics=metrics)
-    deep_ens=NeuralEnsemble(model=model,
-                            params=params,
-                            hyper_params=hyper_params)
-    deep_ens.split=split
+    deep_ens=BaseNN(model=model,
+                    params=params,
+                    hyper_params=hyper_params,
+                    split=split)
     return deep_ens
 
 def train(in_path):
