@@ -7,7 +7,6 @@ from sklearn import preprocessing
 from tensorflow.keras.layers import Dense,BatchNormalization,Concatenate
 from tensorflow.keras import Input, Model
 from keras import callbacks
-#import gzip
 import data
 
 class NeuralEnsemble(object):
@@ -17,7 +16,8 @@ class NeuralEnsemble(object):
         self.hyper_params=hyper_params
         self.split=split
         self.pred_models=None
-    
+        self.extractors=None
+
     def get_type(self):
         raise NotImplementedError
 
@@ -25,6 +25,9 @@ class NeuralEnsemble(object):
         raise NotImplementedError
     
     def predict(self,x,verbose=0):
+        raise NotImplementedError
+    
+    def extract(self,x):
         raise NotImplementedError
 
     def predict_classes(self,x,verbose=0):
@@ -69,10 +72,9 @@ class BaseNN(NeuralEnsemble):
         if(self.pred_models is None):    
             self.pred_models=[]
             for i,x_i in enumerate(X):
-                input_i= self.model.get_layer(f'input_{i}')
-                output_i= self.model.get_layer(f'output_{i}')
-                model_i=Model(inputs=input_i.input,
-                              outputs=output_i.output)
+                model_i=split_models(model=self.model,
+                                     in_names=f'input_{i}',
+                                     out_names=f'output_{i}')
                 self.pred_models.append(model_i)
         y=[]
         for i,x_i in enumerate(X):
@@ -91,9 +93,6 @@ def read_deep(in_path,builder=None):
         params= eval(f.read())
     with open(f'{in_path}/hyper_params',"r") as f:
         hyper_params= eval(f.read())
-#    with open(f'{in_path}/type',"r") as f:
-#        ens_type= f.read()
-#    builder=get_builder(ens_type)
     if(builder is None):
         builder=make_base
     deep_ens=builder(params,hyper_params,split)
@@ -132,29 +131,16 @@ def nn_builder(params,hyper_params,n_splits=10):
         outputs.append(x_i)
     return Model(inputs=inputs, outputs=outputs)
 
-def train(in_path):
-    dataset=data.get_dataset(in_path)
-    all_splits=dataset.get_splits()
-
-    params=dataset.get_params()
-    hyper_params={'layers':[20,20],'batch':True}
-
-    deep_ens=build_ensemble(params,hyper_params,all_split[0])
-    early_stop = callbacks.EarlyStopping(monitor='accuracy',
-                                         mode="max", 
-                                         patience=5,
-                                         restore_best_weights=True)
-    deep_ens.fit(x=dataset.X,
-                 y=dataset.y,
-                 epochs=150,
-                 batch_size=params['batch'],
-                 verbose=1,
-                 callbacks=early_stop)
-
-    y_pred=deep_ens.predict_classes(x=dataset.X)
-    acc=tools.get_metric('acc')
-    print(acc(y_pred,dataset.y))
-
-if __name__ == "__main__":
-    in_path='../../uci/cleveland'
-    train(in_path)
+def split_models(model,in_names,out_names):
+    if(type(in_names)==str):
+        inputs= model.get_layer(in_names).input
+    else:
+        inputs=[ model.get_layer(name_i).input
+                   for name_i in in_names]
+    if(type(out_names)==str):
+        outputs= self.model.get_layer(out_names).output
+    else:
+        outputs=[ model.get_layer(name_i).output
+                   for name_i in out_names]
+    return Model(inputs=inputs,
+                 outputs=outputs)

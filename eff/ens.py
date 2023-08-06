@@ -1,7 +1,28 @@
+import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import Dense,BatchNormalization,Concatenate
 from tensorflow.keras import Input, Model
 import deep
+
+def read_ens(in_path):    
+    with open(f'{in_path}/type',"r") as f:
+        ens_type= f.read()
+    builder=get_builder(ens_type)    
+    return deep.read_deep(in_path=in_path,
+                          builder=builder)
+
+def get_builder(ens_type:str):
+    if(ens_type=='base'):
+        return deep.make_base
+    if(ens_type=='multi'):
+        return build_multi
+    raise Exception(f'Type {ens_type} unknown')
+
+def get_penultimate(i,k,hyper_dict):
+    if(hyper_dict['batch']):
+        return f'batch_{i}_{k}'
+    j=len(hyper_dict['layers'])
+    return f"layer_{i}_{k}_{j}"
 
 class MultiEns(deep.NeuralEnsemble):
     def __init__(self, model,params,hyper_params,split):
@@ -22,19 +43,47 @@ class MultiEns(deep.NeuralEnsemble):
                        verbose=verbose,
                        callbacks=callbacks)
 
-def read_ens(in_path):    
-    with open(f'{in_path}/type',"r") as f:
-        ens_type= f.read()
-    builder=get_builder(ens_type)    
-    return deep.read_deep(in_path=in_path,
-                          builder=builder)
+    def predict(self,x,verbose=0):
+        X=self.split.get_data(x,train=False)
+        if(self.pred_models is None):    
+            self.pred_models=[]
+            for i,x_i in enumerate(X):
+                out_names=[ f'output_{i}_{k}'
+                            for k in range(self.params['n_cats'])     ]
+                model_i=deep.split_models(model=self.model,
+                                          in_names=f'input_{i}',
+                                          out_names=out_names)
+                self.pred_models.append(model_i)
+        y=[]
+        for i,x_i in enumerate(X):
+            y_i=self.pred_models[i].predict(x_i,
+                                            verbose=verbose)
+            y_i=np.array(y_i)
+            y_i=np.sum(y_i,axis=0)
+            y.append(y_i)
+        y=np.concatenate(y,axis=0)
+        return y
 
-def get_builder(ens_type:str):
-    if(ens_type=='base'):
-        return deep.make_base
-    if(ens_type=='multi'):
-        return build_multi
-    raise Exception(f'Type {ens_type} unknown')
+    def extractors(self,x,verbose=0):
+        X=self.split.get_data(x,train=False)
+        if(self.extractors is None):    
+            self.extractors=[]
+            for i,x_i in enumerate(X):
+                out_names=[get_penultimate(i,k,self.hyper_params)
+                                for k in range(self.params['n_cats'])]
+                model_i=deep.split_models(model=self.model,
+                                          in_names=f'input_{i}',
+                                          out_names=out_names)
+                self.pred_models.append(model_i)
+#                input_i= self.model.get_layer(f'input_{i}')                
+#                layer_names=[get_penultimate(i,k,self.hyper_params)
+#                                for k in range(self.params['n_cats'])]
+#                output_i=[ self.model.get_layer(name_i).output
+#                            for name_i in layer_names]
+#                model_i=Model(inputs=input_i.input,
+#                              outputs=output_i)
+#                self.pred_models.append(model_i)
+
 
 def build_multi(params,hyper_params,split):
     model=ens_builder(params,
@@ -62,8 +111,8 @@ def ens_builder(params,hyper_params,n_splits=10):
             x_i=input_layer
             for j,hidden_j in enumerate(hyper_params['layers']):
                 x_i=Dense(hidden_j,
-                      activation='relu',
-                      name=f"layer_{i}_{k}_{j}")(x_i)
+                          activation='relu',
+                          name=f"layer_{i}_{k}_{j}")(x_i)
             if(hyper_params['batch']):
                 x_i=BatchNormalization(name=f'batch_{i}_{k}')(x_i)
             x_i=Dense(params['n_cats'], 
