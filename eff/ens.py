@@ -32,7 +32,7 @@ class MultiEns(deep.NeuralEnsemble):
         return 'multi'
 
     def fit(self,x,y,batch_size,epochs=150,verbose=0,callbacks=None):
-        X,y=self.split.get_data(x,y,train=True)
+        X,y=self.split.get_all(x,y,train=True)
         y=[ tf.keras.utils.to_categorical(y_i) 
               for k in range(self.params['n_cats'])
                   for y_i in y]
@@ -44,7 +44,7 @@ class MultiEns(deep.NeuralEnsemble):
                        callbacks=callbacks)
 
     def predict(self,x,verbose=0):
-        X=self.split.get_data(x,train=False)
+        X=self.split.get_all(x,train=False)
         if(self.pred_models is None):    
             self.pred_models=[]
             for i in range(len(self)):

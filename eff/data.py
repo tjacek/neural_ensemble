@@ -6,10 +6,10 @@ from sklearn.model_selection import RepeatedStratifiedKFold
 import tools
 
 class Dataset(object):
-    def __init__(self,X,y,cs=None):
+    def __init__(self,X,y):#,cs=None):
         self.X=X
         self.y=y
-        self.cs=cs 
+#        self.cs=cs 
 
     def get_splits(self,n_splits=10,n_repeats=3):
         cv = RepeatedStratifiedKFold(n_splits=n_splits, 
@@ -41,7 +41,7 @@ class DataSplit(object):
         return [ train_i.shape[0]#,test_i.shape[0]) 
                 for train_i,test_i in self.indices]
 
-    def get_data(self,X,y=None,train=True):
+    def get_all(self,X,y=None,train=True):
         train=int(not train)
         if(y is None):
             splits=[ X[ind[train]]
@@ -52,6 +52,18 @@ class DataSplit(object):
                     for ind in self.indices]
             X,y=list(zip(*splits))
             return X,y
+
+    def get_dataset(self,X,y,i):
+        train,test=self.indices[i]
+        datasets=[]
+        for x_i in X:
+            X_train=x_i[train]
+            y_train=y[train]
+            X_test =x_i[test]
+            y_test =y[test]
+            datasets.append((Dataset(X_train,y_train),
+                             Dataset(X_test,y_test)))
+        return datasets
     
     def save(self,out_path):
         tools.make_dir(out_path)

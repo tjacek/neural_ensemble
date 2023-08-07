@@ -13,11 +13,16 @@ class NECSCF(object):
     def __call__(self,clf_type):
         if(self.full_feats is None):
             common=self.dataset.X
-            self.full_feats=[[ np.concatenate([common,cs_j],axis=1) 
-                                for cs_j in cs_i]
-                                    for cs_i in self.cs_feats]	
+            full=[[ np.concatenate([common,cs_j],axis=1) 
+                        for cs_j in cs_i]
+                            for cs_i in self.cs_feats]	
+            full=[ self.split.get_dataset(X=full_i,
+            	                          y=self.dataset.y,
+            	                          i=i)
+                        for i,full_i in enumerate(full)]
+            self.full_feats=full 
         for full_i in self.full_feats:
-            print(full_i[0].shape)	
+            print(type( full_i[0][0]))
 
 def get_clf(name_i):
     if(type(name_i)!=str):
