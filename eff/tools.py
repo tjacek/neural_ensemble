@@ -1,6 +1,5 @@
 import os,warnings
 import logging,time
-import tensorflow as tf
 import re
 from sklearn.metrics import accuracy_score
 
@@ -10,6 +9,7 @@ def get_metric(metric_type):
 
 def silence_warnings():
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+    import tensorflow as tf
     logging.getLogger('tensorflow').setLevel(logging.ERROR)
     tf.get_logger().setLevel('ERROR')
     def warn(*args, **kwargs):
