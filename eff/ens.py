@@ -47,7 +47,7 @@ class MultiEns(deep.NeuralEnsemble):
         X=self.split.get_data(x,train=False)
         if(self.pred_models is None):    
             self.pred_models=[]
-            for i,x_i in enumerate(X):
+            for i in range(len(self)):
                 out_names=[ f'output_{i}_{k}'
                             for k in range(self.params['n_cats'])     ]
                 model_i=deep.split_models(model=self.model,
@@ -64,26 +64,23 @@ class MultiEns(deep.NeuralEnsemble):
         y=np.concatenate(y,axis=0)
         return y
 
-    def extractors(self,x,verbose=0):
-        X=self.split.get_data(x,train=False)
+    def extract(self,x,verbose=0):
         if(self.extractors is None):    
             self.extractors=[]
-            for i,x_i in enumerate(X):
+            for i in range(len(self)):
                 out_names=[get_penultimate(i,k,self.hyper_params)
-                                for k in range(self.params['n_cats'])]
+                            for k in range(self.params['n_cats'])]
                 model_i=deep.split_models(model=self.model,
                                           in_names=f'input_{i}',
                                           out_names=out_names)
-                self.pred_models.append(model_i)
-#                input_i= self.model.get_layer(f'input_{i}')                
-#                layer_names=[get_penultimate(i,k,self.hyper_params)
-#                                for k in range(self.params['n_cats'])]
-#                output_i=[ self.model.get_layer(name_i).output
-#                            for name_i in layer_names]
-#                model_i=Model(inputs=input_i.input,
-#                              outputs=output_i)
-#                self.pred_models.append(model_i)
-
+                self.extractors.append(model_i)
+        feats=[]
+        for i in range(len(self)):
+            feat_i=self.extractors[i].predict(x=x,
+                                              verbose=verbose)
+            
+            feats.append(feat_i)
+        return feats
 
 def build_multi(params,hyper_params,split):
     model=ens_builder(params,

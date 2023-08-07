@@ -17,6 +17,9 @@ class NeuralEnsemble(object):
         self.split=split
         self.pred_models=None
         self.extractors=None
+    
+    def __len__(self):
+        return len(self.split)
 
     def get_type(self):
         raise NotImplementedError

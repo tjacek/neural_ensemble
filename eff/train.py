@@ -35,9 +35,12 @@ def pred_exp(data_path,hyper_path,model_path):
     accuracy=tools.get_metric('acc')
     for model_path_i in tools.top_files(model_path):
         deep_ens=ens.read_ens(model_path_i)
-        y_pred=deep_ens.predict_classes(dataset.X)
-        acc_i=accuracy(dataset.y,y_pred)
-        print(acc_i) 
+        cs_feats_i=deep_ens.extract(dataset.X)
+        print(len(cs_feats_i))
+#        y_pred=deep_ens.predict_classes(dataset.X)
+#        acc_i=accuracy(dataset.y,y_pred)
+#        print(acc_i) 
+#        deep_ens.extract(dataset.X)
 
 if __name__ == '__main__':
     dir_path='../../optim_alpha/s_10_10'
