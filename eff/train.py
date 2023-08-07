@@ -3,7 +3,7 @@ tools.silence_warnings()
 import pandas as pd
 from keras import callbacks
 import argparse
-import data,deep,ens,tools
+import data,deep,ens,learn,tools
 
 def train_exp(data_path,hyper_path,model_path,n_splits=10,n_repeats=10):
     dataset=data.get_dataset(data_path)
@@ -35,8 +35,22 @@ def pred_exp(data_path,hyper_path,model_path):
     accuracy=tools.get_metric('acc')
     for model_path_i in tools.top_files(model_path):
         deep_ens=ens.read_ens(model_path_i)
+        y_pred=deep_ens.predict_classes(dataset.X)
+        acc_i=accuracy(dataset.y,y_pred)
+        print(acc_i) 
+        deep_ens.extract(dataset.X)
+
+
+def extract_exp(data_path,hyper_path,model_path):
+    dataset=data.get_dataset(data_path)
+    accuracy=tools.get_metric('acc')
+    for model_path_i in tools.top_files(model_path):
+        deep_ens=ens.read_ens(model_path_i)
         cs_feats_i=deep_ens.extract(dataset.X)
-        print(len(cs_feats_i))
+        necscf=learn.NECSCF(dataset=dataset,
+                            split=deep_ens.split,
+                            cs_feats=cs_feats_i)
+        necscf('LR')
 #        y_pred=deep_ens.predict_classes(dataset.X)
 #        acc_i=accuracy(dataset.y,y_pred)
 #        print(acc_i) 
@@ -51,8 +65,8 @@ if __name__ == '__main__':
     parser.add_argument("--n_splits", type=int, default=10)
     parser.add_argument("--n_repeats", type=int, default=10)
     args = parser.parse_args()
-    pred_exp(data_path=args.data,
-              hyper_path=args.hyper,
-              model_path=args.models)#,
+    extract_exp(data_path=args.data,
+                hyper_path=args.hyper,
+                model_path=args.models)#,
 #              n_splits=args.n_splits,
 #              n_repeats=args.n_repeats)
