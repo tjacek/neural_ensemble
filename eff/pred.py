@@ -13,16 +13,19 @@ def pred_exp(data_path,hyper_path,model_path):
         deep_ens.extract(dataset.X)
 
 
-def extract_exp(data_path,hyper_path,model_path):
+def extract_exp(data_path,model_path,pred_path):
     dataset=data.get_dataset(data_path)
     accuracy=tools.get_metric('acc')
     for model_path_i in tools.top_files(model_path):
         deep_ens=ens.read_ens(model_path_i)
         cs_feats_i=deep_ens.extract(dataset.X)
-        necscf=learn.NECSCF(dataset=dataset,
+        learn.make_features(dataset=dataset,
                             split=deep_ens.split,
                             cs_feats=cs_feats_i)
-        necscf('LR')
+#        necscf=learn.NECSCF(dataset=dataset,
+#                            split=deep_ens.split,
+#                            cs_feats=cs_feats_i)
+#        necscf('LR')
 
 
 if __name__ == '__main__':
@@ -30,10 +33,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", type=str, default='../../s_uci')
     parser.add_argument("--models", type=str, default=f'models')
-    parser.add_argument("--models", type=str, default=f'models')
+    parser.add_argument("--pred", type=str, default=f'pred')
     parser.add_argument("--log", type=str, default=f'log.info')
     args = parser.parse_args()
 #    tools.start_log(args.log)
-    train_exp(data_path=args.data,
-                hyper_path=args.hyper,
-                model_path=args.models)
+    extract_exp(data_path=args.data,
+                model_path=args.models,
+                pred_path=args.pred)
