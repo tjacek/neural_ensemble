@@ -7,12 +7,46 @@ import tools
 
 Features=namedtuple('Features','train test')
 
-class CSFeatures(object):
-    def __init__(self,common,cs,full,y):
-        self.common_train=common
-        self.cs=cs
-        self.full=full
-        self.y=y
+class FeaturesFactory(object):
+    def __init__(self):
+        self.feat_types={
+          'common':common_feats,
+          'cs':cs_feats,
+          'full':full_feats
+        }
+    
+    def __call__(self,dataset,split,cs_feats):
+        common,y=dataset.X,dataset.y
+        features=[]
+        for (train,test),cs_i in zip(split.indices,cs_feats):
+            def helper(x):
+                if(type(x)==list):
+                    return [helper(x_i) for x_i in x]
+                x_train=x[train]
+                x_test=x[test]
+                return Features(x_train,x_test)
+            feats_i={ name_j: helper(type_j(common,cs_i))
+                      for name_j,type_j in self.feat_types.items()}
+            feats_i['y']=helper(y)
+            features.append(feats_i)
+        return AllFeatures(features)
+
+def common_feats(common,cs):
+    return common
+
+def cs_feats(common,cs):
+    return cs
+
+def full_feats(common,cs):
+    return [np.concatenate([common,cs_j],axis=1)
+                for cs_j in cs]
+
+#class CSFeatures(object):
+#    def __init__(self,common,cs,full,y):
+#        self.common_train=common
+#        self.cs=cs
+#        self.full=full
+#        self.y=y
         
 class AllFeatures(object):
     def __init__(self,features):
@@ -22,47 +56,23 @@ class AllFeatures(object):
         acc=tools.get_metric('acc')
         for feat_i in self.features:
             y_pred=ensemble(clf_type,feat_i)
-            acc_i=acc(feat_i.test.y,y_pred)
+            acc_i=acc(feat_i['y'].test,y_pred)
             print(acc_i)
 
 def ensemble(clf_type,feat_i):
     votes=[]
-    for j,full_j in enumerate(feat_i.train.full):
+    for j,full_j in enumerate(feat_i['full']):
         clf_j=get_clf(clf_type)
-        clf_j.fit(full_j,feat_i.train.y)
-        y_pred=clf_j.predict_proba(feat_i.test.full[j])
+        clf_j.fit(full_j.train,feat_i['y'].train)
+        y_pred=clf_j.predict_proba(full_j.test)
         votes.append(y_pred)
     votes=np.array(votes)
     votes=np.sum(votes,axis=0)
     return np.argmax(votes,axis=1)
 
 def make_features(dataset,split,cs_feats):
-    features=[]
-    common,y=dataset.X,dataset.y
-    for (train,test),cs_i in zip(split.indices,cs_feats):
-        full=[np.concatenate([common,cs_j],axis=1)
-                for cs_j in cs_i]
-        common_train=common[train]
-        common_test=common[test]
-        y_train=y[train]
-        y_test=y[test]
-        full_train,full_test=zip(*[ (full_j[train],
-                                     full_j[test]) 
-                                        for full_j in full])
-        cs_train,cs_test=zip(*[ (cs_j[train],
-                                 cs_j[test]) 
-                                    for cs_j in cs_i])
-        train_feats=CSFeatures(common=common_train,
-                               cs=cs_train,
-                               full=full_train,
-                               y=y_train)
-        test_feats=CSFeatures(common=common_test,
-                              cs=cs_test,
-                              full=full_test,
-                              y=y_test)
-        features.append(Features(train=train_feats,
-                                 test=test_feats))
-    return AllFeatures(features)
+    factory= FeaturesFactory()
+    return factory(dataset,split,cs_feats)
 
 def get_clf(name_i):
     if(type(name_i)!=str):
