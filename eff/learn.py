@@ -40,28 +40,21 @@ def cs_feats(common,cs):
 def full_feats(common,cs):
     return [np.concatenate([common,cs_j],axis=1)
                 for cs_j in cs]
-
-#class CSFeatures(object):
-#    def __init__(self,common,cs,full,y):
-#        self.common_train=common
-#        self.cs=cs
-#        self.full=full
-#        self.y=y
         
 class AllFeatures(object):
     def __init__(self,features):
         self.features=features    
 
-    def __call__(self,clf_type):
-        acc=tools.get_metric('acc')
-        for feat_i in self.features:
-            y_pred=ensemble(clf_type,feat_i)
-            acc_i=acc(feat_i['y'].test,y_pred)
-            print(acc_i)
+    def __call__(self,clfs,variants):
+        for name_i,variant_i in variants.items():
+            for clf_j in clfs:
+                y=[(feat_k['y'].test,variant_i(clf_j,feat_k))
+                    for feat_k in self.features]
+                yield name_i,clf_j,y
 
-def ensemble(clf_type,feat_i):
+def ensemble(clf_type,feat_i,feat_type='full'):
     votes=[]
-    for j,full_j in enumerate(feat_i['full']):
+    for j,full_j in enumerate(feat_i[feat_type]):
         clf_j=get_clf(clf_type)
         clf_j.fit(full_j.train,feat_i['y'].train)
         y_pred=clf_j.predict_proba(full_j.test)
@@ -70,9 +63,16 @@ def ensemble(clf_type,feat_i):
     votes=np.sum(votes,axis=0)
     return np.argmax(votes,axis=1)
 
-def make_features(dataset,split,cs_feats):
-    factory= FeaturesFactory()
-    return factory(dataset,split,cs_feats)
+def common_variant(clf_type,feat_i):
+    clf_j=get_clf(clf_type)
+    clf_j.fit(feat_i['common'].train,feat_i['y'].train)
+    return clf_j.predict(feat_i['common'].test)
+
+def necscf_variant(clf_type,feat_i):
+    return ensemble(clf_type,feat_i,feat_type='full')
+
+def cs_variant(clf_type,feat_i):
+    return ensemble(clf_type,feat_i,feat_type='cs')
 
 def get_clf(name_i):
     if(type(name_i)!=str):
