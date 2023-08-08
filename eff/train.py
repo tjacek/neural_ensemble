@@ -6,9 +6,7 @@ import os,argparse
 import data,deep,ens,learn,tools
 
 def train_exp(data_path,hyper_path,model_path,n_splits=10,n_repeats=10):
-
     hyper_df=pd.read_csv(hyper_path)
-
     early_stop = callbacks.EarlyStopping(monitor='accuracy',
                                          mode="max", 
                                          patience=5,
@@ -37,32 +35,6 @@ def train_exp(data_path,hyper_path,model_path,n_splits=10,n_repeats=10):
     if(os.path.isdir(data_path)):
         helper=tools.dir_fun(2)(helper)
     helper(data_path,model_path)
-
-def pred_exp(data_path,hyper_path,model_path):
-    dataset=data.get_dataset(data_path)
-    accuracy=tools.get_metric('acc')
-    for model_path_i in tools.top_files(model_path):
-        deep_ens=ens.read_ens(model_path_i)
-        y_pred=deep_ens.predict_classes(dataset.X)
-        acc_i=accuracy(dataset.y,y_pred)
-        print(acc_i) 
-        deep_ens.extract(dataset.X)
-
-
-def extract_exp(data_path,hyper_path,model_path):
-    dataset=data.get_dataset(data_path)
-    accuracy=tools.get_metric('acc')
-    for model_path_i in tools.top_files(model_path):
-        deep_ens=ens.read_ens(model_path_i)
-        cs_feats_i=deep_ens.extract(dataset.X)
-        necscf=learn.NECSCF(dataset=dataset,
-                            split=deep_ens.split,
-                            cs_feats=cs_feats_i)
-        necscf('LR')
-#        y_pred=deep_ens.predict_classes(dataset.X)
-#        acc_i=accuracy(dataset.y,y_pred)
-#        print(acc_i) 
-#        deep_ens.extract(dataset.X)
 
 if __name__ == '__main__':
     dir_path='../../optim_alpha/s_10_10'
