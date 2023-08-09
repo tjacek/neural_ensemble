@@ -20,21 +20,22 @@ def extract_exp(data_path,model_path,pred_path):
               'necscf':learn.necscf_variant,
               'cs':learn.cs_variant}
     factory= learn.FeaturesFactory()
-    
     @tools.log_time(task='PRED')
     def helper(data_path,model_path,pred_path):
+#        name_i=data_path.split('/')[-1]
         dataset=data.get_dataset(data_path)
-        for model_path_i in tools.top_files(model_path):
+        tools.make_dir(pred_path)
+        for i,model_path_i in enumerate(tools.top_files(model_path)):
             deep_ens=ens.read_ens(model_path_i)
             cs_feats_i=deep_ens.extract(dataset.X)
             feats=factory(dataset=dataset,
                           split=deep_ens.split,
                           cs_feats=cs_feats_i)
-            tools.make_dir(pred_path)
+            tools.make_dir(f'{pred_path}/{i}')
             for variant_j,clf_j,pred_j in feats(clfs,variants):
                 id_j=f'{variant_j}-{clf_j}'
                 print(id_j)
-                save_pred(f'{pred_path}/{id_j}',pred_j)
+                save_pred(f'{pred_path}/{i}/{id_j}',pred_j)
     if(os.path.isdir(data_path)):
         helper=tools.dir_fun(2)(helper)
     helper(data_path,model_path,pred_path)
