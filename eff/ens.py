@@ -25,11 +25,12 @@ def get_penultimate(i,k,hyper_dict):
     return f"layer_{i}_{k}_{j}"
 
 class MultiEns(deep.NeuralEnsemble):
-    def __init__(self, model,params,hyper_params,split):
+    def __init__(self, model,params,hyper_params,split,ens_type='multi'):
         super().__init__(model,params,hyper_params,split)
+        self.ens_type=ens_type
 
     def get_type(self):
-        return 'multi'
+        return self.ens_type#'multi'
 
     def fit(self,x,y,batch_size,epochs=150,verbose=0,callbacks=None):
         X,y=self.split.get_all(x,y,train=True)
@@ -96,6 +97,31 @@ def build_multi(params,hyper_params,split):
                        params=params,
                        hyper_params=hyper_params,
                        split=split)
+    return deep_ens
+
+
+class WeightedBuilder(object):
+    def __init__(self,alpha):
+        self.alpha=alpha
+
+    def build_wighted(params,hyper_params,split):
+        model=ens_builder(params,
+                     hyper_params,
+                     n_splits=len(split))
+        metrics={f'output_{i}_{k}':'accuracy' 
+                for i in range(len(split))
+                    for k in range(params['n_cats'])}
+        loss_dict={f'output_{i}_{k}':loss.binary_loss(i,params['class_weights'])
+                    for i in range(len(split))
+                        for k in range(params['n_cats'])}
+        model.compile(loss=loss_dict ,#'categorical_crossentropy',
+                      optimizer='adam',
+                      metrics=metrics)
+        deep_ens=MultiEns(model=model,
+                          params=params,
+                          hyper_params=hyper_params,
+                          split=split,
+                          ens_type='weighted')
     return deep_ens
 
 def ens_builder(params,hyper_params,n_splits=10):
