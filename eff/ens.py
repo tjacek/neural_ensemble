@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import Dense,BatchNormalization,Concatenate
 from tensorflow.keras import Input, Model
-import deep
+import deep,loss
 
 def read_ens(in_path):    
     with open(f'{in_path}/type',"r") as f:
@@ -101,20 +101,26 @@ def build_multi(params,hyper_params,split):
 
 
 class WeightedBuilder(object):
-    def __init__(self,alpha):
+    def __init__(self,alpha=0.5):
         self.alpha=alpha
 
-    def build_wighted(params,hyper_params,split):
+    def __call__(self,params,hyper_params,split):
         model=ens_builder(params,
                      hyper_params,
                      n_splits=len(split))
         metrics={f'output_{i}_{k}':'accuracy' 
                 for i in range(len(split))
                     for k in range(params['n_cats'])}
-        loss_dict={f'output_{i}_{k}':loss.binary_loss(i,params['class_weights'])
-                    for i in range(len(split))
-                        for k in range(params['n_cats'])}
-        model.compile(loss=loss_dict ,#'categorical_crossentropy',
+        class_dict=params['class_weights']
+        loss_dict={}
+        for i in range(params['n_cats']):
+            for k in range(len(split)):
+                key_ik=f'output_{k}_{i}'
+                print(key_ik)
+                loss_dict[key_ik]=loss.weighted_loss(i=i,
+                                                     class_dict=class_dict,
+                                                     alpha=self.alpha)
+        model.compile(loss=loss_dict,
                       optimizer='adam',
                       metrics=metrics)
         deep_ens=MultiEns(model=model,
@@ -122,7 +128,7 @@ class WeightedBuilder(object):
                           hyper_params=hyper_params,
                           split=split,
                           ens_type='weighted')
-    return deep_ens
+        return deep_ens
 
 def ens_builder(params,hyper_params,n_splits=10):
     outputs,inputs=[],[]

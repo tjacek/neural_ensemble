@@ -11,6 +11,8 @@ def train_exp(data_path,hyper_path,model_path,n_splits=10,n_repeats=10):
                                          mode="max", 
                                          patience=5,
                                          restore_best_weights=True)
+#    builder_fun=ens.build_multi
+    builder_fun=ens.WeightedBuilder()
     @tools.log_time(task='TRAIN')
     def helper(data_path,model_path):
         dataset=data.get_dataset(data_path)
@@ -22,9 +24,9 @@ def train_exp(data_path,hyper_path,model_path,n_splits=10,n_repeats=10):
         hyper_dict=tools.get_hyper(name_i,hyper_df)
         tools.make_dir(model_path)
         for i,split_i in enumerate(all_splits):
-            deep_ens=ens.build_multi(params=params,
-                                     hyper_params=hyper_dict,
-                                     split=split_i)
+            deep_ens=builder_fun(params=params,
+                                 hyper_params=hyper_dict,
+                                 split=split_i)
             deep_ens.fit(x=dataset.X,
                          y=dataset.y,
                          epochs=150,
@@ -39,9 +41,9 @@ def train_exp(data_path,hyper_path,model_path,n_splits=10,n_repeats=10):
 if __name__ == '__main__':
     dir_path='../../optim_alpha/s_10_10'
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type=str, default='../../s_uci')
+    parser.add_argument("--data", type=str, default='../../s_uci/cmc')
     parser.add_argument("--hyper", type=str, default=f'../../hyper.csv')
-    parser.add_argument("--models", type=str, default=f'models')
+    parser.add_argument("--models", type=str, default=f'weig_models')
     parser.add_argument("--n_splits", type=int, default=10)
     parser.add_argument("--n_repeats", type=int, default=10)
     parser.add_argument("--log", type=str, default=f'log.info')

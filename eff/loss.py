@@ -1,19 +1,19 @@
 import tensorflow as tf
 import numpy as np
 
-def get_loss(ens_type):
-    if(ens_type=='multi'):
-        def loss_fun(i,class_dict):
-            return 'categorical_crossentropy'
-    if(type(ens_type)==tuple):
-        ens_type,alpha=ens_type
-        if(ens_type=='weighted'):
-            def loss_fun(i,class_dict):
-                return weighted_loss(i,class_dict,alpha)
-        elif(ens_type=='binary'):
-            def loss_fun(i,class_dict):
-                return binary_loss(i,class_dict,alpha)
-    return loss_fun
+#def get_loss(ens_type):
+#    if(ens_type=='multi'):
+#        def loss_fun(i,class_dict):
+#            return 'categorical_crossentropy'
+#    if(type(ens_type)==tuple):
+#        ens_type,alpha=ens_type
+#        if(ens_type=='weighted'):
+#            def loss_fun(i,class_dict):
+#                return weighted_loss(i,class_dict,alpha)
+#        elif(ens_type=='binary'):
+#            def loss_fun(i,class_dict):
+#                return binary_loss(i,class_dict,alpha)
+#    return loss_fun
 
 def binary_loss(i,class_dict,alpha):
     one_i=class_dict[i]
