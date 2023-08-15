@@ -1,7 +1,7 @@
 import tools
 tools.silence_warnings()
 import os,argparse,json
-import data,ens,learn
+import data,ens,learn,tools
 
 def pred_exp(data_path,hyper_path,model_path):
     dataset=data.get_dataset(data_path)
@@ -20,25 +20,28 @@ def extract_exp(data_path,model_path,pred_path):
               'necscf':learn.necscf_variant,
               'cs':learn.cs_variant}
     factory= learn.FeaturesFactory()
-    @tools.log_time(task='PRED')
-    def helper(data_path,model_path,pred_path):
-#        name_i=data_path.split('/')[-1]
-        dataset=data.get_dataset(data_path)
-        tools.make_dir(pred_path)
-        for i,model_path_i in enumerate(tools.top_files(model_path)):
-            deep_ens=ens.read_ens(model_path_i)
-            cs_feats_i=deep_ens.extract(dataset.X)
-            feats=factory(dataset=dataset,
+    tools.make_dir(pred_path)
+#   ens_types=tools.top_files(model_path)
+    for model_j in tools.top_files(model_path):
+        ens_j=model_j.split('/')[-1]
+        @tools.log_time(task=f'PRED-{ens_j}')
+        def helper(data_path,model_path,pred_path):
+            dataset=data.get_dataset(data_path)
+            tools.make_dir(pred_path)
+            for i,model_path_i in enumerate(tools.top_files(model_path)):
+                deep_ens=ens.read_ens(model_path_i)
+                cs_feats_i=deep_ens.extract(dataset.X)
+                feats=factory(dataset=dataset,
                           split=deep_ens.split,
                           cs_feats=cs_feats_i)
-            tools.make_dir(f'{pred_path}/{i}')
-            for variant_j,clf_j,pred_j in feats(clfs,variants):
-                id_j=f'{variant_j}-{clf_j}'
-                print(id_j)
-                save_pred(f'{pred_path}/{i}/{id_j}',pred_j)
-    if(os.path.isdir(data_path)):
-        helper=tools.dir_fun(2)(helper)
-    helper(data_path,model_path,pred_path)
+                tools.make_dir(f'{pred_path}/{i}')
+                for variant_j,clf_j,pred_j in feats(clfs,variants):
+                    id_j=f'{variant_j}-{clf_j}'
+                    print(id_j)
+                    save_pred(f'{pred_path}/{i}/{id_j}',pred_j)
+        if(os.path.isdir(data_path)):
+            helper=tools.dir_fun(2)(helper)
+        helper(data_path,model_j,f'{pred_path}/{ens_j}')
 
 def save_pred(out_path,pred_i):        
     with open(out_path, 'wb') as f:
@@ -57,8 +60,8 @@ def save_pred(out_path,pred_i):
 if __name__ == '__main__':
     dir_path='../../optim_alpha/s_10_10'
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type=str, default='../../s_uci/cleveland')
-    parser.add_argument("--models", type=str, default=f'models/cleveland')
+    parser.add_argument("--data", type=str, default='../../s_uci/cmc')
+    parser.add_argument("--models", type=str, default=f'models')
     parser.add_argument("--pred", type=str, default=f'pred')
     parser.add_argument("--log", type=str, default=f'log.info')
     args = parser.parse_args()
