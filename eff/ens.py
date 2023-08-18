@@ -62,10 +62,10 @@ class MultiEns(deep.NeuralEnsemble):
         y=np.concatenate(y,axis=0)
         return y
 
-    def get_penultimate(self,i,k):#,hyper_dict):
+    def get_penultimate(self,i,k):
         if(self.hyper_params['batch']):
             return f'batch_{i}_{k}'
-        j=len(self.hyper_params['layers'])
+        j=len(self.hyper_params['layers'])-1
         return f"layer_{i}_{k}_{j}"
 
 def build_multi(params,hyper_params,split):
@@ -101,7 +101,6 @@ class WeightedBuilder(object):
         for i in range(params['n_cats']):
             for k in range(len(split)):
                 key_ik=f'output_{k}_{i}'
-                print(key_ik)
                 loss_dict[key_ik]=loss.weighted_loss(i=i,
                                                      class_dict=class_dict,
                                                      alpha=self.alpha)

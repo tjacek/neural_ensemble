@@ -9,6 +9,12 @@ from tensorflow.keras import Input, Model
 from keras import callbacks
 import data
 
+#def get_penultimate(i,k,hyper_dict):
+#    if(('batch' in hyper_dict) and hyper_dict['batch']):
+#        return f'batch_{i}' #_{k}'
+#    j=len(hyper_dict['layers'])
+#    return f"layer_{i}_{k}_{j}"
+
 class NeuralEnsemble(object):
     def __init__(self,model,params,hyper_params,split):
         self.model=model
@@ -29,9 +35,29 @@ class NeuralEnsemble(object):
     
     def predict(self,x,verbose=0):
         raise NotImplementedError
-    
-    def extract(self,x):
+
+    def get_penultimate(self,i,j):
         raise NotImplementedError
+
+#    def extract(self,x):
+#        raise NotImplementedError
+    def extract(self,x,verbose=0):
+        if(self.extractors is None):    
+            self.extractors=[]
+            for i in range(len(self)):
+                out_names=[self.get_penultimate(i,k)#,self.hyper_params)
+                            for k in range(self.params['n_cats'])]
+                model_i=split_models(model=self.model,
+                                          in_names=f'input_{i}',
+                                          out_names=out_names)
+                self.extractors.append(model_i)
+        feats=[]
+        for i in range(len(self)):
+            feat_i=self.extractors[i].predict(x=x,
+                                              verbose=verbose)
+            
+            feats.append(feat_i)
+        return feats
 
     def predict_classes(self,x,verbose=0):
         prob= self.predict(x,verbose=verbose)
@@ -86,6 +112,13 @@ class BaseNN(NeuralEnsemble):
             y.append(y_i)
         y=np.concatenate(y,axis=0)
         return y
+
+    def get_penultimate(self,i,k):
+#        if(('batch' in hyper_dict) and 
+        if(self.hyper_params['batch']):
+            return f'batch_{i}' #_{k}'
+        j=len(self.hyper_params['layers'])
+        return f"layer_{i}_{k}_{j}"
 
 def read_deep(in_path,builder=None):
     split=data.read_split(f'{in_path}/splits')
