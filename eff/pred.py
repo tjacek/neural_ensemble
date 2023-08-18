@@ -15,14 +15,15 @@ def pred_exp(data_path,hyper_path,model_path):
 
 def extract_exp(data_path,model_path,pred_path):
     acc=tools.get_metric('acc')
-    clfs=['RF','SVC']
+    clfs=['LR','SVC']
     variants={'common':learn.common_variant,
               'necscf':learn.necscf_variant,
               'cs':learn.cs_variant}
     factory= learn.FeaturesFactory()
     tools.make_dir(pred_path)
-#   ens_types=tools.top_files(model_path)
     for model_j in tools.top_files(model_path):
+        if(not 'weighted' in model_j):
+            continue
         ens_j=model_j.split('/')[-1]
         @tools.log_time(task=f'PRED-{ens_j}')
         def helper(data_path,model_path,pred_path):
@@ -38,9 +39,9 @@ def extract_exp(data_path,model_path,pred_path):
                 for variant_j,clf_j,pred_j in feats(clfs,variants):
                     id_j=f'{variant_j}-{clf_j}'
                     print(id_j)
-                    save_pred(f'{pred_path}/{i}/{id_j}',pred_j)
+                    save_pred(f'{pred_path}/{i}/{id_j}',pred_j) 
         if(os.path.isdir(data_path)):
-            helper=tools.dir_fun(2)(helper)
+            helper=tools.dir_fun(3)(helper)
         helper(data_path,model_j,f'{pred_path}/{ens_j}')
 
 def save_pred(out_path,pred_i):        
@@ -56,14 +57,18 @@ def save_pred(out_path,pred_i):
         json_bytes = json_str.encode('utf-8') 
         f.write(json_bytes)
 
+def read_pred(path_i):
+    with open(path_i, 'r') as f:        
+        json_bytes = f.read()                      
+        return json.loads(json_bytes)
 
 if __name__ == '__main__':
-    dir_path='../../optim_alpha/s_10_10'
+    dir_path='../../s_10_10'
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type=str, default='../../s_uci/cmc')
-    parser.add_argument("--models", type=str, default=f'models')
-    parser.add_argument("--pred", type=str, default=f'pred')
-    parser.add_argument("--log", type=str, default=f'log.info')
+    parser.add_argument("--data", type=str, default='../../s_uci')
+    parser.add_argument("--models", type=str, default=f'{dir_path}/models')
+    parser.add_argument("--pred", type=str, default=f'{dir_path}/pred')
+    parser.add_argument("--log", type=str, default=f'{dir_path}/log.info')
     args = parser.parse_args()
     tools.start_log(args.log)
     extract_exp(data_path=args.data,

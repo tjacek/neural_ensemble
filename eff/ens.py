@@ -16,13 +16,10 @@ def get_builder(ens_type:str):
         return deep.make_base
     if(ens_type=='multi'):
         return build_multi
+    if(ens_type=='weighted'):
+        return WeightedBuilder(0.5)
     raise Exception(f'Type {ens_type} unknown')
 
-def get_penultimate(i,k,hyper_dict):
-    if(hyper_dict['batch']):
-        return f'batch_{i}_{k}'
-    j=len(hyper_dict['layers'])
-    return f"layer_{i}_{k}_{j}"
 
 class MultiEns(deep.NeuralEnsemble):
     def __init__(self, model,params,hyper_params,split,ens_type='multi'):
@@ -65,23 +62,11 @@ class MultiEns(deep.NeuralEnsemble):
         y=np.concatenate(y,axis=0)
         return y
 
-    def extract(self,x,verbose=0):
-        if(self.extractors is None):    
-            self.extractors=[]
-            for i in range(len(self)):
-                out_names=[get_penultimate(i,k,self.hyper_params)
-                            for k in range(self.params['n_cats'])]
-                model_i=deep.split_models(model=self.model,
-                                          in_names=f'input_{i}',
-                                          out_names=out_names)
-                self.extractors.append(model_i)
-        feats=[]
-        for i in range(len(self)):
-            feat_i=self.extractors[i].predict(x=x,
-                                              verbose=verbose)
-            
-            feats.append(feat_i)
-        return feats
+    def get_penultimate(self,i,k):#,hyper_dict):
+        if(self.hyper_params['batch']):
+            return f'batch_{i}_{k}'
+        j=len(self.hyper_params['layers'])
+        return f"layer_{i}_{k}_{j}"
 
 def build_multi(params,hyper_params,split):
     model=ens_builder(params,
