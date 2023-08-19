@@ -27,7 +27,7 @@ class MultiEns(deep.NeuralEnsemble):
         self.ens_type=ens_type
 
     def get_type(self):
-        return self.ens_type#'multi'
+        return self.ens_type
 
     def fit(self,x,y,batch_size,epochs=150,verbose=0,callbacks=None):
         X,y=self.split.get_all(x,y,train=True)
@@ -62,11 +62,27 @@ class MultiEns(deep.NeuralEnsemble):
         y=np.concatenate(y,axis=0)
         return y
 
-    def get_penultimate(self,i,k):
-        if(self.hyper_params['batch']):
-            return f'batch_{i}_{k}'
-        j=len(self.hyper_params['layers'])-1
-        return f"layer_{i}_{k}_{j}"
+class BinaryEns(deep.NeuralEnsemble):
+    def __init__(self, model,params,hyper_params,split):
+        super().__init__(model,params,hyper_params,split)
+
+    def get_type(self):
+        return 'binary'
+
+    def fit(self,x,y,batch_size,epochs=150,verbose=0,callbacks=None):
+        X,y=self.split.get_all(x,y,train=True)
+        def helper(y_i,k):
+            y_i=[int(y_ij==k) for y_ij in y_i]
+            return tf.keras.utils.to_categorical(y_i) 
+        y=[ helper(y_i,k)
+              for k in range(self.params['n_cats'])
+                  for y_i in y]
+        self.model.fit(x=X,
+                       y=y,
+                       batch_size=batch_size,
+                       epochs=epochs,
+                       verbose=verbose,
+                       callbacks=callbacks)
 
 def build_multi(params,hyper_params,split):
     model=ens_builder(params,

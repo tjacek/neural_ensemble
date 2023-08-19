@@ -36,11 +36,12 @@ class NeuralEnsemble(object):
     def predict(self,x,verbose=0):
         raise NotImplementedError
 
-    def get_penultimate(self,i,j):
-        raise NotImplementedError
+    def get_penultimate(self,i,k):
+        if(self.hyper_params['batch']):
+            return f'batch_{i}_{k}'
+        j=len(self.hyper_params['layers'])-1
+        return f"layer_{i}_{k}_{j}"
 
-#    def extract(self,x):
-#        raise NotImplementedError
     def extract(self,x,verbose=0):
         if(self.extractors is None):    
             self.extractors=[]
