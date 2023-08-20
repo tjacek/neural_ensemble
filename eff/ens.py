@@ -18,6 +18,8 @@ def get_builder(ens_type:str):
         return build_multi
     if(ens_type=='weighted'):
         return WeightedBuilder(0.5)
+    if(ens_type=='binary'):
+        return BinaryBuilder(0.5)
     raise Exception(f'Type {ens_type} unknown')
 
 
@@ -108,7 +110,8 @@ class WeightedBuilder(object):
     def __call__(self,params,hyper_params,split):
         model=ens_builder(params,
                      hyper_params,
-                     n_splits=len(split))
+                     n_splits=len(split),
+                     softmax_cats=params['n_cats'])
         metrics={f'output_{i}_{k}':'accuracy' 
                 for i in range(len(split))
                     for k in range(params['n_cats'])}
@@ -130,7 +133,40 @@ class WeightedBuilder(object):
                           ens_type='weighted')
         return deep_ens
 
-def ens_builder(params,hyper_params,n_splits=10):
+
+class BinaryBuilder(object):
+    def __init__(self,alpha=0.5):
+        self.alpha=alpha
+
+    def __call__(self,params,hyper_params,split):
+        model=ens_builder(params,
+                          hyper_params,
+                          n_splits=len(split),
+                          softmax_cats=2)
+        metrics={f'output_{i}_{k}':'accuracy' 
+                for i in range(len(split))
+                    for k in range(params['n_cats'])}
+        class_dict=params['class_weights']
+        loss_dict={}
+        for i in range(params['n_cats']):
+            for k in range(len(split)):
+                key_ik=f'output_{k}_{i}'
+                loss_dict[key_ik]=loss.binary_loss(i=i,
+                                                   class_dict=class_dict,
+                                                   alpha=self.alpha)
+        model.compile(loss=loss_dict,
+                      optimizer='adam',
+                      metrics=metrics)
+        deep_ens=BinaryEns(model=model,
+                          params=params,
+                          hyper_params=hyper_params,
+                          split=split,
+                          ens_type='weighted')
+        return deep_ens
+
+def ens_builder(params,hyper_params,n_splits=10,softmax_cats=None):
+    if(softmax_cats is None):
+        softmax_cats=params['n_cats']
     outputs,inputs=[],[]
     for i in range(n_splits):
         input_layer = Input(shape=(params['dims']),
@@ -139,12 +175,12 @@ def ens_builder(params,hyper_params,n_splits=10):
         for k in range(params['n_cats']): 
             x_i=input_layer
             for j,hidden_j in enumerate(hyper_params['layers']):
-                x_i=Dense(hidden_j,
+                x_i=Dense(units=hidden_j,
                           activation='relu',
                           name=f"layer_{i}_{k}_{j}")(x_i)
             if(hyper_params['batch']):
                 x_i=BatchNormalization(name=f'batch_{i}_{k}')(x_i)
-            x_i=Dense(params['n_cats'], 
+            x_i=Dense(units=softmax_cats, #params['n_cats'], 
                       activation='softmax',
                       name=f'output_{i}_{k}')(x_i)
             outputs.append(x_i)
