@@ -11,9 +11,9 @@ def train_exp(data_path,hyper_path,model_path,n_splits=10,n_repeats=10):
                                          mode="max", 
                                          patience=5,
                                          restore_best_weights=True)
-#    builder_fun=ens.build_multi
     builder_fun={'base':deep.make_base,
                  'weighted':ens.WeightedBuilder(0.5),
+                 'binary':ens.BinaryBuilder(0.5),
                  'multi': ens.build_multi}
     tools.make_dir(model_path)
     for ens_type,builder in builder_fun.items():
@@ -43,11 +43,11 @@ def train_exp(data_path,hyper_path,model_path,n_splits=10,n_repeats=10):
         helper(data_path,f'{model_path}/{ens_type}')
 
 if __name__ == '__main__':
-    dir_path='../../optim_alpha/s_10_10'
+    dir_path='../../s_10_10'
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type=str, default='../../s_uci/cmc')
+    parser.add_argument("--data", type=str, default='../../s_uci/')
     parser.add_argument("--hyper", type=str, default=f'../../hyper.csv')
-    parser.add_argument("--models", type=str, default=f'models')
+    parser.add_argument("--models", type=str, default=f'../../models')
     parser.add_argument("--n_splits", type=int, default=10)
     parser.add_argument("--n_repeats", type=int, default=10)
     parser.add_argument("--log", type=str, default=f'log.info')

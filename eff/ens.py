@@ -22,7 +22,6 @@ def get_builder(ens_type:str):
         return BinaryBuilder(0.5)
     raise Exception(f'Type {ens_type} unknown')
 
-
 class MultiEns(deep.NeuralEnsemble):
     def __init__(self, model,params,hyper_params,split,ens_type='multi'):
         super().__init__(model,params,hyper_params,split)
@@ -160,8 +159,7 @@ class BinaryBuilder(object):
         deep_ens=BinaryEns(model=model,
                           params=params,
                           hyper_params=hyper_params,
-                          split=split,
-                          ens_type='weighted')
+                          split=split)
         return deep_ens
 
 def ens_builder(params,hyper_params,n_splits=10,softmax_cats=None):
