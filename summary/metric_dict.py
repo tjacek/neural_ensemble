@@ -67,26 +67,40 @@ class GenCol(object):
                 return seq_i
         return self.default
 
+class AccDictReader(object):
+    def __init__(self,taboo):
+        self.taboo=taboo
+
+    def __call__(self,pred_path,metric_i='acc'):
+        metric_i=get_metric(metric_i)
+        metric_dict=MetricDict()
+        for path_i in top_files(pred_path):
+            all_pred=read_pred(path_i)
+            id_i=get_id(path_i)
+            if(self.valid(id_i)):
+                line_i=[get_id(path_i)]
+                acc=[ metric_i(test_i,pred_i) 
+                    for test_i,pred_i in all_pred]
+                metric_dict[id_i]=acc
+        return metric_dict
+    
+    def valid(self,id_i):
+        for taboo_j in self.taboo:
+            if(taboo_j in id_i):
+                return False
+        return True 
+
+def get_metric(metric_i):
+    if(metric_i=='acc'):
+        return accuracy_score
+    elif(metric_i=='balanced'):
+        return balanced_accuracy_score
+
 def get_alpha(raw):
     digits=re.findall(r'\d+',raw)
     if(len(digits)>0):
         return f'0.{digits[1]}'
     return '-'
-
-def make_acc_dict(pred_path,metric_i='acc'):
-    if(metric_i=='acc'):
-        metric_i=accuracy_score
-    elif(metric_i=='balanced'):
-        metric_i=balanced_accuracy_score
-    metric_dict=MetricDict()
-    for path_i in top_files(pred_path):
-        all_pred=read_pred(path_i)
-        id_i=get_id(path_i)
-        line_i=[get_id(path_i)]
-        acc=[ metric_i(test_i,pred_i) 
-                for test_i,pred_i in all_pred]
-        metric_dict[id_i]=acc
-    return metric_dict
 
 def read_pred(path_i):
     with open(path_i, 'r') as f:        

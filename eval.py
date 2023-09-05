@@ -6,15 +6,18 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 from collections import defaultdict
-from  summary.metric_dict import make_acc_dict
+from  summary.metric_dict import AccDictReader#make_acc_dict
 import json
 
 def single_exp(pred_path,out_path):
-    def helper(df):
-        return df[df['clf']!='LR']
-    acc_dict=make_acc_dict(pred_path,'acc')
-    df_dict=summary(acc_dict,helper)
-    return list(df_dict.values())[0]
+#    def helper(df):
+#        return df[df['clf']!='LR']
+    acc_reader=AccDictReader(['inliner',
+                              'LR'])
+    acc_dict=acc_reader(pred_path,'acc') #make_acc_dict(pred_path,'acc')
+    print(acc_dict.stats())
+#    df_dict=summary(acc_dict,helper)
+#    return list(df_dict.values())[0]
 
 def sig_stats(df_dict):
     clfs=list(df_dict.values())[0]['clf'].unique()
@@ -55,31 +58,31 @@ def best(df_j):
                           ascending=False)
     return df_j.iloc[0].tolist()
 
-def _summary(acc_dict,transform=None):
-    data_dict=acc_dict.dataset_dfs(transform=transform)
-    df_dict={}
-    for data,df_i in data_dict.items():
-        lines=[]
-        variant_df=df_i[df_i['variant']=='-']
-        for index, row in variant_df.iterrows():
-            lines.append(row.tolist())
-        for clf_j in df_i['clf'].unique():
-            df_j=df_i[(df_i['clf']==clf_j) &
-                       (df_i['variant']!='-')]
-            df_j=df_j.sort_values(by='mean',
-                                  ascending=False)
-            line_j=df_j.iloc[0].tolist()
-            lines.append(line_j)
-        cols=['dataset','id', 'mean','std','clf','cs','variant']#'alpha','variant']
-        s_df=pd.DataFrame(lines,
-                          columns=cols)
-        s_df=s_df.sort_values(by='mean',
-                              ascending=False)
-        s_df=add_pvalues(data,s_df,acc_dict)
-        s_df=show_impr(s_df)
-        print(s_df)
-        df_dict[data]=s_df
-    return df_dict
+#def _summary(acc_dict,transform=None):
+#    data_dict=acc_dict.dataset_dfs(transform=transform)
+#    df_dict={}
+#    for data,df_i in data_dict.items():
+#        lines=[]
+#        variant_df=df_i[df_i['variant']=='-']
+#        for index, row in variant_df.iterrows():
+#            lines.append(row.tolist())
+#        for clf_j in df_i['clf'].unique():
+#            df_j=df_i[(df_i['clf']==clf_j) &
+#                       (df_i['variant']!='-')]
+#            df_j=df_j.sort_values(by='mean',
+#                                  ascending=False)
+#            line_j=df_j.iloc[0].tolist()
+#            lines.append(line_j)
+#        cols=['dataset','id', 'mean','std','clf','cs','variant']#'alpha','variant']
+#        s_df=pd.DataFrame(lines,
+#                          columns=cols)
+#        s_df=s_df.sort_values(by='mean',
+#                              ascending=False)
+#        s_df=add_pvalues(data,s_df,acc_dict)
+#        s_df=show_impr(s_df)
+#        print(s_df)
+#        df_dict[data]=s_df
+#    return df_dict
 
 def add_pvalues(data,s_df,acc_dict,verbose=False):
     base_cls= s_df[s_df['variant']=='-']
@@ -113,7 +116,7 @@ def show_impr(s_df):
     return s_df
 
 if __name__ == '__main__':
-    dir_path='../optim_alpha/r_10_10'
+    dir_path='../'
     parser = argparse.ArgumentParser()
     parser.add_argument("--pred", type=str, default=f'{dir_path}/pred')
     args = parser.parse_args()
