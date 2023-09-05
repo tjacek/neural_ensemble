@@ -52,6 +52,10 @@ class MetricDict(dict):
         p_value=round(r[1],4)
         return p_value
 
+    def stats(self):
+        return {key_i:len(value_i) 
+                for key_i,value_i in self.items()}
+
 class GenCol(object):
     def __init__(self,seqs,default='-'):
         self.seqs=seqs
