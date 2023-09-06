@@ -6,51 +6,86 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 from collections import defaultdict
-from  summary.metric_dict import AccDictReader#make_acc_dict
+from  summary.metric_dict import AccDictReader
 import json
 
 def single_exp(pred_path,out_path):
-#    def helper(df):
-#        return df[df['clf']!='LR']
+
     acc_reader=AccDictReader(['inliner',
+                              '-cs',
                               'LR'])
-    acc_dict=acc_reader(pred_path,'acc') #make_acc_dict(pred_path,'acc')
-    print(acc_dict.stats())
-#    df_dict=summary(acc_dict,helper)
+    acc_dict=acc_reader(pred_path,'acc') 
+    df_i=acc_dict.to_df()
+    df_i=df_i.sort_values(by='mean',
+                            ascending=False)
+    clf_dict=by_clf(df_i)
+    id_dict={clf_i:to_ids( df_i)   
+        for clf_i,df_i in clf_dict.items()}
+    pvalue_df=sig_stats(id_dict,acc_dict)
+    print(df_i)
+    print(pvalue_df)
+#    df_dict=summary(acc_dict,None)#helper)
 #    return list(df_dict.values())[0]
 
-def sig_stats(df_dict):
-    clfs=list(df_dict.values())[0]['clf'].unique()
-    counter_dict={clf_i:[0,0,0,0] for clf_i in clfs }
-    for data_i,df_i in df_dict.items():
-        for j,row_j in df_i[df_i['diff']!=0].iterrows():
-            clf_j,sig_j,diff_j=row_j['clf'],row_j['sig'],row_j['diff']
-            if(diff_j<0):
-                diff_j=0
-            index=int(sig_j)*2+ int(diff_j)
-            counter_dict[clf_j][index]+=1
-    print(counter_dict)
+def by_clf(df_i):
+    return { clf_i:df_i[df_i['clf']==clf_i]
+              for clf_i in  df_i['clf'].unique()}
 
-def summary(acc_dict,transform=None):
-    data_dict=acc_dict.by_clf(transform=transform)
-    df_dict={}#defaultdict(lambda:{})
-    for data,clf_dict in data_dict.items():
-        lines=[]
-        for clf_j,df_j in clf_dict.items():
-            inliner_j= df_j[ df_j['variant']=='inliner']                              
-            other_j= df_j[ df_j['variant']!='inliner']
-            lines+=[best(inliner_j),best(other_j)]
-        cols=['dataset','id', 'mean','std','clf','cs','variant']
-        s_df=pd.DataFrame(lines,
-                          columns=cols)
-        s_df=s_df.sort_values(by='mean',
-                              ascending=False)
+def to_ids(df_i):
+    base,other=None,[]
+    for j,row in df_i.iterrows():
+        id_i=','.join([row['dataset'],row['id']])
+        if(row['cs']=='-'):
+            base=id_i#row['id']
+        else:
+            other.append(id_i) #row['id'])
+    return [base,other]
+
+def sig_stats(id_dict,acc_dict):
+    lines=[]
+    for clf_i,ids_i in id_dict.items():
+        base,other=ids_i
+        for other_j in other:
+            data_j,variant_j=other_j.split('-')[0].split(',')
+            pvalue_j=acc_dict.pvalue(base,other_j)
+            lines.append([data_j,clf_i,variant_j,pvalue_j])
+    cols=['dataset','clf','class-specific','pvalue']
+    pvalue_df=pd.DataFrame(lines,columns=cols)
+    pvalue_df['sig']=pvalue_df['pvalue'].apply(lambda x:x<0.05)
+    return pvalue_df
+
+#def sig_stats(df_dict):
+#    clfs=list(df_dict.values())[0]['clf'].unique()
+#    counter_dict={clf_i:[0,0,0,0] for clf_i in clfs }
+#    for data_i,df_i in df_dict.items():
+#        for j,row_j in df_i[df_i['diff']!=0].iterrows():
+#            clf_j,sig_j,diff_j=row_j['clf'],row_j['sig'],row_j['diff']
+#            if(diff_j<0):
+#                diff_j=0
+#            index=int(sig_j)*2+ int(diff_j)
+#            counter_dict[clf_j][index]+=1
+#    print(counter_dict)
+
+#def summary(acc_dict,transform=None):
+#    data_dict=acc_dict.by_clf(transform=transform)
+#    df_dict={}#defaultdict(lambda:{})
+#    for data,clf_dict in data_dict.items():
+#        lines=[]
+#        for clf_j,df_j in clf_dict.items():
+#            inliner_j= df_j[ df_j['variant']=='inliner']                              
+#            other_j= df_j[ df_j['variant']!='inliner']
+#            lines+=[best(inliner_j),best(other_j)]
+#        cols=['dataset','id', 'mean','std','clf','cs','variant']
+#        s_df=pd.DataFrame(lines,
+#                          columns=cols)
+#        s_df=s_df.sort_values(by='mean',
+#                              ascending=False)
 #        s_df=add_pvalues(data,s_df,acc_dict)
 #        print(s_df)
 #        s_df=show_impr(s_df)
-        df_dict[data]=s_df
-    print(df_dict)
-    return df_dict
+#        df_dict[data]=s_df
+#    print(df_dict)
+#    return df_dict
 
 
 def best(df_j):

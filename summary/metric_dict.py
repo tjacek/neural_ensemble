@@ -117,4 +117,5 @@ def top_files(path):
 
 def get_id(path_i):
     raw=path_i.split('/')
-    return f'{raw[-2]},{raw[-1]}'
+    data_i=raw[-2].replace('-','_')
+    return f'{data_i},{raw[-1]}'
