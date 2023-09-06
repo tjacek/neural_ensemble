@@ -22,10 +22,11 @@ def single_exp(pred_path,out_path):
     id_dict={clf_i:to_ids( df_i)   
         for clf_i,df_i in clf_dict.items()}
     pvalue_df=sig_stats(id_dict,acc_dict)
-    print(df_i)
-    print(pvalue_df)
-#    df_dict=summary(acc_dict,None)#helper)
-#    return list(df_dict.values())[0]
+    
+    df_i= df_i[['dataset','clf','cs','mean','std']]
+    print(to_latex(df_i))
+    print(to_latex(pvalue_df))
+
 
 def by_clf(df_i):
     return { clf_i:df_i[df_i['clf']==clf_i]
@@ -54,6 +55,20 @@ def sig_stats(id_dict,acc_dict):
     pvalue_df['sig']=pvalue_df['pvalue'].apply(lambda x:x<0.05)
     return pvalue_df
 
+def to_latex(df_i):
+    cols= df_i.columns.tolist()
+    latext=' & '.join(cols)
+    latext=f'\\hline {latext} \\\\ \n'
+    for i,row_i in df_i.iterrows():
+        row_i=[str(col_j) for col_j in list(row_i) ]
+        line_i= ' & '.join(row_i)
+        line_i=f'\\hline {line_i} \\\\ \n'
+        latext+=line_i
+    header= '|'.join([ 'l' for c in cols])
+    header= '\\begin{tabular}{|'+header +'|}\n'
+    latext=header + latext+'\\hline \n \\end{tabular}'
+    latext=latext.replace('_','-')
+    return latext
 #def sig_stats(df_dict):
 #    clfs=list(df_dict.values())[0]['clf'].unique()
 #    counter_dict={clf_i:[0,0,0,0] for clf_i in clfs }
@@ -92,32 +107,6 @@ def best(df_j):
     df_j=df_j.sort_values(by='mean',
                           ascending=False)
     return df_j.iloc[0].tolist()
-
-#def _summary(acc_dict,transform=None):
-#    data_dict=acc_dict.dataset_dfs(transform=transform)
-#    df_dict={}
-#    for data,df_i in data_dict.items():
-#        lines=[]
-#        variant_df=df_i[df_i['variant']=='-']
-#        for index, row in variant_df.iterrows():
-#            lines.append(row.tolist())
-#        for clf_j in df_i['clf'].unique():
-#            df_j=df_i[(df_i['clf']==clf_j) &
-#                       (df_i['variant']!='-')]
-#            df_j=df_j.sort_values(by='mean',
-#                                  ascending=False)
-#            line_j=df_j.iloc[0].tolist()
-#            lines.append(line_j)
-#        cols=['dataset','id', 'mean','std','clf','cs','variant']#'alpha','variant']
-#        s_df=pd.DataFrame(lines,
-#                          columns=cols)
-#        s_df=s_df.sort_values(by='mean',
-#                              ascending=False)
-#        s_df=add_pvalues(data,s_df,acc_dict)
-#        s_df=show_impr(s_df)
-#        print(s_df)
-#        df_dict[data]=s_df
-#    return df_dict
 
 def add_pvalues(data,s_df,acc_dict,verbose=False):
     base_cls= s_df[s_df['variant']=='-']
