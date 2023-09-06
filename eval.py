@@ -13,20 +13,21 @@ def single_exp(pred_path,out_path):
 
     acc_reader=AccDictReader(['inliner',
                               '-cs',
-                              'LR'])
+                              'LR','RF'])
     acc_dict=acc_reader(pred_path,'acc') 
     df_i=acc_dict.to_df()
     df_i=df_i.sort_values(by='mean',
                             ascending=False)
+    
+    pvalue_df=summary(df_i,acc_dict)    
+    df_i= df_i[['dataset','clf','cs','mean','std']]
+    return df_i,pvalue_df
+
+def summary(df_i,acc_dict):
     clf_dict=by_clf(df_i)
     id_dict={clf_i:to_ids( df_i)   
         for clf_i,df_i in clf_dict.items()}
-    pvalue_df=sig_stats(id_dict,acc_dict)
-    
-    df_i= df_i[['dataset','clf','cs','mean','std']]
-    print(to_latex(df_i))
-    print(to_latex(pvalue_df))
-
+    return sig_stats(id_dict,acc_dict)
 
 def by_clf(df_i):
     return { clf_i:df_i[df_i['clf']==clf_i]
@@ -69,17 +70,42 @@ def to_latex(df_i):
     latext=header + latext+'\\hline \n \\end{tabular}'
     latext=latext.replace('_','-')
     return latext
-#def sig_stats(df_dict):
-#    clfs=list(df_dict.values())[0]['clf'].unique()
-#    counter_dict={clf_i:[0,0,0,0] for clf_i in clfs }
-#    for data_i,df_i in df_dict.items():
-#        for j,row_j in df_i[df_i['diff']!=0].iterrows():
-#            clf_j,sig_j,diff_j=row_j['clf'],row_j['sig'],row_j['diff']
-#            if(diff_j<0):
-#                diff_j=0
-#            index=int(sig_j)*2+ int(diff_j)
-#            counter_dict[clf_j][index]+=1
-#    print(counter_dict)
+
+def sort_df(df_dict):
+    subset={'sig_better':[],
+            'insig_better':[],
+            'sig_worse':[],
+            'insig_worse':[]}
+    for data_i,result_i in df_dict.items():
+        sig_i=is_sig(result_i[1])
+        better=improv(result_i[0])
+        if(sig_i and better):
+            subset['sig_better'].append(result_i)
+        if((not sig_i) and better):
+            subset['insig_better'].append(result_i)
+        if(sig_i and (not better)):
+            subset['sig_worse'].append(result_i)
+        if((not sig_i) and (not better)):
+            subset['insig_worse'].append(result_i)    
+    for subset_k in subset.values(): 
+        print("!!!!!!!!!!!!!")
+        for df_i,pvalue_i in subset_k:
+            print(to_latex(df_i))
+            print(to_latex(pvalue_i))
+    for key_k,subset_k in subset.items():
+        print(f'{key_k},{len(subset_k)}')
+
+def is_sig(pvalue_i):
+    sig_i=pvalue_i['sig'].tolist()
+    sig_i=np.array(sig_i,dtype=int)
+    return sum(sig_i)>0 
+
+def improv(df_i):
+#    df_j=df_j.sort_values(by='mean',
+#                          ascending=False)
+    best_dict=df_i.iloc[0].to_dict()
+    return best_dict['cs']!='-'
+#    print(best_dict)
 
 #def summary(acc_dict,transform=None):
 #    data_dict=acc_dict.by_clf(transform=transform)
@@ -103,41 +129,38 @@ def to_latex(df_i):
 #    return df_dict
 
 
-def best(df_j):
-    df_j=df_j.sort_values(by='mean',
-                          ascending=False)
-    return df_j.iloc[0].tolist()
 
-def add_pvalues(data,s_df,acc_dict,verbose=False):
-    base_cls= s_df[s_df['variant']=='-']
-    id_dict={  row_i['clf']:row_i['id'] 
-             for i,row_i in base_cls.iterrows()}
-    def helper(x):
-        if(x.variant=='-'):
-            return 1.0
-        if(not x.clf in id_dict):
-            return '-'
-        base_id=f'{data},{id_dict[x.clf]}'
-        x_id=f'{data},{x.id}'
-        return  acc_dict.pvalue(base_id,x_id)
-    s_df['pvalue']=s_df.apply( helper,axis=1)
-    s_df.drop('id', inplace=True, axis=1)
-    s_df=s_df[s_df['pvalue']!='-']
-    s_df['sig']=s_df['pvalue'].apply(lambda p: p<0.05)
-    if(verbose):
-        print(s_df.to_latex())
-    return s_df
 
-def show_impr(s_df):
-    base_cls= s_df[s_df['variant']=='-']
-    mean_dict={  row_i['clf']:row_i['mean'] 
-             for i,row_i in base_cls.iterrows()}
-    def helper(x):
-        if(x.variant=='-'):
-            return 0
-        return np.sign(x['mean']-mean_dict[x.clf] )
-    s_df['diff']=s_df.apply( helper,axis=1)
-    return s_df
+#def add_pvalues(data,s_df,acc_dict,verbose=False):
+#    base_cls= s_df[s_df['variant']=='-']
+#    id_dict={  row_i['clf']:row_i['id'] 
+#             for i,row_i in base_cls.iterrows()}
+#    def helper(x):
+#        if(x.variant=='-'):
+#            return 1.0
+#        if(not x.clf in id_dict):
+#            return '-'
+#        base_id=f'{data},{id_dict[x.clf]}'
+#        x_id=f'{data},{x.id}'
+#        return  acc_dict.pvalue(base_id,x_id)
+#    s_df['pvalue']=s_df.apply( helper,axis=1)
+#    s_df.drop('id', inplace=True, axis=1)
+#    s_df=s_df[s_df['pvalue']!='-']
+#    s_df['sig']=s_df['pvalue'].apply(lambda p: p<0.05)
+#    if(verbose):
+#        print(s_df.to_latex())
+#    return s_df
+
+#def show_impr(s_df):
+#    base_cls= s_df[s_df['variant']=='-']
+#    mean_dict={  row_i['clf']:row_i['mean'] 
+#             for i,row_i in base_cls.iterrows()}
+#    def helper(x):
+#        if(x.variant=='-'):
+#            return 0
+#        return np.sign(x['mean']-mean_dict[x.clf] )
+#    s_df['diff']=s_df.apply( helper,axis=1)
+#    return s_df
 
 if __name__ == '__main__':
     dir_path='../'
@@ -147,4 +170,5 @@ if __name__ == '__main__':
     if(os.path.isdir(args.pred)):
         single_exp=tools.dir_fun(2)(single_exp)
     df_dict=single_exp(args.pred,'out')
-#    sig_stats(df_dict)
+#    print(df_dict)
+    sort_df(df_dict)
