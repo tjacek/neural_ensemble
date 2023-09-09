@@ -13,7 +13,9 @@ def single_exp(pred_path,out_path):
 
     acc_reader=AccDictReader(['inliner',
                               '-cs',
-                              'LR','RF'])
+                              ['multi','base'],
+                              'LR',
+                              'RF'])
     acc_dict=acc_reader(pred_path,'acc') 
     df_i=acc_dict.to_df()
     df_i=df_i.sort_values(by='mean',
@@ -86,12 +88,13 @@ def sort_df(df_dict):
         if(sig_i and (not better)):
             subset['sig_worse'].append(result_i)
         if((not sig_i) and (not better)):
-            subset['insig_worse'].append(result_i)    
+            subset['insig_worse'].append(result_i)
     for subset_k in subset.values(): 
-        print("!!!!!!!!!!!!!")
-        for df_i,pvalue_i in subset_k:
-            print(to_latex(df_i))
-            print(to_latex(pvalue_i))
+        df_i,pvalue_i=zip(*subset_k)
+        df_i = pd.concat(df_i)
+        pvalue_i = pd.concat(pvalue_i)
+        print(to_latex(df_i))
+        print(to_latex(pvalue_i))
     for key_k,subset_k in subset.items():
         print(f'{key_k},{len(subset_k)}')
 
