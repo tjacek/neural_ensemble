@@ -47,6 +47,8 @@ class MetricDict(dict):
         return clf_dict
 
     def pvalue(self,id_x,id_y):
+        if( (not id_x in self) or (not id_y in self)):
+            raise Exception(f'{id_x}#{id_y}')
         r=stats.ttest_ind(self[id_x], 
                 self[id_y], equal_var=False)
         p_value=round(r[1],4)
@@ -68,8 +70,14 @@ class GenCol(object):
         return self.default
 
 class AccDictReader(object):
-    def __init__(self,taboo):
-        self.taboo=taboo
+    def __init__(self,pred):
+        new_pred=[]
+        for pred_i in pred:
+            if(type(pred_i)!=list ):
+                if(not ('~' in pred_i)):
+                    pred_i=[pred_i]
+            new_pred.append(pred_i)
+        self.pred=new_pred
 
     def __call__(self,pred_path,metric_i='acc'):
         metric_i=get_metric(metric_i)
@@ -85,8 +93,13 @@ class AccDictReader(object):
         return metric_dict
     
     def valid(self,id_i):
-        for taboo_j in self.taboo:
-            if(taboo_j in id_i):
+        for pred_j in self.pred:
+            if( type(pred_j)==list):
+                req_i=[ int(t in id_i) 
+                        for t in pred_j]
+                if(sum(req_i)==0):
+                    return False
+            elif(pred_j in id_i):
                 return False
         return True 
 

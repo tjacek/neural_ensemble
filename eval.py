@@ -11,10 +11,10 @@ import json
 
 def single_exp(pred_path,out_path):
 
-    acc_reader=AccDictReader(['inliner',
-                              '-cs',
-                              ['multi','base'],
-                              'LR',
+    acc_reader=AccDictReader(['~inliner',
+                              '~-cs',
+                              ['binary','base'],
+                              '~LR',
                               'RF'])
     acc_dict=acc_reader(pred_path,'acc') 
     df_i=acc_dict.to_df()
@@ -89,7 +89,8 @@ def sort_df(df_dict):
             subset['sig_worse'].append(result_i)
         if((not sig_i) and (not better)):
             subset['insig_worse'].append(result_i)
-    for subset_k in subset.values(): 
+    for subset_k in subset.values():
+        print(subset_k) 
         df_i,pvalue_i=zip(*subset_k)
         df_i = pd.concat(df_i)
         pvalue_i = pd.concat(pvalue_i)
