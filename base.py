@@ -4,3 +4,8 @@ class Experiment(object):
         self.params=params
         self.hyper_params=hyper_params
         self.model=model
+
+class Protocol(object):
+    def __init__(self,n_split=10,n_iters=10):
+        self.n_split=n_split
+        self.n_iters=n_iters
