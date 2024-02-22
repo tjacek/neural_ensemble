@@ -119,4 +119,10 @@ def find_alpha(alg_params,split,params,hyper_dict,verbose=1):
     return  alpha[best],all_exp[best]
 
 if __name__ == '__main__':
-    single_exp('../uci/wall_following')
+    in_path='../uci/wall-following'
+    X,y,params=data.get_data(in_path)
+    bayes_optim(alg_params=base.AlgParams(),
+                split=10,
+                params=params,
+                n_iter=5,
+                verbose=1)
