@@ -9,6 +9,10 @@ class Protocol(object):
     def __init__(self,n_split=10,n_iters=10):
         self.n_split=n_split
         self.n_iters=n_iters
+        self.current_split=None
+
+    def get_train(self,dataset):
+        return dataset.X[self.split],dataset.y[self.split]
 
 
 class AlgParams(object):

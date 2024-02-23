@@ -5,11 +5,19 @@ from sklearn import preprocessing
 from collections import Counter
 import utils
 
+class Dataset(object):
+    def __init__(self,X,y,params):
+        self.X=X
+        self.y=y
+        self.params=params
+
 def get_data(in_path):
     df=pd.read_csv(in_path)
     X,y=prepare_data(df,target=-1)
     params=get_dataset_params(X,y)
-    return X,y,params
+    return Dataset(X=X,
+                   y=y,
+                   params=params)
 
 def prepare_data(df,target=-1):
     to_numeric(df)

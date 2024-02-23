@@ -68,8 +68,8 @@ class EffBuilder(object):
         best['layers']=2
         return best
 
-def bayes_optim(alg_params,split,params,n_iter=5,verbose=1):
-    model_builder=get_builder(alg_params,params)
+def bayes_optim(dataset,alg_params,protocol,n_iter=5,verbose=1):
+    model_builder=get_builder(alg_params,dataset.params)
     tuner=kt.BayesianOptimization(model_builder,
                 objective='val_loss',
                 max_trials= alg_params.bayes_iter,
@@ -120,9 +120,9 @@ def find_alpha(alg_params,split,params,hyper_dict,verbose=1):
 
 if __name__ == '__main__':
     in_path='../uci/wall-following'
-    X,y,params=data.get_data(in_path)
-    bayes_optim(alg_params=base.AlgParams(),
-                split=10,
-                params=params,
+    dataset=data.get_data(in_path)
+    bayes_optim(dataset=dataset,
+                alg_params=base.AlgParams(),
+                protocol=base.Protocol(),
                 n_iter=5,
                 verbose=1)
