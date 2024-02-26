@@ -3,6 +3,7 @@ import pandas as pd
 from scipy.io import arff
 from sklearn import preprocessing
 from collections import Counter
+from collections import defaultdict
 import utils
 
 class Dataset(object):
@@ -10,6 +11,12 @@ class Dataset(object):
         self.X=X
         self.y=y
         self.params=params
+
+    def by_cat(self):
+        by_cat=defaultdict(lambda :[])
+        for i,cat_i in enumerate(self.y):
+            by_cat[cat_i].append(i)
+        return by_cat
 
 def get_data(in_path):
     df=pd.read_csv(in_path)

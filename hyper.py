@@ -74,15 +74,16 @@ def bayes_optim(dataset,alg_params,protocol,n_iter=5,verbose=1):
                 objective='val_loss',
                 max_trials= alg_params.bayes_iter,
                 overwrite=True)
-    x_train,y_train=split.get_train()
-    x_valid,y_valid=split.get_valid()
+    protocol.set_split(dataset)
+    x_train,y_train=protocol.current_split.get_train()
+    x_valid,y_valid=protocol.current_split.get_valid()
 #    class_weights = class_weight.compute_class_weight(class_weight='balanced',
 #                                                      classes=np.unique(y_train),
 #                                                      y=y_train)
     tuner.search(x=x_train, 
                  y=y_train, 
                  epochs=150,
-                 batch_size=params['batch'], 
+                 batch_size=dataset.params['batch'], 
                  validation_data=(x_valid, y_valid),
                  verbose=verbose,
                  callbacks=[alg_params.get_callback()])
@@ -121,8 +122,9 @@ def find_alpha(alg_params,split,params,hyper_dict,verbose=1):
 if __name__ == '__main__':
     in_path='../uci/wall-following'
     dataset=data.get_data(in_path)
-    bayes_optim(dataset=dataset,
-                alg_params=base.AlgParams(),
-                protocol=base.Protocol(),
-                n_iter=5,
-                verbose=1)
+    hyper_dict=bayes_optim(dataset=dataset,
+                           alg_params=base.AlgParams(),
+                           protocol=base.Protocol(),
+                           n_iter=5,
+                           verbose=1)
+    print(hyper_dict)
