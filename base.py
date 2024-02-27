@@ -1,13 +1,27 @@
 import tensorflow as tf
 import json,random
 
-
 class Experiment(object):
-    def __init__(self,split,params,hyper_params=None,model=None):
+    def __init__(self,split,hyper_params=None,model=None):
         self.split=split
-        self.params=params
         self.hyper_params=hyper_params
         self.model=model
+
+    def train(self):
+        params=self.split.dataset.params
+        x_train,y_train=self.split.get_train()
+        y_train=[tf.keras.utils.to_categorical(y_train) 
+                    for k in range(params['n_cats'])]
+        x_valid,y_valid=self.split.get_test()
+        y_valid=[tf.keras.utils.to_categorical(y_valid) 
+                    for k in range(params['n_cats'])]
+        self.model.fit(x=x_train,
+                       y=y_train,
+                       batch_size=params['batch'],
+                       epochs=alg_params.epochs,
+                       validation_data=(x_valid, y_valid),
+                       verbose=verbose,
+                       callbacks=alg_params.get_callback())
 
 class AlgParams(object):
     def __init__(self,hyper_type='eff',epochs=300,callbacks=None,alpha=None,
@@ -33,11 +47,18 @@ class Protocol(object):
         self.n_iters=n_iters
         self.current_split=None
 
+
+
     def set_split(self,dataset):
         train,test=self.gen_split(dataset)
         self.current_split=Split(dataset=dataset,
                                  train=train,
                                  test=test)
+
+    def iter(self,dataset):
+        for i in range(self.n_iters):
+            self.set_split(dataset)
+            yield self.current_split
 
     def gen_split(self,dataset):
         by_cat=dataset.by_cat()

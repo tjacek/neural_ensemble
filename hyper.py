@@ -68,7 +68,7 @@ class EffBuilder(object):
         best['layers']=2
         return best
 
-def bayes_optim(dataset,alg_params,protocol,n_iter=5,verbose=1):
+def bayes_optim(dataset,alg_params,protocol,verbose=1):
     model_builder=get_builder(alg_params,dataset.params)
     tuner=kt.BayesianOptimization(model_builder,
                 objective='val_loss',
@@ -125,6 +125,5 @@ if __name__ == '__main__':
     hyper_dict=bayes_optim(dataset=dataset,
                            alg_params=base.AlgParams(),
                            protocol=base.Protocol(),
-                           n_iter=5,
                            verbose=1)
     print(hyper_dict)
