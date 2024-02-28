@@ -1,27 +1,7 @@
 import tensorflow as tf
+import numpy as np
 import json,random
-
-class Experiment(object):
-    def __init__(self,split,hyper_params=None,model=None):
-        self.split=split
-        self.hyper_params=hyper_params
-        self.model=model
-
-    def train(self):
-        params=self.split.dataset.params
-        x_train,y_train=self.split.get_train()
-        y_train=[tf.keras.utils.to_categorical(y_train) 
-                    for k in range(params['n_cats'])]
-        x_valid,y_valid=self.split.get_test()
-        y_valid=[tf.keras.utils.to_categorical(y_valid) 
-                    for k in range(params['n_cats'])]
-        self.model.fit(x=x_train,
-                       y=y_train,
-                       batch_size=params['batch'],
-                       epochs=alg_params.epochs,
-                       validation_data=(x_valid, y_valid),
-                       verbose=verbose,
-                       callbacks=alg_params.get_callback())
+import data
 
 class AlgParams(object):
     def __init__(self,hyper_type='eff',epochs=300,callbacks=None,alpha=None,
@@ -46,8 +26,6 @@ class Protocol(object):
         self.n_split=n_split
         self.n_iters=n_iters
         self.current_split=None
-
-
 
     def set_split(self,dataset):
         train,test=self.gen_split(dataset)
@@ -87,3 +65,22 @@ class Split(object):
 
     def get_test(self):
         return self.dataset.X[self.test],self.dataset.y[self.test]
+
+    def to_ncscf(self,extractor):
+        all_splits=[]
+        for cs_i in extractor.predict(self.dataset.X):
+            feats_i=np.concatenate([self.dataset.X,cs_i],axis=1)
+            data_i=data.Dataset(X=feats_i,
+                                y=self.dataset.y,
+                                params=self.dataset.params)
+            split_i=Split(dataset=data_i,
+                          train=self.train,
+                          test=self.test)
+            all_splits.append(split_i)
+        return NECSCF(all_splits=all_splits)
+
+
+class NECSCF(object):
+    def __init__(self,all_splits):
+        self.all_splits=all_splits
+        self.clf=[]

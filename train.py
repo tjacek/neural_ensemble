@@ -1,14 +1,16 @@
-import base,data,deep
+import base,data,exp,deep
 
-def train_data(dataset,protocol,hyper_params):
+def train_data(dataset,protocol,alg_params,hyper_params):
     for split_i in protocol.iter(dataset):
         model_i=deep.ensemble_builder(params=dataset.params,
         	                          hyper_params=hyper_params,
         	                          alpha=0.5)
-        exp_i=base.Experiment(split=split_i,
+        exp_i=exp.Experiment(split=split_i,
         	                  hyper_params=hyper_params,
         	                  model=model_i)
-        exp_i.train()
+        exp_i.train(alg_params,
+        	        verbose=0)
+        exp_i.eval(alg_params)
 
 if __name__ == '__main__':
     in_path='../uci/wall-following'
