@@ -98,12 +98,23 @@ class NECSCF(object):
             self.clfs.append(clf_i)
 
     def eval(self):
-        acc=[]
+        votes=[]
         for split_i,clf_i in zip(self.all_splits,self.clfs):
             X_test,y_test=split_i.get_test()
-            y_pred=clf_i.predict(X_test)
-            acc.append(accuracy_score(y_test,y_pred)) 
-        return acc
+            votes.append(clf_i.predict_proba(X_test).T)
+        votes= np.array(votes)
+        y_pred= np.sum(votes,axis=0).T
+        y_pred=np.argmax(y_pred,axis=1)
+        return Result(y_true=y_test,
+                      y_pred=y_pred)
+
+class Result(object):
+    def __init__(self,y_true,y_pred):
+        self.y_true=y_true
+        self.y_pred=y_pred
+
+    def acc(self):
+        return accuracy_score(self.y_true,self.y_pred)
 
 def get_clf(name_i):
     if(type(name_i)!=str):
