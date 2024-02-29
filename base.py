@@ -1,6 +1,11 @@
 import tensorflow as tf
 import numpy as np
 import json,random
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import balanced_accuracy_score,classification_report,f1_score
+from sklearn import ensemble
+
 import data
 
 class AlgParams(object):
@@ -83,4 +88,28 @@ class Split(object):
 class NECSCF(object):
     def __init__(self,all_splits):
         self.all_splits=all_splits
-        self.clf=[]
+        self.clfs=[]
+
+    def train(self,clf_type="RF"):
+        for split_i in self.all_splits:
+            clf_i=get_clf(clf_type)
+            X_train,y_train=split_i.get_train()
+            clf_i.fit(X_train,y_train)
+            self.clfs.append(clf_i)
+
+    def eval(self):
+        acc=[]
+        for split_i,clf_i in zip(self.all_splits,self.clfs):
+            X_test,y_test=split_i.get_test()
+            y_pred=clf_i.predict(X_test)
+            acc.append(accuracy_score(y_test,y_pred)) 
+        return acc
+
+def get_clf(name_i):
+    if(type(name_i)!=str):
+        return name_i
+    if(name_i=="RF"):
+        return ensemble.RandomForestClassifier(class_weight='balanced_subsample')
+    if(name_i=="LR-imb"):
+        return LogisticRegression(solver='liblinear',
+            class_weight='balanced')
