@@ -55,6 +55,16 @@ class Protocol(object):
                     train.append(index)
         return train,test
 
+def gen_split(n_split,dataset,)
+    by_cat=dataset.by_cat()
+    train=[[] for i in range(n_split) ]
+    for cat_i,samples_i in by_cat.items():
+        random.shuffle(samples_i)
+        for j,index in enumerate(samples_i):
+            mod_j=(j%self.n_split)
+            train[mod_j].append(j)
+    return train
+
 class Split(object):
     def __init__(self,dataset,train,test):
         self.dataset=dataset
@@ -84,6 +94,14 @@ class Split(object):
             all_splits.append(split_i)
         return NECSCF(all_splits=all_splits)
 
+    def eval(self,clf_type):
+        clf_i=get_clf(clf_type)
+        X_train,y_train=self.get_train()
+        clf_i.fit(X_train,y_train)
+        X_test,y_test=self.get_test()
+        y_pred=clf_i.predict(X_test)
+        return Result(y_true=y_test,
+                      y_pred=y_pred)
 
 class NECSCF(object):
     def __init__(self,all_splits):
