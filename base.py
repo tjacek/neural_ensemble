@@ -44,26 +44,24 @@ class Protocol(object):
             yield self.current_split
 
     def gen_split(self,dataset):
-        by_cat=dataset.by_cat()
-        train,test=[],[]
-        for cat_i,samples_i in by_cat.items():
-            random.shuffle(samples_i)
-            for j,index in enumerate(samples_i):
-                if( (j% self.n_split)==0):
-                    test.append(index)
-                else:
-                    train.append(index)
-        return train,test
+        all_splits=gen_all_splits(self.n_split,dataset)
+        for i in range(self.n_split):
+            train_i=[]
+            for j in range(i):
+                if(i!=j):
+                    train_i+=all_splits[i]
+            test_i=all_splits[j]
+            yield train_i,test_i
 
-def gen_split(n_split,dataset,)
+def gen_all_splits(n_split,dataset)
     by_cat=dataset.by_cat()
-    train=[[] for i in range(n_split) ]
+    all_splits=[[] for i in range(n_split) ]
     for cat_i,samples_i in by_cat.items():
         random.shuffle(samples_i)
         for j,index in enumerate(samples_i):
             mod_j=(j%self.n_split)
-            train[mod_j].append(j)
-    return train
+            all_splits[mod_j].append(j)
+    return all_splits
 
 class Split(object):
     def __init__(self,dataset,train,test):
