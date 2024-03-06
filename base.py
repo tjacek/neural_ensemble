@@ -32,16 +32,20 @@ class Protocol(object):
         self.n_iters=n_iters
         self.current_split=None
 
-    def set_split(self,dataset):
-        train,test=self.gen_split(dataset)
-        self.current_split=Split(dataset=dataset,
-                                 train=train,
-                                 test=test)
+#    def set_split(self,dataset):
+#        train,test=self.gen_split(dataset)
+#        self.current_split=Split(dataset=dataset,
+#                                 train=train,
+#                                 test=test)
 
     def iter(self,dataset):
         for i in range(self.n_iters):
-            self.set_split(dataset)
-            yield self.current_split
+            for train_i,test_i in self.gen_split(dataset):
+                yield Split(dataset=dataset,
+                            train=train_i,
+                            test=test_i)
+#            self.set_split(dataset)
+#            yield self.current_split
 
     def gen_split(self,dataset):
         all_splits=gen_all_splits(self.n_split,dataset)
