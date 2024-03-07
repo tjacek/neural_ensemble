@@ -32,38 +32,30 @@ class Protocol(object):
         self.n_iters=n_iters
         self.current_split=None
 
-#    def set_split(self,dataset):
-#        train,test=self.gen_split(dataset)
-#        self.current_split=Split(dataset=dataset,
-#                                 train=train,
-#                                 test=test)
-
     def iter(self,dataset):
         for i in range(self.n_iters):
             for train_i,test_i in self.gen_split(dataset):
                 yield Split(dataset=dataset,
                             train=train_i,
                             test=test_i)
-#            self.set_split(dataset)
-#            yield self.current_split
 
     def gen_split(self,dataset):
         all_splits=gen_all_splits(self.n_split,dataset)
         for i in range(self.n_split):
             train_i=[]
-            for j in range(i):
+            for j in range(self.n_split):
                 if(i!=j):
-                    train_i+=all_splits[i]
-            test_i=all_splits[j]
+                    train_i+=all_splits[j]
+            test_i=all_splits[i]
             yield train_i,test_i
 
-def gen_all_splits(n_split,dataset)
+def gen_all_splits(n_split,dataset):
     by_cat=dataset.by_cat()
     all_splits=[[] for i in range(n_split) ]
     for cat_i,samples_i in by_cat.items():
         random.shuffle(samples_i)
         for j,index in enumerate(samples_i):
-            mod_j=(j%self.n_split)
+            mod_j=(j%n_split)
             all_splits[mod_j].append(j)
     return all_splits
 
@@ -104,6 +96,9 @@ class Split(object):
         y_pred=clf_i.predict(X_test)
         return Result(y_true=y_test,
                       y_pred=y_pred)
+
+    def __str__(self):
+        return f"{len(self.train)}:{len(self.test)}"
 
 class NECSCF(object):
     def __init__(self,all_splits):

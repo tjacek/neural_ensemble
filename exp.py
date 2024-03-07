@@ -15,6 +15,8 @@ class Experiment(object):
         x_valid,y_valid=self.split.get_test()
         y_valid=[tf.keras.utils.to_categorical(y_valid) 
                     for k in range(params['n_cats'])]
+        self.model.summary()
+        raise Exception(y_train)
         self.model.fit(x=x_train,
                        y=y_train,
                        batch_size=params['batch'],
@@ -26,7 +28,9 @@ class Experiment(object):
     def eval(self,alg_params):
         extractor=self.make_extractor()
         necscf=self.split.to_ncscf(extractor)
-        raise Exception(necscf)
+        necscf.train()
+        return necscf.eval()
+#        raise Exception(acc)
 
     def make_extractor(self):
         names= [ layer.name for layer in self.model.layers]

@@ -5,6 +5,8 @@ import base,data,exp,deep
 def train_data(dataset,protocol,alg_params,hyper_params):
     acc=[]
     for split_i in protocol.iter(dataset):
+        print(str(split_i))
+
         model_i=deep.ensemble_builder(params=dataset.params,
         	                          hyper_params=hyper_params,
         	                          alpha=0.5)
@@ -19,8 +21,8 @@ def train_data(dataset,protocol,alg_params,hyper_params):
     print(acc)
 
 def stat_sig(dataset,protocol,alg_params,hyper_params,clf_type="RF"):
-	rf_results,ne_results=[],[]
-	for split_i in protocol.iter(dataset):
+    rf_results,ne_results=[],[]
+    for split_i in protocol.iter(dataset):
         model_i=deep.ensemble_builder(params=dataset.params,
         	                          hyper_params=hyper_params,
         	                          alpha=0.5)
@@ -37,9 +39,7 @@ if __name__ == '__main__':
     dataset=data.get_data(in_path)
 #    hyper_params={'units_0': 204, 'units_1': 52, 'batch': 0, 'layers': 2}
     hyper_params={'units_0': 123, 'units_1': 65, 'batch': 0, 'layers': 2}
-
     hyper_dict=train_data(dataset=dataset,
                           protocol=base.Protocol(),
                           alg_params=base.AlgParams(),
-
                            hyper_params=hyper_params)
