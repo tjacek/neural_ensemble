@@ -2,14 +2,15 @@ import utils
 utils.silence_warnings()
 import base,data,exp,deep
 
-def train_data(dataset,protocol,alg_params,hyper_params):
+def train_data(dataset,protocol,alg_params,hyper_params,verbose=0):
     acc=[]
     for split_i in protocol.iter(dataset):
         print(str(split_i))
         exp_i=exp.make_exp(split_i,hyper_params)
         exp_i.train(alg_params,
-        	        verbose=0)
-        result_i=exp_i.eval(alg_params)
+        	        verbose=verbose)
+        result_i=exp_i.eval(alg_params,
+        	                clf_type="RF")
         result=exp_i.split.eval("RF")
         acc.append(result_i.acc()-result.acc())
     print(acc)
@@ -31,4 +32,5 @@ if __name__ == '__main__':
     hyper_dict=train_data(dataset=dataset,
                           protocol=base.Protocol(n_split=3,n_iters=3),
                           alg_params=base.AlgParams(),
-                           hyper_params=hyper_params)
+                          hyper_params=hyper_params,
+                          verbose=0)

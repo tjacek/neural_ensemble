@@ -1,5 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras import Input, Model
+import deep
 
 class Experiment(object):
     def __init__(self,split,hyper_params=None,model=None):
@@ -10,13 +11,15 @@ class Experiment(object):
     def train(self,alg_params,verbose=0):
         params=self.split.dataset.params
         x_train,y_train=self.split.get_train()
-        y_train=[tf.keras.utils.to_categorical(y_train) 
+        y_train=[tf.keras.utils.to_categorical(y_train,
+                                               num_classes=params['n_cats']) 
                     for k in range(params['n_cats'])]
         x_valid,y_valid=self.split.get_test()
-        y_valid=[tf.keras.utils.to_categorical(y_valid) 
+        y_valid=[tf.keras.utils.to_categorical(y_valid,
+                                               num_classes=params['n_cats']) 
                     for k in range(params['n_cats'])]
-        self.model.summary()
-        raise Exception(y_train)
+        if(verbose):
+            self.model.summary()
         self.model.fit(x=x_train,
                        y=y_train,
                        batch_size=params['batch'],
@@ -25,12 +28,11 @@ class Experiment(object):
                        verbose=verbose,
                        callbacks=alg_params.get_callback())
 
-    def eval(self,alg_params):
+    def eval(self,alg_params,clf_type="RF"):
         extractor=self.make_extractor()
         necscf=self.split.to_ncscf(extractor)
-        necscf.train()
+        necscf.train(clf_type=clf_type)
         return necscf.eval()
-#        raise Exception(acc)
 
     def make_extractor(self):
         names= [ layer.name for layer in self.model.layers]
@@ -40,3 +42,12 @@ class Experiment(object):
                     for name_i in penult]
         return Model(inputs=self.model.input,
                         outputs=layers)        
+
+def make_exp(split_i,hyper_params):
+    model_i=deep.ensemble_builder(params=split_i.dataset.params,
+                                  hyper_params=hyper_params,
+                                  alpha=0.5)
+    exp_i=Experiment(split=split_i,
+                     hyper_params=hyper_params,
+                     model=model_i)
+    return exp_i 
