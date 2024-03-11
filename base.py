@@ -5,7 +5,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import balanced_accuracy_score,classification_report,f1_score
 from sklearn import ensemble
-
+import itertools
 import data
 
 class AlgParams(object):
@@ -30,7 +30,15 @@ class Protocol(object):
     def __init__(self,n_split=10,n_iters=10):
         self.n_split=n_split
         self.n_iters=n_iters
-        self.current_split=None
+
+
+    def single_split(self,dataset):
+        all_splits=gen_all_splits(self.n_split,dataset)
+        train=list(itertools.chain.from_iterable(all_splits[:-1]))
+        test=all_splits[-1]
+        return Split(dataset=dataset,
+                     train=train,
+                     test=test)
 
     def iter(self,dataset):
         for i in range(self.n_iters):

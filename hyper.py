@@ -74,9 +74,9 @@ def bayes_optim(dataset,alg_params,protocol,verbose=1):
                 objective='val_loss',
                 max_trials= alg_params.bayes_iter,
                 overwrite=True)
-    protocol.set_split(dataset)
-    x_train,y_train=protocol.current_split.get_train()
-    x_valid,y_valid=protocol.current_split.get_valid()
+    split=protocol.single_split(dataset)
+    x_train,y_train=split.get_train()
+    x_valid,y_valid=split.get_valid()
 #    class_weights = class_weight.compute_class_weight(class_weight='balanced',
 #                                                      classes=np.unique(y_train),
 #                                                      y=y_train)
@@ -120,7 +120,7 @@ def find_alpha(alg_params,split,params,hyper_dict,verbose=1):
     return  alpha[best],all_exp[best]
 
 if __name__ == '__main__':
-    in_path='../uci/wall-following'
+    in_path='../uci/cleveland'
     dataset=data.get_data(in_path)
     hyper_dict=bayes_optim(dataset=dataset,
                            alg_params=base.AlgParams(),
