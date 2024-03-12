@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras import Input, Model
-import deep
+import deep,utils
 
 class Experiment(object):
     def __init__(self,split,hyper_params=None,model=None):
@@ -41,7 +41,15 @@ class Experiment(object):
         layers=[self.model.get_layer(name_i).output 
                     for name_i in penult]
         return Model(inputs=self.model.input,
-                        outputs=layers)        
+                        outputs=layers)
+
+    def save(self,out_path):
+        utils.make_dir(out_path)
+        self.model.save_weights(f'{out_path}/weights')
+#        np.save(f'{out_path}/train',self.split.train_ind)
+#        np.save(f'{out_path}/test',self.split.test_ind)
+        with open(f'{out_path}/info',"a") as f:
+            f.write(f'{str(self.hyper_params)}\n') 
 
 def make_exp(split_i,hyper_params):
     model_i=deep.ensemble_builder(params=split_i.dataset.params,

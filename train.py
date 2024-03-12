@@ -4,7 +4,8 @@ import base,data,exp,deep
 import numpy as np
 from scipy import stats
 
-def train_data(dataset,protocol,alg_params,hyper_params,verbose=0):
+def train_data(dataset,protocol,alg_params,hyper_params,
+	           verbose=0):
     acc=[]
     for split_i in protocol.iter(dataset):
         print(str(split_i))
@@ -17,14 +18,21 @@ def train_data(dataset,protocol,alg_params,hyper_params,verbose=0):
         acc.append(result_i.acc()-result.acc())
     print(acc)
 
-def stat_sig(dataset,protocol,alg_params,hyper_params,clf_type="RF",verbose=0):
+def stat_sig(dataset,protocol,alg_params,hyper_params,
+	         clf_type="RF",
+	         verbose=0,
+	         out_path=None):
+    if(out_path):
+        utils.make_dir(out_path)	
     rf_results,ne_results=[],[]
-    for split_i in protocol.iter(dataset):
+    for i,split_i in enumerate(protocol.iter(dataset)):
         exp_i=exp.make_exp(split_i,hyper_params)
         exp_i.train(alg_params,
         	        verbose=0)
         ne_results.append(  exp_i.eval(alg_params))        
         rf_results.append(exp_i.split.eval(clf_type))
+        if(out_path):
+            exp_i.save(f'{out_path}/{i}')	
     pvalue,clf_mean,ne_mean=compute_pvalue(rf_results,ne_results)
     print(f"{pvalue:.3f},{clf_mean:.3f},{ne_mean:.3f}")
 
@@ -40,7 +48,8 @@ if __name__ == '__main__':
 #    hyper_params={'units_0': 204, 'units_1': 52, 'batch': 0, 'layers': 2}
     hyper_params={'units_0': 123, 'units_1': 65, 'batch': 0, 'layers': 2}
     hyper_dict=stat_sig(dataset=dataset,
-                          protocol=base.Protocol(n_split=10,n_iters=10),
+                          protocol=base.Protocol(n_split=3,n_iters=3),
                           alg_params=base.AlgParams(),
                           hyper_params=hyper_params,
-                          verbose=0)
+                          verbose=0,
+                          out_path="test")
