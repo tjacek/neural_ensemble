@@ -1,11 +1,10 @@
 import tensorflow as tf
 import numpy as np
-import json,random
+import json#,random
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import balanced_accuracy_score,classification_report,f1_score
 from sklearn import ensemble
-import itertools
 import data
 
 class AlgParams(object):
@@ -27,45 +26,15 @@ class AlgParams(object):
                                                 patience=5)
 
 class Protocol(object):
-    def __init__(self,n_split=10,n_iters=10):
-        self.n_split=n_split
-        self.n_iters=n_iters
-
 
     def single_split(self,dataset):
-        all_splits=gen_all_splits(self.n_split,dataset)
-        train=list(itertools.chain.from_iterable(all_splits[:-1]))
-        test=all_splits[-1]
-        return Split(dataset=dataset,
-                     train=train,
-                     test=test)
+        raise NotImplementedError()
 
     def iter(self,dataset):
-        for i in range(self.n_iters):
-            for train_i,test_i in self.gen_split(dataset):
-                yield Split(dataset=dataset,
-                            train=train_i,
-                            test=test_i)
+        raise NotImplementedError()
 
-    def gen_split(self,dataset):
-        all_splits=gen_all_splits(self.n_split,dataset)
-        for i in range(self.n_split):
-            train_i=[]
-            for j in range(self.n_split):
-                if(i!=j):
-                    train_i+=all_splits[j]
-            test_i=all_splits[i]
-            yield train_i,test_i
-
-def gen_all_splits(n_split,dataset):
-    by_cat=dataset.by_cat()
-    all_splits=[[] for i in range(n_split) ]
-    for cat_i,samples_i in by_cat.items():
-        random.shuffle(samples_i)
-        for j,index in enumerate(samples_i):
-            mod_j=(j%n_split)
-            all_splits[mod_j].append(j)
-    return all_splits
+    def add_exp(self,exp_i):
+        raise NotImplementedError()  
 
 class Split(object):
     def __init__(self,dataset,train,test):

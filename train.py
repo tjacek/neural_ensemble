@@ -3,6 +3,7 @@ utils.silence_warnings()
 import base,data,exp,deep
 import numpy as np
 from scipy import stats
+import protocol
 
 def train_data(dataset,protocol,alg_params,hyper_params,
 	           verbose=0):
@@ -18,14 +19,14 @@ def train_data(dataset,protocol,alg_params,hyper_params,
         acc.append(result_i.acc()-result.acc())
     print(acc)
 
-def stat_sig(dataset,protocol,alg_params,hyper_params,
+def stat_sig(dataset,protocol_obj,alg_params,hyper_params,
 	         clf_type="RF",
 	         verbose=0,
 	         out_path=None):
     if(out_path):
         utils.make_dir(out_path)	
     rf_results,ne_results=[],[]
-    for i,split_i in enumerate(protocol.iter(dataset)):
+    for i,split_i in enumerate(protocol_obj.iter(dataset)):
         exp_i=exp.make_exp(split_i,hyper_params)
         exp_i.train(alg_params,
         	        verbose=0)
@@ -47,8 +48,10 @@ if __name__ == '__main__':
     dataset=data.get_data(in_path)
 #    hyper_params={'units_0': 204, 'units_1': 52, 'batch': 0, 'layers': 2}
     hyper_params={'units_0': 123, 'units_1': 65, 'batch': 0, 'layers': 2}
+    prot=protocol.BasicProtocol(n_split=3,
+    	                        n_iters=3)
     hyper_dict=stat_sig(dataset=dataset,
-                          protocol=base.Protocol(n_split=3,n_iters=3),
+                          protocol_obj=prot,#base.Protocol(n_split=3,n_iters=3),
                           alg_params=base.AlgParams(),
                           hyper_params=hyper_params,
                           verbose=0,
