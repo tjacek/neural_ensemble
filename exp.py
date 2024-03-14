@@ -59,3 +59,6 @@ def make_exp(split_i,hyper_params):
                      hyper_params=hyper_params,
                      model=model_i)
     return exp_i 
+
+#def read_exp(in_path):
+#    with open(f'{in_path}/info',"r") as f:
