@@ -5,19 +5,14 @@ import numpy as np
 from scipy import stats
 import protocol
 
-def train_data(dataset,protocol,alg_params,hyper_params,
-	           verbose=0):
-    acc=[]
-    for split_i in protocol.iter(dataset):
-        print(str(split_i))
+def train_data(dataset,protocol_obj,alg_params,hyper_params,
+	           out_path,verbose=0):
+    for split_i in protocol_obj.iter(dataset):
         exp_i=exp.make_exp(split_i,hyper_params)
         exp_i.train(alg_params,
         	        verbose=verbose)
-        result_i=exp_i.eval(alg_params,
-        	                clf_type="RF")
-        result=exp_i.split.eval("RF")
-        acc.append(result_i.acc()-result.acc())
-    print(acc)
+        protocol_obj.add_exp(exp_i)
+    protocol_obj.exp_group.save(out_path)
 
 def stat_sig(dataset,protocol_obj,alg_params,hyper_params,
 	         clf_type="RF",
@@ -50,9 +45,10 @@ if __name__ == '__main__':
     hyper_params={'units_0': 123, 'units_1': 65, 'batch': 0, 'layers': 2}
     prot=protocol.BasicProtocol(n_split=3,
     	                        n_iters=3)
-    hyper_dict=stat_sig(dataset=dataset,
-                          protocol_obj=prot,#base.Protocol(n_split=3,n_iters=3),
-                          alg_params=base.AlgParams(),
-                          hyper_params=hyper_params,
-                          verbose=0,
-                          out_path="test")
+    protocol.read_basic("new-3-3")
+#    hyper_dict=train_data(dataset=dataset,
+#                          protocol_obj=prot,#base.Protocol(n_split=3,n_iters=3),
+#                          alg_params=base.AlgParams(),
+#                          hyper_params=hyper_params,
+#                          verbose=0,
+#                          out_path="new-3-3")

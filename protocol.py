@@ -1,5 +1,6 @@
 import itertools,random
-import base
+import numpy as np
+import base,utils
 
 class BasicProtocol(base.Protocol):
     def __init__(self,n_split=10,n_iters=10):
@@ -24,7 +25,7 @@ class BasicProtocol(base.Protocol):
 
     def add_exp(self,exp_i):
         if(self.exp_group is None):
-            self.exp_group=BasicExpGroup(self.splits,self.n_iters)
+            self.exp_group=BasicExpGroup(self.n_split,self.n_iters)
         self.exp_group.add(exp_i)
 
     def gen_split(self,dataset):
@@ -61,3 +62,18 @@ class BasicExpGroup(object):
         if(self.current_split >self.n_split):
             self.current_split=0
             self.current_iter+=1
+
+
+    def save(self,out_path):
+        utils.make_dir(out_path)
+        for i,exp_split_i in  enumerate(self.all_exps):
+            utils.make_dir(f'{out_path}/{i}')
+            for j,exp_j in enumerate(exp_split_i):
+                path_j=f'{out_path}/{i}/{j}'
+                exp_j.save(path_j)
+                np.save(f'{path_j}/test',exp_j.split.test)
+
+def read_basic(in_path):
+    for path_i in utils.top_files(in_path):
+        paths_exp=utils.top_files(path_i)
+        print(paths_exp)
