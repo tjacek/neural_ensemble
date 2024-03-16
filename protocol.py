@@ -1,6 +1,6 @@
 import itertools,random
 import numpy as np
-import base,utils
+import base,data,exp,utils
 
 class BasicProtocol(base.Protocol):
     def __init__(self,n_split=10,n_iters=10):
@@ -73,7 +73,9 @@ class BasicExpGroup(object):
                 exp_j.save(path_j)
                 np.save(f'{path_j}/test',exp_j.split.test)
 
-def read_basic(in_path):
+def read_basic(in_path,dataset_path):
+    dataset=data.get_data(dataset_path)
     for path_i in utils.top_files(in_path):
-        paths_exp=utils.top_files(path_i)
-        print(paths_exp)
+        for exp_path_j in utils.top_files(path_i):
+            exp_j= exp.read_exp(exp_path_j,dataset)
+            print(type(exp_j))

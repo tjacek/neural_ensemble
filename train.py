@@ -45,7 +45,7 @@ if __name__ == '__main__':
     hyper_params={'units_0': 123, 'units_1': 65, 'batch': 0, 'layers': 2}
     prot=protocol.BasicProtocol(n_split=3,
     	                        n_iters=3)
-    protocol.read_basic("new-3-3")
+    protocol.read_basic("new-3-3",in_path)
 #    hyper_dict=train_data(dataset=dataset,
 #                          protocol_obj=prot,#base.Protocol(n_split=3,n_iters=3),
 #                          alg_params=base.AlgParams(),

@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras import Input, Model
-import deep,utils
+import base,deep,utils
 
 class Experiment(object):
     def __init__(self,split,hyper_params=None,model=None):
@@ -60,7 +60,14 @@ def make_exp(split_i,hyper_params):
                      model=model_i)
     return exp_i 
 
-def read_exp(in_path):
+def read_exp(in_path,dataset):
     with open(f'{in_path}/info',"r") as f:
         lines=f.readlines()
-        print(lines)
+        hyper_params=eval(lines[0])
+        model=deep.ensemble_builder(dataset.params,hyper_params)
+        split=base.Split(dataset=dataset,
+                         train=None,
+                         test=None)
+        return Experiment(split=split,
+                          hyper_params=hyper_params,
+                          model=model)
