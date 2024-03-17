@@ -7,6 +7,12 @@ class BasicProtocol(base.Protocol):
         self.n_split=n_split
         self.n_iters=n_iters
         self.exp_group=None
+    
+    def init_exp_group(self):
+        all_exps=[[] for _ in range(self.n_iters)]
+        self.exp_group=BasicExpGroup(all_exps=all_exps,
+                                     n_split=self.n_split,
+                                     n_iters=self.n_iters)
 
     def single_split(self,dataset):
         all_splits=gen_all_splits(self.n_split,dataset)
@@ -25,7 +31,7 @@ class BasicProtocol(base.Protocol):
 
     def add_exp(self,exp_i):
         if(self.exp_group is None):
-            self.exp_group=BasicExpGroup(self.n_split,self.n_iters)
+            self.init_exp_group()#self.exp_group=BasicExpGroup(self.n_split,self.n_iters)
         self.exp_group.add(exp_i)
 
     def gen_split(self,dataset):
@@ -38,6 +44,7 @@ class BasicProtocol(base.Protocol):
             test_i=all_splits[i]
             yield train_i,test_i
 
+
 def gen_all_splits(n_split,dataset):
     by_cat=dataset.by_cat()
     all_splits=[[] for i in range(n_split) ]
@@ -49,10 +56,10 @@ def gen_all_splits(n_split,dataset):
     return all_splits
 
 class BasicExpGroup(object):
-    def __init__(self,n_split=10,n_iters=10):
+    def __init__(self,all_exps,n_split=10,n_iters=10):
         self.n_split=n_split
         self.n_iters=n_iters
-        self.all_exps=[[] for _ in range(n_iters)]
+        self.all_exps=all_exps #[[] for _ in range(n_iters)]
         self.current_split=0
         self.current_iter=0
 
@@ -72,6 +79,7 @@ class BasicExpGroup(object):
                 path_j=f'{out_path}/{i}/{j}'
                 exp_j.save(path_j)
                 np.save(f'{path_j}/test',exp_j.split.test)
+
 
 def read_basic(in_path,dataset_path):
     dataset=data.get_data(dataset_path)
