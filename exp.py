@@ -1,4 +1,5 @@
 import tensorflow as tf
+import numpy as np
 from tensorflow.keras import Input, Model
 import base,deep,utils
 
@@ -65,9 +66,10 @@ def read_exp(in_path,dataset):
         lines=f.readlines()
         hyper_params=eval(lines[0])
         model=deep.ensemble_builder(dataset.params,hyper_params)
+        test=np.load(f'{in_path}/test.npy')
         split=base.Split(dataset=dataset,
                          train=None,
-                         test=None)
+                         test=test)
         return Experiment(split=split,
                           hyper_params=hyper_params,
                           model=model)

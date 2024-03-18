@@ -31,7 +31,7 @@ class BasicProtocol(base.Protocol):
 
     def add_exp(self,exp_i):
         if(self.exp_group is None):
-            self.init_exp_group()#self.exp_group=BasicExpGroup(self.n_split,self.n_iters)
+            self.init_exp_group()
         self.exp_group.add(exp_i)
 
     def gen_split(self,dataset):
@@ -59,7 +59,7 @@ class BasicExpGroup(object):
     def __init__(self,all_exps,n_split=10,n_iters=10):
         self.n_split=n_split
         self.n_iters=n_iters
-        self.all_exps=all_exps #[[] for _ in range(n_iters)]
+        self.all_exps=all_exps 
         self.current_split=0
         self.current_iter=0
 
@@ -70,6 +70,13 @@ class BasicExpGroup(object):
             self.current_split=0
             self.current_iter+=1
 
+    def eval(self,alg_params,clf_type="RF"):
+        acc=[]
+        for exp_i in self.all_exps:
+            for exp_j in exp_i:
+                result_j=exp_j.eval(alg_params,"RF")
+                acc.append(result_j.get_acc())
+        return acc
 
     def save(self,out_path):
         utils.make_dir(out_path)
@@ -83,7 +90,13 @@ class BasicExpGroup(object):
 
 def read_basic(in_path,dataset_path):
     dataset=data.get_data(dataset_path)
+    all_exps=[]
     for path_i in utils.top_files(in_path):
+        all_exps.append([])
         for exp_path_j in utils.top_files(path_i):
             exp_j= exp.read_exp(exp_path_j,dataset)
+            all_exps[-1].append(exp_j)
             print(type(exp_j))
+    return BasicExpGroup(all_exps=all_exps,
+                         n_split=len(all_exps),
+                         n_iters=len(all_exps[0]))
