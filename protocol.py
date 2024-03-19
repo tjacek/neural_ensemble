@@ -51,7 +51,7 @@ def gen_all_splits(n_split,dataset):
     for cat_i,samples_i in by_cat.items():
         random.shuffle(samples_i)
         for j,index in enumerate(samples_i):
-            mod_j=(j%n_split)
+            mod_j=(j%(n_split))
             all_splits[mod_j].append(j)
     return all_splits
 
@@ -66,7 +66,7 @@ class BasicExpGroup(object):
     def add(self,exp_i):
         self.all_exps[self.current_iter].append(exp_i)
         self.current_split+=1
-        if(self.current_split >self.n_split):
+        if(self.current_split>=self.n_split):
             self.current_split=0
             self.current_iter+=1
 
@@ -75,7 +75,7 @@ class BasicExpGroup(object):
         for exp_i in self.all_exps:
             for exp_j in exp_i:
                 result_j=exp_j.eval(alg_params,"RF")
-                acc.append(result_j.get_acc())
+                acc.append(result_j.acc())
         return acc
 
     def save(self,out_path):
@@ -96,7 +96,18 @@ def read_basic(in_path,dataset_path):
         for exp_path_j in utils.top_files(path_i):
             exp_j= exp.read_exp(exp_path_j,dataset)
             all_exps[-1].append(exp_j)
-            print(type(exp_j))
+        splits=[exp_i.split.test 
+                     for exp_i in all_exps[-1]]
+        for k,exp_k in enumerate(all_exps[-1]):
+            train_k=get_train(k,splits)
+            exp_k.split.train=train_k
     return BasicExpGroup(all_exps=all_exps,
                          n_split=len(all_exps),
                          n_iters=len(all_exps[0]))
+
+def get_train(k,splits):
+    train=[]
+    for i,split_i in enumerate(splits):
+        if(k!=i):
+            train+=list(split_i)
+    return np.array(train).astype(int)

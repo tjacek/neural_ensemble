@@ -70,6 +70,7 @@ def read_exp(in_path,dataset):
         split=base.Split(dataset=dataset,
                          train=None,
                          test=test)
+        print(split.test.dtype)
         return Experiment(split=split,
                           hyper_params=hyper_params,
                           model=model)
