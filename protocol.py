@@ -70,13 +70,10 @@ class BasicExpGroup(object):
             self.current_split=0
             self.current_iter+=1
 
-    def eval(self,alg_params,clf_type="RF"):
-        acc=[]
+    def iter(self):
         for exp_i in self.all_exps:
             for exp_j in exp_i:
-                result_j=exp_j.eval(alg_params,"RF")
-                acc.append(result_j.acc())
-        return acc
+                yield exp_j
 
     def save(self,out_path):
         utils.make_dir(out_path)
