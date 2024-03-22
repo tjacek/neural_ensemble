@@ -3,10 +3,16 @@ utils.silence_warnings()
 import base,data,exp,deep
 import numpy as np
 from scipy import stats
-import protocol
+import base,protocol,utils
 
-def train_data(dataset,protocol_obj,alg_params,hyper_params,
-	           out_path,verbose=0):
+@utils.dir_fun
+def train_data(in_path:str,
+	           out_path:str,
+	           protocol_obj:base.Protocol,
+	           alg_params:base.AlgParams,
+	           hyper_params:dict,
+	           verbose=0):
+    dataset=data.get_data(in_path)
     for split_i in protocol_obj.iter(dataset):
         exp_i=exp.make_exp(split_i,hyper_params)
         exp_i.train(alg_params,
@@ -41,20 +47,21 @@ def acc_stats(results):
     acc=[result_i.acc() for result_i in results]
     return f"mean:{np.mean(acc):.3f},std:{np.std(acc):.3f}"
 
+
 if __name__ == '__main__':
-    in_path='../uci/cleveland'
-    dataset=data.get_data(in_path)
+    in_path='../uci' #cleveland'
+   
 #    hyper_params={'units_0': 204, 'units_1': 52, 'batch': 0, 'layers': 2}
     hyper_params={'units_0': 123, 'units_1': 65, 'batch': 0, 'layers': 2}
     prot=protocol.BasicProtocol(n_split=3,
     	                        n_iters=3)
     alg_params=base.AlgParams()
-    exp_group=protocol.read_basic("new-3-3",in_path)
-    clf_comp(exp_group,alg_params,"RF")
+#    exp_group=protocol.read_basic("new-3-3",in_path)
+#    clf_comp(exp_group,alg_params,"RF")
 
-#    hyper_dict=train_data(dataset=dataset,
-#                          protocol_obj=prot,#base.Protocol(n_split=3,n_iters=3),
-#                          alg_params=base.AlgParams(),
-#                          hyper_params=hyper_params,
-#                          verbose=0,
-#                          out_path="new-3-3")
+    hyper_dict=train_data(in_path=in_path,
+    	                  out_path="../test",
+                          protocol_obj=prot,
+                          alg_params=base.AlgParams(),
+                          hyper_params=hyper_params,
+                          verbose=0)
