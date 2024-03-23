@@ -12,7 +12,9 @@ def train_data(in_path:str,
 	           alg_params:base.AlgParams,
 	           hyper_params:dict,
 	           verbose=0):
+    print(in_path)
     dataset=data.get_data(in_path)
+    protocol_obj.init_exp_group()
     for split_i in protocol_obj.iter(dataset):
         exp_i=exp.make_exp(split_i,hyper_params)
         exp_i.train(alg_params,

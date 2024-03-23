@@ -30,11 +30,11 @@ def dir_fun(fun):
         in_path,out_path=kwargs['in_path'],kwargs['out_path']
         make_dir(out_path)
         for in_i in top_files(in_path):
-            name_i=in_path.split('/')[-1]
+            name_i=in_i.split('/')[-1]
             out_i=f'{out_path}/{name_i}'
             args_i=kwargs.copy()
             args_i['in_path']=in_i
             args_i['out_path']=out_i
+            print(args_i)
             fun(*args ,**args_i)
-        return fun(*args,**kwargs)
     return decor_fun
