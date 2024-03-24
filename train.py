@@ -14,13 +14,19 @@ def train_data(in_path:str,
 	           verbose=0):
     print(in_path)
     dataset=data.get_data(in_path)
-    protocol_obj.init_exp_group()
-    for split_i in protocol_obj.iter(dataset):
+#    protocol_obj.init_exp_group()
+    exp_facade=protocol.ExpFacade(exp_path=out_path,
+                                  n_split=protocol_obj.n_split,
+                                  n_iters=protocol_obj.n_iters)
+    exp_facade.init_dir()
+    for i,j,split_i in protocol_obj.iter(dataset):
         exp_i=exp.make_exp(split_i,hyper_params)
         exp_i.train(alg_params,
         	        verbose=verbose)
-        protocol_obj.add_exp(exp_i)
-    protocol_obj.exp_group.save(out_path)
+        exp_facade.set(exp_i,i,j)
+#        print(exp_i)
+#        protocol_obj.add_exp(exp_i)
+#    protocol_obj.exp_group.save(out_path)
 
 def stat_sig(exp_group,alg_params,clf_type):
     rf_results,ne_results=[],[]
