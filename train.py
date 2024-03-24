@@ -28,9 +28,15 @@ def train_data(in_path:str,
 #        protocol_obj.add_exp(exp_i)
 #    protocol_obj.exp_group.save(out_path)
 
-def stat_sig(exp_group,alg_params,clf_type):
+def stat_sig(in_path:str,
+		     data_path:str,
+	         alg_params,
+	         clf_type):
+    dataset=data.get_data(data_path)
+    exp_facade=protocol.read_facade(in_path)
     rf_results,ne_results=[],[]
-    for exp_i in exp_group.iter():
+    for exp_i in exp_facade.iter(dataset):
+        print(exp_i)
         ne_results.append(  exp_i.eval(alg_params))        
         rf_results.append(exp_i.split.eval(clf_type))
     pvalue,clf_mean,ne_mean=compute_pvalue(rf_results,ne_results)
@@ -55,7 +61,6 @@ def acc_stats(results):
     acc=[result_i.acc() for result_i in results]
     return f"mean:{np.mean(acc):.3f},std:{np.std(acc):.3f}"
 
-
 if __name__ == '__main__':
     in_path='../uci' #cleveland'
    
@@ -65,11 +70,11 @@ if __name__ == '__main__':
     	                        n_iters=3)
     alg_params=base.AlgParams()
 #    exp_group=protocol.read_basic("new-3-3",in_path)
-#    clf_comp(exp_group,alg_params,"RF")
+    stat_sig("../test/cleveland","../uci/cleveland",alg_params,"RF")
 
-    hyper_dict=train_data(in_path=in_path,
-    	                  out_path="../test",
-                          protocol_obj=prot,
-                          alg_params=base.AlgParams(),
-                          hyper_params=hyper_params,
-                          verbose=0)
+#    hyper_dict=train_data(in_path=in_path,
+#    	                  out_path="../test",
+#                          protocol_obj=prot,
+#                          alg_params=base.AlgParams(),
+#                          hyper_params=hyper_params,
+#                          verbose=0)

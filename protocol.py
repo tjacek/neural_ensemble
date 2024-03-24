@@ -6,13 +6,6 @@ class BasicProtocol(base.Protocol):
     def __init__(self,n_split=10,n_iters=10):
         self.n_split=n_split
         self.n_iters=n_iters
-#        self.exp_group=None
-    
-#    def init_exp_group(self):
-#        all_exps=[[] for _ in range(self.n_iters)]
-#        self.exp_group=BasicExpGroup(all_exps=all_exps,
-#                                     n_split=self.n_split,
-#                                     n_iters=self.n_iters)
 
     def single_split(self,dataset):
         all_splits=gen_all_splits(self.n_split,dataset)
@@ -29,11 +22,6 @@ class BasicProtocol(base.Protocol):
                                     train=train_j,
                                     test=test_j)
                 yield i,j,split_ij
-
-#    def add_exp(self,exp_i):
-#        if(self.exp_group is None):
-#            self.init_exp_group()
-#        self.exp_group.add(exp_i)
 
     def gen_split(self,dataset):
         all_splits=gen_all_splits(self.n_split,dataset)
@@ -68,6 +56,11 @@ class ExpFacade(object):
         utils.make_dir(self.exp_path)
         for i in range(self.n_split):
             utils.make_dir(f'{self.exp_path}/{i}')
+    
+    def iter(self,dataset):
+        for i in range(self.n_iters):
+            for j in range(self.n_split):
+                yield self.get(dataset,i,j)
 
     def set(self,exp_ij,i,j):
         path_ij=f'{self.exp_path}/{i}/{j}'
@@ -77,7 +70,7 @@ class ExpFacade(object):
     def get(self,dataset,i,j):
         path_ij=f'{self.exp_path}/{i}/{j}'
         exp_ij= exp.read_exp(path_ij,dataset)
-        exp_ij.train=self.get_train(i,j)
+        exp_ij.split.train=self.get_train(i,j)
         return exp_ij
 
     def get_train(self,i,j):
@@ -87,58 +80,12 @@ class ExpFacade(object):
                 path_ik=f'{self.exp_path}/{i}/{k}'
                 train_k=np.load(f'{path_ik}/test.npy')
                 train+=list(train_k)
-        return np.array(train).astype(iny)
+        return np.array(train).astype(int)
 
-#class BasicExpGroup(object):
-#    def __init__(self,all_exps,n_split=10,n_iters=10):
-#        self.n_split=n_split
-#        self.n_iters=n_iters
-#        self.all_exps=all_exps 
-#        self.current_split=0
-#        self.current_iter=0
-
-#    def add(self,exp_i):
-#        self.all_exps[self.current_iter].append(exp_i)
-#        self.current_split+=1
-#        if(self.current_split>=self.n_split):
-#            self.current_split=0
-#            self.current_iter+=1
-
-#    def iter(self):
-#        for exp_i in self.all_exps:
-#            for exp_j in exp_i:
-#                yield exp_j
-
-#    def save(self,out_path):
-#        utils.make_dir(out_path)
-#        for i,exp_split_i in  enumerate(self.all_exps):
-#            utils.make_dir(f'{out_path}/{i}')
-#            for j,exp_j in enumerate(exp_split_i):
-#                path_j=f'{out_path}/{i}/{j}'
-#                exp_j.save(path_j)
-#                np.save(f'{path_j}/test',exp_j.split.test)
-
-
-#def read_basic(in_path,dataset_path):
-#    dataset=data.get_data(dataset_path)
-#    all_exps=[]
-#    for path_i in utils.top_files(in_path):
-#        all_exps.append([])
-#        for exp_path_j in utils.top_files(path_i):
-#            exp_j= exp.read_exp(exp_path_j,dataset)
-#            all_exps[-1].append(exp_j)
-#        splits=[exp_i.split.test 
-#                     for exp_i in all_exps[-1]]
-#        for k,exp_k in enumerate(all_exps[-1]):
-#            train_k=get_train(k,splits)
-#            exp_k.split.train=train_k
-#    return BasicExpGroup(all_exps=all_exps,
-#                         n_split=len(all_exps),
-#                         n_iters=len(all_exps[0]))
-
-#def get_train(k,splits):
-#    train=[]
-#    for i,split_i in enumerate(splits):
-#        if(k!=i):
-#            train+=list(split_i)
-#    return np.array(train).astype(int)
+def read_facade(in_path:str):
+    paths=utils.top_files(in_path)
+    n_iters=len(paths)
+    n_split=len(utils.top_files(paths[0]))
+    return ExpFacade(exp_path=in_path,
+                     n_split=n_iters,
+                     n_iters=n_split)
