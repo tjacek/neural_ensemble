@@ -4,10 +4,12 @@ import base,data,protocol
 
 def stat_sig(in_path:str,
 		     data_path:str,
-	         alg_params,
-	         clf_type):
-    dataset=data.get_data(data_path)
+	         alg_params=None,
+	         clf_type="RF"):
     exp_facade=protocol.read_facade(in_path)
+    dataset=data.get_data(data_path)
+    if(alg_params is None):
+        alg_params=base.AlgParams()
     rf_results,ne_results=[],[]
     for exp_i in exp_facade.iter(dataset):
         print(exp_i)
@@ -22,9 +24,17 @@ def compute_pvalue(clf_results,ne_results):
     pvalue=stats.ttest_ind(clf_acc,ne_acc,equal_var=False)[1]
     return pvalue,np.mean(clf_acc),np.mean(ne_acc)
 
-def clf_comp(exp_group,alg_params,clf_single="RF",clf_ne="LR"):
+def clf_comp(in_path:str,
+             data_path:str,
+             alg_params=None,
+             clf_single="RF",
+             clf_ne="LR"):
+    exp_facade=protocol.read_facade(in_path)
+    dataset=data.get_data(data_path)
+    if(alg_params is None):
+        alg_params=base.AlgParams()
     clf_results,ne_results=[],[]
-    for exp_i in exp_group.iter():
+    for exp_i in exp_facade.iter(dataset):
         ne_results.append(exp_i.eval(alg_params,
                                      clf_type=clf_single))        
         clf_results.append(exp_i.split.eval(clf_type=clf_single))
@@ -36,5 +46,4 @@ def acc_stats(results):
     return f"mean:{np.mean(acc):.3f},std:{np.std(acc):.3f}"
 
 if __name__ == '__main__':
-    alg_params=base.AlgParams()
-    stat_sig("../test/cleveland","../uci/cleveland",alg_params,"RF")
+    clf_comp("../test/cleveland","../uci/cleveland",)
