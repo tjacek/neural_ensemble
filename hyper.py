@@ -1,11 +1,13 @@
+import utils
+utils.silence_warnings()
 import numpy as np
 import tensorflow.keras
 import tensorflow as tf
 from tensorflow.keras import Input, Model
 import keras_tuner as kt
 from sklearn.utils import class_weight
-import argparse
-import base,deep,data
+import argparse,json
+import base,deep,data,protocol
 
 class MultiKTBuilder(object): 
     def __init__(self,params):
@@ -119,11 +121,19 @@ def find_alpha(alg_params,split,params,hyper_dict,verbose=1):
     best=np.argmax(acc)
     return  alpha[best],all_exp[best]
 
-if __name__ == '__main__':
-    in_path='../uci/cleveland'
+@utils.dir_fun
+def mult_exp(in_path,out_path):
+    print(out_path)
     dataset=data.get_data(in_path)
     hyper_dict=bayes_optim(dataset=dataset,
                            alg_params=base.AlgParams(),
-                           protocol=base.Protocol(),
-                           verbose=1)
-    print(hyper_dict)
+                           protocol=protocol.BasicProtocol(),
+                            verbose=1)
+    with open(out_path, 'w') as fp:
+        json.dump(hyper_dict, fp)                          
+
+if __name__ == '__main__':
+    in_path='../uci/cleveland'
+    mult_exp(in_path='../uci',out_path='../hyper')
+#   
+#    print(hyper_dict)
