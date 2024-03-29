@@ -121,19 +121,20 @@ def find_alpha(alg_params,split,params,hyper_dict,verbose=1):
     best=np.argmax(acc)
     return  alpha[best],all_exp[best]
 
-@utils.dir_fun
-def mult_exp(in_path,out_path):
-    print(out_path)
-    dataset=data.get_data(in_path)
+@utils.DirFun([("data_path",0),("hyper_path",1)])
+def mult_exp(data_path,hyper_path):
+    print(data_path)
+    dataset=data.get_data(data_path)
     hyper_dict=bayes_optim(dataset=dataset,
                            alg_params=base.AlgParams(),
                            protocol=protocol.BasicProtocol(),
-                            verbose=1)
-    with open(out_path, 'w') as fp:
+                           verbose=1)
+    with open(hyper_path, 'w') as fp:
         json.dump(hyper_dict, fp)                          
+    return hyper_dict
 
 if __name__ == '__main__':
     in_path='../uci/cleveland'
-    mult_exp(in_path='../uci',out_path='../hyper')
+    mult_exp(data_path='../uci',hyper_path='../hyper')
 #   
 #    print(hyper_dict)

@@ -24,17 +24,36 @@ def top_files(path):
     paths=sorted(paths)
     return paths
 
-def dir_fun(fun):
-    @wraps(fun)
-    def decor_fun(*args, **kwargs):
-        in_path,out_path=kwargs['in_path'],kwargs['out_path']
-        make_dir(out_path)
-        for in_i in top_files(in_path):
-            name_i=in_i.split('/')[-1]
-            out_i=f'{out_path}/{name_i}'
-            args_i=kwargs.copy()
-            args_i['in_path']=in_i
-            args_i['out_path']=out_i
-            print(args_i)
-            fun(*args ,**args_i)
-    return decor_fun
+class DirFun(object):
+    def __init__(self,dir_args=None):
+        if(dir_args is None):
+            dir_args=[("in_path",0)]
+        self.dir_args=dir_args
+
+    def __call__(self, fun):#*args, **kwargs):
+        @wraps(fun)
+        def decor_fun(*args, **kwargs):
+            in_path=self.get_input(*args, **kwargs)
+            for in_i in top_files(in_path):
+                id_i=in_i.split('/')[-1]
+                new_args,new_kwargs=self.new_args(id_i,*args, **kwargs)
+                fun(*new_args, **new_kwargs)
+        return decor_fun 
+    
+    def get_input(self,*args, **kwargs):
+        name,i=self.dir_args[0]
+        if(name in kwargs):
+            return kwargs[name]
+        return args[i]
+
+    def new_args(self,id_k,*args, **kwargs):
+        new_args=list(args).copy()
+        new_kwargs=kwargs.copy()
+        for name_i,i in self.dir_args:
+            if(name_i in kwargs):
+                value_i=kwargs[name_i]
+                new_kwargs[name_i]=f"{value_i}/{id_k}"
+            else:
+                value_i=args[name_i]
+                new_args[name_i]=f"{value_i}/{id_k}"
+        return tuple(new_args),new_kwargs
