@@ -4,16 +4,17 @@ import base,data,exp,deep
 import numpy as np
 import base,protocol,utils
 
-@utils.dir_fun
-def train_data(in_path:str,
+@utils.DirFun([("data_path",0),("hyper_path",1),(out_path,2)])
+def train_data(data_path:str,
+	           hyper_path:str,
 	           out_path:str,
 	           protocol_obj:base.Protocol,
 	           alg_params:base.AlgParams,
-	           hyper_params:dict,
+#	           hyper_params:dict,
 	           verbose=0):
     print(in_path)
-    dataset=data.get_data(in_path)
-#    protocol_obj.init_exp_group()
+    dataset=data.get_data(data_path)
+    hyper_params=read_hyper(hyper_path)
     exp_facade=protocol.ExpFacade(exp_path=out_path,
                                   n_split=protocol_obj.n_split,
                                   n_iters=protocol_obj.n_iters)
@@ -28,8 +29,8 @@ if __name__ == '__main__':
     in_path='../uci' #cleveland'
 #    hyper_params={'units_0': 204, 'units_1': 52, 'batch': 0, 'layers': 2}
     hyper_params={'units_0': 123, 'units_1': 65, 'batch': 0, 'layers': 2}
-    prot=protocol.BasicProtocol(n_split=3,
-    	                        n_iters=3)
+    prot=protocol.BasicProtocol(n_split=10,
+    	                        n_iters=10)
     alg_params=base.AlgParams()
 
     hyper_dict=train_data(in_path=in_path,
