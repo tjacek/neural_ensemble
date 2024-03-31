@@ -44,14 +44,6 @@ class Experiment(object):
         return Model(inputs=self.model.input,
                         outputs=layers)
 
-    def save(self,out_path):
-        utils.make_dir(out_path)
-        self.model.save_weights(f'{out_path}/weights')
-#        np.save(f'{out_path}/train',self.split.train_ind)
-#        np.save(f'{out_path}/test',self.split.test_ind)
-        with open(f'{out_path}/info',"a") as f:
-            f.write(f'{str(self.hyper_params)}\n') 
-
 def make_exp(split_i,hyper_params):
     model_i=deep.ensemble_builder(params=split_i.dataset.params,
                                   hyper_params=hyper_params,
@@ -61,15 +53,24 @@ def make_exp(split_i,hyper_params):
                      model=model_i)
     return exp_i 
 
-def read_exp(in_path,dataset):
-    with open(f'{in_path}/info',"r") as f:
-        lines=f.readlines()
-        hyper_params=eval(lines[0])
-        model=deep.ensemble_builder(dataset.params,hyper_params)
-        test=np.load(f'{in_path}/test.npy')
-        split=base.Split(dataset=dataset,
-                         train=None,
-                         test=test)
-        return Experiment(split=split,
-                          hyper_params=hyper_params,
-                          model=model)
+
+class NetworkIO(object):
+
+    def read(self,in_path,dataset):
+        with open(f'{in_path}/info',"r") as f:
+            lines=f.readlines()
+            hyper_params=eval(lines[0])
+            model=deep.ensemble_builder(dataset.params,hyper_params)
+            test=np.load(f'{in_path}/test.npy')
+            split=base.Split(dataset=dataset,
+                            train=None,
+                            test=test)
+            return Experiment(split=split,
+                                hyper_params=hyper_params,
+                                model=model)
+
+    def save(self,exp,out_path):
+        utils.make_dir(out_path)
+        exp.model.save_weights(f'{out_path}/weights')
+        with open(f'{out_path}/info',"a") as f:
+            f.write(f'{str(self.hyper_params)}\n') 
