@@ -54,9 +54,13 @@ def make_exp(split_i,hyper_params):
     return exp_i 
 
 
-class NetworkIO(object):
+class NNetIO(object):
 
-    def read(self,in_path,dataset):
+    def read(self,in_path,dataset,clf_type="RF"):    
+        exp_i= self.read_exp(in_path,dataset)
+        return exp_i.split.eval(clf_type)
+
+    def read_exp(self,in_path,dataset):
         with open(f'{in_path}/info',"r") as f:
             lines=f.readlines()
             hyper_params=eval(lines[0])
@@ -72,5 +76,16 @@ class NetworkIO(object):
     def save(self,exp,out_path):
         utils.make_dir(out_path)
         exp.model.save_weights(f'{out_path}/weights')
+        with open(f'{out_path}/info',"a") as f:
+            f.write(f'{str(self.hyper_params)}\n') 
+
+class FeatIO(object):
+    def __init__(self,clf_type="RF"):
+        self.clf_type=clf_type
+
+    def save(self,exp,out_path):
+        utils.make_dir(out_path)
+        for i,cs_i in enumerate(extractor.predict(self.dataset.X)):
+            np.save(f'{out_path}/{i}',cs_i)
         with open(f'{out_path}/info',"a") as f:
             f.write(f'{str(self.hyper_params)}\n') 
