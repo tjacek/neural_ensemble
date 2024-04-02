@@ -2,7 +2,27 @@ import itertools,random
 import numpy as np
 import base,data,exp,utils
 
-class BasicProtocol(base.Protocol):
+class Protocol(object):
+    def __init__(self,io_type,
+                      split_gen=None,
+                      alg_params=None):
+        if(split_gen is None):
+            split_gen=SplitGenerator(n_split=3,
+                                     n_iters=3)
+        if(alg_params is None):
+            alg_params=base.AlgParams()
+        self.io_type=io_type
+        self.split_gen=split_gen
+        self.alg_params=alg_params
+       
+
+    def get_group(self,exp_path):
+        return ExpFacade(exp_path=exp_path,
+                         io_type=self.io_type,
+                         n_split=self.split_gen.n_split,
+                         n_iters=self.split_gen.n_iters)
+
+class SplitGenerator(base.Protocol):
     def __init__(self,n_split=10,n_iters=10):
         self.n_split=n_split
         self.n_iters=n_iters
@@ -44,11 +64,13 @@ def gen_all_splits(n_split,dataset):
             all_splits[mod_j].append(j)
     return all_splits
 
-class ExpFacade(object):
+class ExpGroup(object):
     def __init__(self,exp_path:str,
+                      io_type,
                       n_split=10,
                       n_iters=10):
         self.exp_path=exp_path
+        self.io_type=io_type
         self.n_split=n_split
         self.n_iters=n_iters
 
