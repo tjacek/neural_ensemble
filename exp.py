@@ -77,7 +77,7 @@ class NNetIO(object):
         utils.make_dir(out_path)
         exp.model.save_weights(f'{out_path}/weights')
         with open(f'{out_path}/info',"a") as f:
-            f.write(f'{str(self.hyper_params)}\n') 
+            f.write(f'{str(exp.hyper_params)}\n') 
 
 class FeatIO(object):
     def __init__(self,clf_type="RF"):

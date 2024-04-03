@@ -16,13 +16,13 @@ class Protocol(object):
         self.alg_params=alg_params
        
 
-    def get_group(self,exp_path):
-        return ExpFacade(exp_path=exp_path,
+    def get_group(self,exp_path:str):
+        return ExpGroup(exp_path=exp_path,
                          io_type=self.io_type,
                          n_split=self.split_gen.n_split,
                          n_iters=self.split_gen.n_iters)
 
-class SplitGenerator(base.Protocol):
+class SplitGenerator(object):
     def __init__(self,n_split=10,n_iters=10):
         self.n_split=n_split
         self.n_iters=n_iters
@@ -86,7 +86,8 @@ class ExpGroup(object):
 
     def set(self,exp_ij,i,j):
         path_ij=f'{self.exp_path}/{i}/{j}'
-        exp_ij.save(path_ij)
+#        exp_ij.save(path_ij)
+        self.io_type.save(exp_ij,path_ij)
         np.save(f'{path_ij}/test',exp_ij.split.test)
 
     def get(self,dataset,i,j):
