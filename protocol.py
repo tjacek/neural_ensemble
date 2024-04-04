@@ -64,37 +64,29 @@ def gen_all_splits(n_split,dataset):
             all_splits[mod_j].append(j)
     return all_splits
 
-class ExpGroup(object):
+class ExpIO(object):
     def __init__(self,exp_path:str,
-                      io_type,
+#                      io_type,
                       n_split=10,
                       n_iters=10):
         self.exp_path=exp_path
-        self.io_type=io_type
+#        self.io_type=io_type
         self.n_split=n_split
         self.n_iters=n_iters
 
     def init_dir(self):
         utils.make_dir(self.exp_path)
-        for i in range(self.n_split):
+        for i in range(self.n_iters):
             utils.make_dir(f'{self.exp_path}/{i}')
-    
-    def iter(self,dataset):
+
+    def iter_paths(self):
         for i in range(self.n_iters):
             for j in range(self.n_split):
-                yield self.get(dataset,i,j)
+                yield i,j,f'{self.exp_path}/{i}'
 
-    def set(self,exp_ij,i,j):
-        path_ij=f'{self.exp_path}/{i}/{j}'
-#        exp_ij.save(path_ij)
-        self.io_type.save(exp_ij,path_ij)
-        np.save(f'{path_ij}/test',exp_ij.split.test)
-
-    def get(self,dataset,i,j):
-        path_ij=f'{self.exp_path}/{i}/{j}'
-        exp_ij= exp.read_exp(path_ij,dataset)
-        exp_ij.split.train=self.get_train(i,j)
-        return exp_ij
+    def iter_result(self,dataset):
+        for i,j,path_ij in self.iter_paths():
+            yield self.get_result(i,j,path_ij)
 
     def get_train(self,i,j):
         train=[]
@@ -105,10 +97,68 @@ class ExpGroup(object):
                 train+=list(train_k)
         return np.array(train).astype(int)
 
-def read_facade(in_path:str):
-    paths=utils.top_files(in_path)
-    n_iters=len(paths)
-    n_split=len(utils.top_files(paths[0]))
-    return ExpFacade(exp_path=in_path,
-                     n_split=n_iters,
-                     n_iters=n_split)
+class NNetIO(ExpIO):
+    def get_exp(self,i,j,path):
+        with open(f'{in_path}/info',"r") as f:
+            lines=f.readlines()
+            hyper_params=eval(lines[0])
+            model=deep.ensemble_builder(dataset.params,hyper_params)
+            train=self.get_train(i,j)
+            test=np.load(f'{in_path}/test.npy')
+            split=base.Split(dataset=dataset,
+                            train=train,
+                            test=test)
+            return Experiment(split=split,
+                                hyper_params=hyper_params,
+                                model=model)
+
+    def get_result(self,i,j,path,clf_type):
+        exp_ij=self.get_exp(i,j,path)
+        return exp_i.split.eval(clf_type)
+#class ExpGroup(object):
+#    def __init__(self,exp_path:str,
+#                      io_type,
+#                      n_split=10,
+#                      n_iters=10):
+#        self.exp_path=exp_path
+#        self.io_type=io_type
+#        self.n_split=n_split
+#        self.n_iters=n_iters
+
+#    def init_dir(self):
+#        utils.make_dir(self.exp_path)
+#        for i in range(self.n_split):
+#            utils.make_dir(f'{self.exp_path}/{i}')
+    
+#    def iter(self,dataset):
+#        for i in range(self.n_iters):
+#            for j in range(self.n_split):
+#                yield self.get(dataset,i,j)
+
+#    def set(self,exp_ij,i,j):
+#        path_ij=f'{self.exp_path}/{i}/{j}'
+#        self.io_type.save(exp_ij,path_ij)
+#        np.save(f'{path_ij}/test',exp_ij.split.test)
+
+#    def get(self,dataset,i,j):
+#        path_ij=f'{self.exp_path}/{i}/{j}'
+#        exp_ij= exp.read_exp(path_ij,dataset)
+#        exp_ij.split.train=self.get_train(i,j)
+#        return exp_ij
+
+#    def get_train(self,i,j):
+#        train=[]
+#        for k in range(self.n_iters):
+#            if(k!=j):
+#                path_ik=f'{self.exp_path}/{i}/{k}'
+#                train_k=np.load(f'{path_ik}/test.npy')
+#                train+=list(train_k)
+#        return np.array(train).astype(int)
+
+#def read_facade(in_path:str):
+#    paths=utils.top_files(in_path)
+#    n_iters=len(paths)
+#    n_split=len(utils.top_files(paths[0]))
+#    return ExpFacade(exp_path=in_path,
+#                     n_split=n_iters,
+#                     n_iters=n_split)
