@@ -17,8 +17,8 @@ class Protocol(object):
        
 
     def get_group(self,exp_path:str):
-        return ExpGroup(exp_path=exp_path,
-                         io_type=self.io_type,
+        return ExpIO(exp_path=exp_path,
+#                         io_type=self.io_type,
                          n_split=self.split_gen.n_split,
                          n_iters=self.split_gen.n_iters)
 

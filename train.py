@@ -16,14 +16,10 @@ def train_data(data_path:str,
     dataset=data.get_data(data_path)
     hyper_params=read_hyper(hyper_path)
     exp_group= protocol_obj.get_group(exp_path=out_path)
-
-#    protocol.ExpFacade(exp_path=out_path,
-#                                  n_split=protocol_obj.n_split,
-#                                  n_iters=protocol_obj.n_iters)
     exp_group.init_dir()
     for i,j,split_i in protocol_obj.split_gen.iter(dataset):
         exp_i=exp.make_exp(split_i,hyper_params)
-        exp_i.train(alg_params,
+        exp_i.train(protocol_obj.alg_params,
         	        verbose=verbose)
         exp_group.set(exp_i,i,j)
 
@@ -35,13 +31,9 @@ if __name__ == '__main__':
     in_path='../uci' #cleveland'
 #    hyper_params={'units_0': 204, 'units_1': 52, 'batch': 0, 'layers': 2}
     hyper_params={'units_0': 123, 'units_1': 65, 'batch': 0, 'layers': 2}
-    
-
     prot=protocol.Protocol(io_type=exp.NNetIO(),
                            split_gen=protocol.SplitGenerator(n_split=3,
                                                              n_iters=3))
-    alg_params=base.AlgParams()
-
     hyper_dict=train_data(data_path=in_path,
     	                  hyper_path='../hyper',
     	                  out_path="../test2",
