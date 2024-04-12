@@ -31,7 +31,7 @@ if __name__ == '__main__':
     in_path='../uci' #cleveland'
 #    hyper_params={'units_0': 204, 'units_1': 52, 'batch': 0, 'layers': 2}
     hyper_params={'units_0': 123, 'units_1': 65, 'batch': 0, 'layers': 2}
-    prot=protocol.Protocol(io_type=exp.NNetIO(),
+    prot=protocol.Protocol(io_type=protocol.NNetIO,
                            split_gen=protocol.SplitGenerator(n_split=3,
                                                              n_iters=3))
     hyper_dict=train_data(data_path=in_path,

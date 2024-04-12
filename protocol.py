@@ -17,10 +17,10 @@ class Protocol(object):
        
 
     def get_group(self,exp_path:str):
-        return ExpIO(exp_path=exp_path,
+        return self.io_type(exp_path=exp_path,
 #                         io_type=self.io_type,
-                         n_split=self.split_gen.n_split,
-                         n_iters=self.split_gen.n_iters)
+                            n_split=self.split_gen.n_split,
+                            n_iters=self.split_gen.n_iters)
 
 class SplitGenerator(object):
     def __init__(self,n_split=10,n_iters=10):
@@ -66,7 +66,6 @@ def gen_all_splits(n_split,dataset):
 
 class ExpIO(object):
     def __init__(self,exp_path:str,
-#                      io_type,
                       n_split=10,
                       n_iters=10):
         self.exp_path=exp_path
@@ -97,7 +96,19 @@ class ExpIO(object):
                 train+=list(train_k)
         return np.array(train).astype(int)
 
+    def set(self,exp_ij,i,j):
+        path_ij=f'{self.exp_path}/{i}/{j}'
+        self.save(exp_ij,path_ij)
+        np.save(f'{path_ij}/test',exp_ij.split.test)
+
 class NNetIO(ExpIO):
+#    def __init__(self,exp_path:str,
+#                      n_split=10,
+#                      n_iters=10):
+#        super(self).__init__(exp_path=exp_path,
+#                             n_split=n_split,
+#                             n_iters=n_iters)
+
     def get_exp(self,i,j,path):
         with open(f'{in_path}/info',"r") as f:
             lines=f.readlines()
@@ -115,6 +126,13 @@ class NNetIO(ExpIO):
     def get_result(self,i,j,path,clf_type):
         exp_ij=self.get_exp(i,j,path)
         return exp_i.split.eval(clf_type)
+
+    def save(self,exp,out_path):
+        utils.make_dir(out_path)
+        exp.model.save_weights(f'{out_path}/weights')
+        with open(f'{out_path}/info',"a") as f:
+            f.write(f'{str(exp.hyper_params)}\n') 
+
 #class ExpGroup(object):
 #    def __init__(self,exp_path:str,
 #                      io_type,
