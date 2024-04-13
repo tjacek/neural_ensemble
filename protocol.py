@@ -102,12 +102,6 @@ class ExpIO(object):
         np.save(f'{path_ij}/test',exp_ij.split.test)
 
 class NNetIO(ExpIO):
-#    def __init__(self,exp_path:str,
-#                      n_split=10,
-#                      n_iters=10):
-#        super(self).__init__(exp_path=exp_path,
-#                             n_split=n_split,
-#                             n_iters=n_iters)
 
     def get_exp(self,i,j,path):
         with open(f'{in_path}/info',"r") as f:
