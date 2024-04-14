@@ -5,12 +5,16 @@ import base,data,protocol,utils
 @utils.DirFun([("data_path",0),("model_path",1)])
 def stat_sig(data_path:str,
              model_path:str,
-             protocol_obj:protocol.Protocol):
+             protocol_obj:protocol.Protocol,
+             clf_type="RF"):
     dataset=data.get_data(data_path)
     exp_group= protocol_obj.get_group(exp_path=model_path)
-    for result_i in exp_group.iter_result(dataset):
-        print(result_i)
-
+    rf_results,ne_results=[],[]
+    for exp_ij in exp_group.iter_exp(dataset):
+        ne_results.append(exp_ij.eval(protocol_obj.alg_params))        
+        rf_results.append(exp_ij.split.eval(clf_type))
+    pvalue,clf_mean,ne_mean=compute_pvalue(rf_results,ne_results)
+    print(f"pvalue:{pvalue:.3f},clf:{clf_mean:.3f},ne:{ne_mean:.3f}")    
 #def stat_sig(in_path:str,
 #		     data_path:str,
 #	         alg_params=None,
