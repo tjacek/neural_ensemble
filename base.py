@@ -25,17 +25,6 @@ class AlgParams(object):
         return tf.keras.callbacks.EarlyStopping(monitor='val_loss', 
                                                 patience=5)
 
-class Protocol(object):
-
-    def single_split(self,dataset):
-        raise NotImplementedError()
-
-    def iter(self,dataset):
-        raise NotImplementedError()
-
-    def add_exp(self,exp_i):
-        raise NotImplementedError()  
-
 class Split(object):
     def __init__(self,dataset,train,test):
         self.dataset=dataset
@@ -113,6 +102,6 @@ def get_clf(name_i):
         return name_i
     if(name_i=="RF"):
         return ensemble.RandomForestClassifier(class_weight='balanced_subsample')
-    if(name_i=="LR-imb"):
+    if(name_i=="LR"):
         return LogisticRegression(solver='liblinear',
             class_weight='balanced')
