@@ -33,43 +33,10 @@ def clf_comp(data_path:str,
     clf_results,ne_results=[],[]
     for exp_i in exp_group.iter_exp(dataset):
         ne_results.append(exp_i.eval(protocol_obj.alg_params,
-                                     clf_type=clf_single))        
-        clf_results.append(exp_i.split.eval(clf_type=clf_ne))
+                                     clf_type=clf_ne))        
+        clf_results.append(exp_i.split.eval(clf_type=clf_single))
     print(f"{clf_single},{acc_stats(clf_results)}")
     print(f"{clf_ne},{acc_stats(ne_results)}")
-
-#def stat_sig(in_path:str,
-#		     data_path:str,
-#	         alg_params=None,
-#	         clf_type="RF"):
-#    exp_facade=protocol.read_facade(in_path)
-#    dataset=data.get_data(data_path)
-#    if(alg_params is None):
-#        alg_params=base.AlgParams()
-#    rf_results,ne_results=[],[]
-#    for exp_i in exp_facade.iter(dataset):
-#        print(exp_i)
-#        ne_results.append(  exp_i.eval(alg_params))        
-#        rf_results.append(exp_i.split.eval(clf_type))
-#    pvalue,clf_mean,ne_mean=compute_pvalue(rf_results,ne_results)
-#    print(f"pvalue:{pvalue:.3f},clf:{clf_mean:.3f},ne:{ne_mean:.3f}")
-
-#def clf_comp(in_path:str,
-#             data_path:str,
-#             alg_params=None,
-#             clf_single="RF",
-#             clf_ne="LR"):
-#    exp_facade=protocol.read_facade(in_path)
-#    dataset=data.get_data(data_path)
-#    if(alg_params is None):
-#        alg_params=base.AlgParams()
-#    clf_results,ne_results=[],[]
-#    for exp_i in exp_facade.iter(dataset):
-#        ne_results.append(exp_i.eval(alg_params,
-#                                     clf_type=clf_single))        
-#        clf_results.append(exp_i.split.eval(clf_type=clf_single))
-#    print(f"{clf_single},{acc_stats(clf_results)}")
-#    print(f"{clf_ne},{acc_stats(ne_results)}")
 
 def acc_stats(results):
     acc=[result_i.acc() for result_i in results]
@@ -77,8 +44,8 @@ def acc_stats(results):
 
 if __name__ == '__main__':
     prot=protocol.Protocol(io_type=protocol.NNetIO,
-                           split_gen=protocol.SplitGenerator(n_split=3,
-                                                             n_iters=3))
-    clf_comp(data_path=f"../uci",
+                           split_gen=protocol.SplitGenerator(n_split=10,
+                                                             n_iters=10))
+    stat_sig(data_path=f"../uci",
              model_path=f"../test2",
              protocol_obj=prot)
