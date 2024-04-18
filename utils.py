@@ -35,10 +35,12 @@ class DirFun(object):
         def decor_fun(*args, **kwargs):
             in_path=self.get_input(*args, **kwargs)
             make_dir(self.get_output(*args, **kwargs))
+            return_dict={}
             for in_i in top_files(in_path):
                 id_i=in_i.split('/')[-1]
                 new_args,new_kwargs=self.new_args(id_i,*args, **kwargs)
-                fun(*new_args, **new_kwargs)
+                return_dict[id_i]=fun(*new_args, **new_kwargs)
+            return return_dict
         return decor_fun 
     
     def get_input(self,*args, **kwargs):
@@ -65,3 +67,7 @@ class DirFun(object):
                 value_i=args[i]
                 new_args[i]=f"{value_i}/{id_k}"
         return tuple(new_args),new_kwargs
+
+def print_dict(return_dict):
+    for id_i,value_i in return_dict.items():
+        print(f'{id_i},{value_i}')

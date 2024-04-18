@@ -14,7 +14,9 @@ def stat_sig(data_path:str,
         ne_results.append(exp_ij.eval(protocol_obj.alg_params))        
         rf_results.append(exp_ij.split.eval(clf_type))
     pvalue,clf_mean,ne_mean=compute_pvalue(rf_results,ne_results)
-    print(f"pvalue:{pvalue:.3f},clf:{clf_mean:.3f},ne:{ne_mean:.3f}")
+    text=f"pvalue:{pvalue:.3f},clf:{clf_mean:.3f},ne:{ne_mean:.3f}"
+    print(text)
+    return text
 
 def compute_pvalue(clf_results,ne_results):
     clf_acc=[result_i.acc() for result_i in clf_results]
@@ -46,6 +48,7 @@ if __name__ == '__main__':
     prot=protocol.Protocol(io_type=protocol.NNetIO,
                            split_gen=protocol.SplitGenerator(n_split=10,
                                                              n_iters=10))
-    stat_sig(data_path=f"../uci",
-             model_path=f"../test2",
-             protocol_obj=prot)
+    r_dict=stat_sig(data_path=f"../uci",
+                    model_path=f"../test2",
+                    protocol_obj=prot)
+    utils.print_dict(r_dict)
