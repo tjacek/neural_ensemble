@@ -97,6 +97,10 @@ class Result(object):
     def acc(self):
         return accuracy_score(self.y_true,self.y_pred)
 
+    def save(self,out_path:str):
+        with open(out_path, 'w') as json_file:
+            json.dump((self.y_true,self.y_pred), json_file)
+
 def get_clf(name_i):
     if(type(name_i)!=str):
         return name_i
