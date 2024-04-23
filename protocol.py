@@ -1,6 +1,6 @@
 import itertools,random
 import numpy as np
-import base,data,exp,utils
+import base,data,deep,exp,utils
 
 class Protocol(object):
     def __init__(self,io_type,
@@ -18,7 +18,6 @@ class Protocol(object):
 
     def get_group(self,exp_path:str):
         return self.io_type(exp_path=exp_path,
-#                         io_type=self.io_type,
                             n_split=self.split_gen.n_split,
                             n_iters=self.split_gen.n_iters)
 
@@ -81,7 +80,7 @@ class ExpIO(object):
     def iter_paths(self):
         for i in range(self.n_iters):
             for j in range(self.n_split):
-                yield i,j,f'{self.exp_path}/{i}'
+                yield i,j,f'{self.exp_path}/{i}/{j}'
 
     def iter_result(self,dataset):
         for i,j,path_ij in self.iter_paths():
@@ -103,7 +102,11 @@ class ExpIO(object):
 
 class NNetIO(ExpIO):
 
-    def get_exp(self,i,j,path):
+    def iter_exp(self,dataset):
+        for i,j,path_ij in self.iter_paths():
+            yield self.get_exp(i,j,path_ij,dataset)    
+
+    def get_exp(self,i,j,in_path,dataset):
         with open(f'{in_path}/info',"r") as f:
             lines=f.readlines()
             hyper_params=eval(lines[0])
@@ -113,7 +116,7 @@ class NNetIO(ExpIO):
             split=base.Split(dataset=dataset,
                             train=train,
                             test=test)
-            return Experiment(split=split,
+            return exp.Experiment(split=split,
                                 hyper_params=hyper_params,
                                 model=model)
 
@@ -127,50 +130,18 @@ class NNetIO(ExpIO):
         with open(f'{out_path}/info',"a") as f:
             f.write(f'{str(exp.hyper_params)}\n') 
 
-#class ExpGroup(object):
-#    def __init__(self,exp_path:str,
-#                      io_type,
-#                      n_split=10,
-#                      n_iters=10):
-#        self.exp_path=exp_path
-#        self.io_type=io_type
-#        self.n_split=n_split
-#        self.n_iters=n_iters
+class FeatIO(ExpIO):
+    def save(self,exp,out_path):
+        utils.make_dir(out_path)
+        extractor=self.make_extractor()
+        necscf=self.split.to_ncscf(extractor)
 
-#    def init_dir(self):
-#        utils.make_dir(self.exp_path)
-#        for i in range(self.n_split):
-#            utils.make_dir(f'{self.exp_path}/{i}')
-    
-#    def iter(self,dataset):
-#        for i in range(self.n_iters):
-#            for j in range(self.n_split):
-#                yield self.get(dataset,i,j)
+class ResultIO(ExpIO):
 
-#    def set(self,exp_ij,i,j):
-#        path_ij=f'{self.exp_path}/{i}/{j}'
-#        self.io_type.save(exp_ij,path_ij)
-#        np.save(f'{path_ij}/test',exp_ij.split.test)
+    def get_result(self,i,j,path,clf_type):
+        return base.read_result(path)
 
-#    def get(self,dataset,i,j):
-#        path_ij=f'{self.exp_path}/{i}/{j}'
-#        exp_ij= exp.read_exp(path_ij,dataset)
-#        exp_ij.split.train=self.get_train(i,j)
-#        return exp_ij
-
-#    def get_train(self,i,j):
-#        train=[]
-#        for k in range(self.n_iters):
-#            if(k!=j):
-#                path_ik=f'{self.exp_path}/{i}/{k}'
-#                train_k=np.load(f'{path_ik}/test.npy')
-#                train+=list(train_k)
-#        return np.array(train).astype(int)
-
-#def read_facade(in_path:str):
-#    paths=utils.top_files(in_path)
-#    n_iters=len(paths)
-#    n_split=len(utils.top_files(paths[0]))
-#    return ExpFacade(exp_path=in_path,
-#                     n_split=n_iters,
-#                     n_iters=n_split)
+    def save(self,exp,out_path):
+        utils.make_dir(out_path)
+        result=exp.eval(alg_params,clf_type="RF")
+        result.save(out_path)

@@ -101,6 +101,12 @@ class Result(object):
         with open(out_path, 'w') as json_file:
             json.dump((self.y_true,self.y_pred), json_file)
 
+def read_result(in_path):
+    with open(in_path, 'r') as json_file:
+         y_true,y_pred = json.load(json_file)
+         return Result(y_true=y_true,
+                       y_pred=y_pred) 
+
 def get_clf(name_i):
     if(type(name_i)!=str):
         return name_i
