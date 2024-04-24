@@ -21,6 +21,9 @@ class Protocol(object):
                             n_split=self.split_gen.n_split,
                             n_iters=self.split_gen.n_iters)
 
+    def __str__(self):
+        return f'split:{self.split_gen}\nio_type{self.io_type}'
+
 class SplitGenerator(object):
     def __init__(self,n_split=10,n_iters=10):
         self.n_split=n_split
@@ -51,7 +54,9 @@ class SplitGenerator(object):
                     train_i+=all_splits[j]
             test_i=all_splits[i]
             yield train_i,test_i
-
+    
+    def __str__(self):
+        return f'{self.n_split}-{self.n_iters}'
 
 def gen_all_splits(n_split,dataset):
     by_cat=dataset.by_cat()
@@ -129,6 +134,9 @@ class NNetIO(ExpIO):
         exp.model.save_weights(f'{out_path}/weights')
         with open(f'{out_path}/info',"a") as f:
             f.write(f'{str(exp.hyper_params)}\n') 
+
+    def __str__(self):
+        return "NNetIO"
 
 class FeatIO(ExpIO):
     def save(self,exp,out_path):

@@ -8,18 +8,18 @@ from sklearn import ensemble
 import data
 
 class AlgParams(object):
-    def __init__(self,hyper_type='eff',epochs=300,callbacks=None,alpha=None,
+    def __init__(self,hyper_type='eff',epochs=300,callbacks=None,alpha=0.5,
                     bayes_iter=5,rest_clf=None):
-        if(alpha is None):
-            alpha=[0.25,0.5,0.75]
+#        if(alpha is None):
+#            alpha=[0.25,0.5,0.75]
         self.hyper_type=hyper_type
         self.epochs=epochs
         self.alpha=alpha
         self.bayes_iter=bayes_iter
         self.rest_clf=rest_clf
 
-    def optim_alpha(self):
-        return type(self.alpha)==list 
+#    def optim_alpha(self):
+#        return type(self.alpha)==list 
 
     def get_callback(self):
         return tf.keras.callbacks.EarlyStopping(monitor='val_loss', 
