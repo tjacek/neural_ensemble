@@ -139,10 +139,18 @@ class NNetIO(ExpIO):
         return "NNetIO"
 
 class FeatIO(ExpIO):
+#    def get_exp(self,i,j,in_path,dataset):
+#        with open(f'{in_path}/info',"r") as f:
+
     def save(self,exp,out_path):
         utils.make_dir(out_path)
         extractor=self.make_extractor()
         necscf=self.split.to_ncscf(extractor)
+        binary=np.array(extractor.predict(dataset.X))
+        np.save(out_path,binary)
+
+    def __str__(self):
+        return "FeatIO"
 
 class ResultIO(ExpIO):
 
@@ -153,3 +161,6 @@ class ResultIO(ExpIO):
         utils.make_dir(out_path)
         result=exp.eval(alg_params,clf_type="RF")
         result.save(out_path)
+
+    def __str__(self):
+        return "ResultIO"
