@@ -52,29 +52,3 @@ def make_exp(split_i,hyper_params):
                      hyper_params=hyper_params,
                      model=model_i)
     return exp_i 
-
-
-class NNetIO(object):
-
-    def read(self,in_path,dataset,clf_type="RF"):    
-        exp_i= self.read_exp(in_path,dataset)
-        return exp_i.split.eval(clf_type)
-
-    def read_exp(self,in_path,dataset):
-        with open(f'{in_path}/info',"r") as f:
-            lines=f.readlines()
-            hyper_params=eval(lines[0])
-            model=deep.ensemble_builder(dataset.params,hyper_params)
-            test=np.load(f'{in_path}/test.npy')
-            split=base.Split(dataset=dataset,
-                            train=None,
-                            test=test)
-            return Experiment(split=split,
-                                hyper_params=hyper_params,
-                                model=model)
-
-    def save(self,exp,out_path):
-        utils.make_dir(out_path)
-        exp.model.save_weights(f'{out_path}/weights')
-        with open(f'{out_path}/info',"a") as f:
-            f.write(f'{str(exp.hyper_params)}\n') 
