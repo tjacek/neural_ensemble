@@ -125,9 +125,10 @@ class NNetIO(ExpIO):
                                 hyper_params=hyper_params,
                                 model=model)
 
-    def get_result(self,i,j,path,clf_type):
+    def get_nescf(self,i,j,path):
         exp_ij=self.get_exp(i,j,path)
-        return exp_i.split.eval(clf_type)
+        return exp_ij.to_ncscf()
+#        return exp_i.split.eval(clf_type)
 
     def save(self,exp,out_path):
         utils.make_dir(out_path)
@@ -139,28 +140,29 @@ class NNetIO(ExpIO):
         return "NNetIO"
 
 class FeatIO(ExpIO):
-#    def get_exp(self,i,j,in_path,dataset):
-#        with open(f'{in_path}/info',"r") as f:
+    def get_necscf(self,i,j):
+        cs=np.load(f'{in_path}/info')
+        return split_i.ncscf_from_feats()
 
     def save(self,exp,out_path):
         utils.make_dir(out_path)
         extractor=self.make_extractor()
         necscf=self.split.to_ncscf(extractor)
         binary=np.array(extractor.predict(dataset.X))
-        np.save(out_path,binary)
+        np.savez_compressed(f'{out_path}/info',binary)
 
     def __str__(self):
         return "FeatIO"
 
-class ResultIO(ExpIO):
+#class ResultIO(ExpIO):
 
-    def get_result(self,i,j,path,clf_type):
-        return base.read_result(path)
+#    def get_result(self,i,j,path,clf_type):
+#        return base.read_result(path)
 
-    def save(self,exp,out_path):
-        utils.make_dir(out_path)
-        result=exp.eval(alg_params,clf_type="RF")
-        result.save(out_path)
+#    def save(self,exp,out_path):
+#        utils.make_dir(out_path)
+#        result=exp.eval(alg_params,clf_type="RF")
+#        result.save(out_path)
 
-    def __str__(self):
-        return "ResultIO"
+#    def __str__(self):
+#        return "ResultIO"

@@ -8,9 +8,9 @@ def stat_sig(data_path:str,
              protocol_obj:protocol.Protocol,
              clf_type="RF"):
     dataset=data.get_data(data_path)
-    exp_group= protocol_obj.get_group(exp_path=model_path)
+    exp_io= protocol_obj.get_group(exp_path=model_path)
     rf_results,ne_results=[],[]
-    for exp_ij in exp_group.iter_exp(dataset):
+    for exp_ij in exp_io.iter_exp(dataset):
         ne_results.append(exp_ij.eval(protocol_obj.alg_params))        
         rf_results.append(exp_ij.split.eval(clf_type))
     pvalue,clf_mean,ne_mean=compute_pvalue(rf_results,ne_results)

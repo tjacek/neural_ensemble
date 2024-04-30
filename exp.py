@@ -29,9 +29,12 @@ class Experiment(object):
                        verbose=verbose,
                        callbacks=alg_params.get_callback())
 
-    def eval(self,alg_params,clf_type="RF"):
+    def get_ncscf(self):
         extractor=self.make_extractor()
-        necscf=self.split.to_ncscf(extractor)
+        return self.split.to_ncscf(extractor)
+
+    def eval(self,alg_params,clf_type="RF"):
+        necscf= self.get_ncscf()
         necscf.train(clf_type=clf_type)
         return necscf.eval()
 
@@ -52,3 +55,11 @@ def make_exp(split_i,hyper_params):
                      hyper_params=hyper_params,
                      model=model_i)
     return exp_i 
+
+
+#class FeatExp(object):
+#    def __init__(self,split,binary):
+#        self.split=split
+#        self.binary=binary
+
+#    def eval(self,alg_params,clf_type="RF"):
