@@ -73,7 +73,6 @@ class ExpIO(object):
                       n_split=10,
                       n_iters=10):
         self.exp_path=exp_path
-#        self.io_type=io_type
         self.n_split=n_split
         self.n_iters=n_iters
 
@@ -82,14 +81,18 @@ class ExpIO(object):
         for i in range(self.n_iters):
             utils.make_dir(f'{self.exp_path}/{i}')
 
+    def iter_necscf(self,dataset):
+        for i,j,path_ij in self.iter_paths():
+            yield self.get_necscf(i,j,path_ij,dataset)    
+
     def iter_paths(self):
         for i in range(self.n_iters):
             for j in range(self.n_split):
                 yield i,j,f'{self.exp_path}/{i}/{j}'
 
-    def iter_result(self,dataset):
-        for i,j,path_ij in self.iter_paths():
-            yield self.get_result(i,j,path_ij)
+#    def iter_result(self,dataset):
+#        for i,j,path_ij in self.iter_paths():
+#            yield self.get_result(i,j,path_ij)
 
     def get_train(self,i,j):
         train=[]
@@ -107,9 +110,9 @@ class ExpIO(object):
 
 class NNetIO(ExpIO):
 
-    def iter_exp(self,dataset):
-        for i,j,path_ij in self.iter_paths():
-            yield self.get_exp(i,j,path_ij,dataset)    
+#    def iter_exp(self,dataset):
+#        for i,j,path_ij in self.iter_paths():
+#            yield self.get_exp(i,j,path_ij,dataset)    
 
     def get_exp(self,i,j,in_path,dataset):
         with open(f'{in_path}/info',"r") as f:
@@ -125,9 +128,9 @@ class NNetIO(ExpIO):
                                 hyper_params=hyper_params,
                                 model=model)
 
-    def get_nescf(self,i,j,path):
-        exp_ij=self.get_exp(i,j,path)
-        return exp_ij.to_ncscf()
+    def get_necscf(self,i,j,path,dataset):
+        exp_ij=self.get_exp(i,j,path,dataset)
+        return exp_ij.to_necscf()
 #        return exp_i.split.eval(clf_type)
 
     def save(self,exp,out_path):
