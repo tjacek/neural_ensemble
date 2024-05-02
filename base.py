@@ -99,6 +99,13 @@ class NECSCF(object):
         return Result(y_true=y_test,
                       y_pred=y_pred)
 
+    def baseline(self,dataset,clf_type):
+        cs_split=self.all_splits[0]
+        split=Split(dataset=dataset,
+                    train=cs_split.train,
+                    test=cs_split.test)
+        return split.eval(clf_type)
+
 class Result(object):
     def __init__(self,y_true,y_pred):
         self.y_true=y_true

@@ -83,6 +83,7 @@ class ExpIO(object):
 
     def iter_necscf(self,dataset):
         for i,j,path_ij in self.iter_paths():
+            print(f'{i}/{j}')
             yield self.get_necscf(i,j,path_ij,dataset)    
 
     def iter_paths(self):

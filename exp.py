@@ -29,7 +29,7 @@ class Experiment(object):
                        verbose=verbose,
                        callbacks=alg_params.get_callback())
 
-    def get_necscf(self):
+    def to_necscf(self):
         extractor=self.make_extractor()
         return self.split.to_ncscf(extractor)
 

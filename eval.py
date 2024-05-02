@@ -10,9 +10,11 @@ def stat_sig(data_path:str,
     dataset=data.get_data(data_path)
     exp_io= protocol_obj.get_group(exp_path=model_path)
     rf_results,ne_results=[],[]
-    for exp_ij in exp_io.iter_exp(dataset):
-        ne_results.append(exp_ij.eval(protocol_obj.alg_params))        
-        rf_results.append(exp_ij.split.eval(clf_type))
+    for nescf_ij in exp_io.iter_necscf(dataset):
+        nescf_ij.train(clf_type)
+        ne_results.append(nescf_ij.eval())#exp_ij.eval(protocol_obj.alg_params))        
+        rf_results.append(nescf_ij.baseline(dataset,clf_type))#exp_ij.split.eval(clf_type))
+#    print(rf_results)
     pvalue,clf_mean,ne_mean=compute_pvalue(rf_results,ne_results)
     text=f"pvalue:{pvalue:.3f},clf:{clf_mean:.3f},ne:{ne_mean:.3f}"
     print(text)
@@ -46,8 +48,8 @@ def acc_stats(results):
 
 if __name__ == '__main__':
     prot=protocol.Protocol(io_type=protocol.NNetIO,
-                           split_gen=protocol.SplitGenerator(n_split=10,
-                                                             n_iters=10))
+                           split_gen=protocol.SplitGenerator(n_split=3,
+                                                             n_iters=3))
     r_dict=stat_sig(data_path=f"../uci",
                     model_path=f"../test2",
                     protocol_obj=prot)
