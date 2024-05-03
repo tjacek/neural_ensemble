@@ -20,7 +20,7 @@ def train_data(data_path:str,
         exp_i=exp.make_exp(split_i,hyper_params)
         exp_i.train(protocol_obj.alg_params,
         	        verbose=verbose)
-        exp_io.set(exp_i,i,j)
+        exp_io.set(exp_i,i,j,dataset)
 
 def read_hyper(hyper_path:str):
     with open(hyper_path) as out_file:
@@ -30,11 +30,11 @@ if __name__ == '__main__':
     in_path='../uci' #cleveland'
 #    hyper_params={'units_0': 204, 'units_1': 52, 'batch': 0, 'layers': 2}
     hyper_params={'units_0': 123, 'units_1': 65, 'batch': 0, 'layers': 2}
-    prot=protocol.Protocol(io_type=protocol.NNetIO,
+    prot=protocol.Protocol(io_type=protocol.FeatIO,
                            split_gen=protocol.SplitGenerator(n_split=3,
                                                              n_iters=3))
     hyper_dict=train_data(data_path=in_path,
     	                  hyper_path='../hyper',
-    	                  out_path="../test2",
+    	                  out_path="../test3",
                           protocol_obj=prot,
                           verbose=0)

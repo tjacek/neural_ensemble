@@ -104,9 +104,9 @@ class ExpIO(object):
                 train+=list(train_k)
         return np.array(train).astype(int)
 
-    def set(self,exp_ij,i,j):
+    def set(self,exp_ij,i,j,dataset=None):
         path_ij=f'{self.exp_path}/{i}/{j}'
-        self.save(exp_ij,path_ij)
+        self.save(exp_ij,path_ij,dataset)
         np.save(f'{path_ij}/test',exp_ij.split.test)
 
 class NNetIO(ExpIO):
@@ -134,7 +134,7 @@ class NNetIO(ExpIO):
         return exp_ij.to_necscf()
 #        return exp_i.split.eval(clf_type)
 
-    def save(self,exp,out_path):
+    def save(self,exp,out_path,dataset):
         utils.make_dir(out_path)
         exp.model.save_weights(f'{out_path}/weights')
         with open(f'{out_path}/info',"a") as f:
@@ -148,10 +148,10 @@ class FeatIO(ExpIO):
         cs=np.load(f'{in_path}/info')
         return split_i.ncscf_from_feats()
 
-    def save(self,exp,out_path):
+    def save(self,exp,out_path,dataset):
         utils.make_dir(out_path)
-        extractor=self.make_extractor()
-        necscf=self.split.to_ncscf(extractor)
+        extractor=exp.make_extractor()
+        necscf=exp.split.to_ncscf(extractor)
         binary=np.array(extractor.predict(dataset.X))
         np.savez_compressed(f'{out_path}/info',binary)
 
