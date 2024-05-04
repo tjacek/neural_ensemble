@@ -76,7 +76,7 @@ def bayes_optim(dataset,alg_params,protocol,verbose=1):
                 objective='val_loss',
                 max_trials= alg_params.bayes_iter,
                 overwrite=True)
-    split=protocol.single_split(dataset)
+    split=protocol.split_gen.single_split(dataset)
     x_train,y_train=split.get_train()
     x_valid,y_valid=split.get_valid()
 #    class_weights = class_weight.compute_class_weight(class_weight='balanced',
@@ -122,19 +122,21 @@ def find_alpha(alg_params,split,params,hyper_dict,verbose=1):
     return  alpha[best],all_exp[best]
 
 @utils.DirFun([("data_path",0),("hyper_path",1)])
-def mult_exp(data_path,hyper_path):
+def mult_exp(data_path,hyper_path,prot_obj):
     print(data_path)
     dataset=data.get_data(data_path)
     hyper_dict=bayes_optim(dataset=dataset,
                            alg_params=base.AlgParams(),
-                           protocol=protocol.BasicProtocol(),
+                           protocol=prot_obj,
                            verbose=1)
     with open(hyper_path, 'w') as fp:
         json.dump(hyper_dict, fp)                          
     return hyper_dict
 
 if __name__ == '__main__':
-    in_path='../uci/cleveland'
-    mult_exp(data_path='../uci',hyper_path='../hyper')
-#   
-#    print(hyper_dict)
+    prot=protocol.Protocol(io_type=protocol.NNetIO,
+                           split_gen=protocol.SplitGenerator(n_split=3,
+                                                             n_iters=3))
+    mult_exp(data_path='../uci',
+             hyper_path='../hyper',
+             prot_obj=prot)
