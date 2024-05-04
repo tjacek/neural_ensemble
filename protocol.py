@@ -145,16 +145,25 @@ class NNetIO(ExpIO):
 
 class FeatIO(ExpIO):
     def get_necscf(self,i,j):
-        cs=np.load(f'{in_path}/info')
-        return split_i.ncscf_from_feats()
+        cs=np.load(f'{in_path}/binary')
+        train=self.get_train(i,j)
+        test=np.load(f'{in_path}/test.npy')
+        split_i=base.Split(dataset=dataset,
+                            train=train,
+                            test=test)
+        return split_i.ncscf_from_feats(cs)
+
 
     def save(self,exp,out_path,dataset):
         utils.make_dir(out_path)
         extractor=exp.make_extractor()
         necscf=exp.split.to_ncscf(extractor)
         binary=np.array(extractor.predict(dataset.X))
-        np.savez_compressed(f'{out_path}/info',binary)
+        np.savez_compressed(f'{out_path}/binary',binary)
 
+#        with open(f'{out_path}/info',"a") as f:
+#            f.write(f'{str(exp.hyper_params)}\n') 
+    
     def __str__(self):
         return "FeatIO"
 
