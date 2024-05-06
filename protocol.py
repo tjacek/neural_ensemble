@@ -22,7 +22,7 @@ class Protocol(object):
                             n_iters=self.split_gen.n_iters)
 
     def __str__(self):
-        return f'split:{self.split_gen}\nio_type{self.io_type}'
+        return f'split:{self.split_gen}\nio_type{str(self.io_type)}'
 
 class SplitGenerator(object):
     def __init__(self,n_split=10,n_iters=10):
@@ -91,10 +91,6 @@ class ExpIO(object):
             for j in range(self.n_split):
                 yield i,j,f'{self.exp_path}/{i}/{j}'
 
-#    def iter_result(self,dataset):
-#        for i,j,path_ij in self.iter_paths():
-#            yield self.get_result(i,j,path_ij)
-
     def get_train(self,i,j):
         train=[]
         for k in range(self.n_iters):
@@ -109,11 +105,10 @@ class ExpIO(object):
         self.save(exp_ij,path_ij,dataset)
         np.save(f'{path_ij}/test',exp_ij.split.test)
 
-class NNetIO(ExpIO):
+    def __str__(self):
+        return "this"
 
-#    def iter_exp(self,dataset):
-#        for i,j,path_ij in self.iter_paths():
-#            yield self.get_exp(i,j,path_ij,dataset)    
+class NNetIO(ExpIO):
 
     def get_exp(self,i,j,in_path,dataset):
         with open(f'{in_path}/info',"r") as f:
@@ -179,3 +174,8 @@ class FeatIO(ExpIO):
 
 #    def __str__(self):
 #        return "ResultIO"
+
+def read_protocol(in_path):
+    with open(in_path, 'r') as file:
+        for line in file:
+            print(line)

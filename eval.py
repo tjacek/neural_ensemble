@@ -48,9 +48,9 @@ def acc_stats(results):
 
 if __name__ == '__main__':
     prot=protocol.Protocol(io_type=protocol.NNetIO,
-                           split_gen=protocol.SplitGenerator(n_split=3,
-                                                             n_iters=3))
+                           split_gen=protocol.SplitGenerator(n_split=10,
+                                                             n_iters=10))
     r_dict=stat_sig(data_path=f"../uci",
-                    model_path=f"../test2",
+                    model_path=f"../10-10",
                     protocol_obj=prot)
     utils.print_dict(r_dict)
