@@ -22,7 +22,7 @@ class Protocol(object):
                             n_iters=self.split_gen.n_iters)
 
     def __str__(self):
-        return f'split:{self.split_gen}\nio_type{str(self.io_type)}'
+        return f'split:{self.split_gen}\nio_type{self.io_type.get_id()}'
 
 class SplitGenerator(object):
     def __init__(self,n_split=10,n_iters=10):
@@ -105,9 +105,6 @@ class ExpIO(object):
         self.save(exp_ij,path_ij,dataset)
         np.save(f'{path_ij}/test',exp_ij.split.test)
 
-    def __str__(self):
-        return "this"
-
 class NNetIO(ExpIO):
 
     def get_exp(self,i,j,in_path,dataset):
@@ -135,7 +132,7 @@ class NNetIO(ExpIO):
         with open(f'{out_path}/info',"a") as f:
             f.write(f'{str(exp.hyper_params)}\n') 
 
-    def __str__(self):
+    def get_id(self):
         return "NNetIO"
 
 class FeatIO(ExpIO):
@@ -159,7 +156,7 @@ class FeatIO(ExpIO):
 #        with open(f'{out_path}/info',"a") as f:
 #            f.write(f'{str(exp.hyper_params)}\n') 
     
-    def __str__(self):
+    def get_id(self):
         return "FeatIO"
 
 #class ResultIO(ExpIO):
