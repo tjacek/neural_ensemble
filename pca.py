@@ -1,8 +1,22 @@
 import data,protocol
 
 class DeoractorPCA(protocol.ExpIO):
+    def __init__(self,io_type):
+        self.io_type=io_type
+
     def get_necscf(self,i,j,path,dataset):
-        exp_ij=self.get_exp(i,j,path,dataset)
+        exp_ij=self.io_type.get_exp(i,j,path,dataset)
+        cs= exp_ij.make_extractor()
+        for cs_i in cs:
+            feats_i=np.concatenate([dataset.X,cs_i],axis=1)
+            data_i=data.Dataset(X=feats_i,
+                                y=dataset.y,
+                                params=dataset.params)
+            split_i=protocol.Split(dataset=data_i,
+                                   train=exp_ij.train,
+                                   test=exp_ij.test)
+            all_splits.append(split_i)
+        return base.NECSCF(all_splits=all_splits)
 
 @utils.DirFun([("data_path",0),("model_path",1)])
 def stat_sig(data_path:str,
