@@ -1,3 +1,5 @@
+import numpy as np
+from sklearn.decomposition import PCA
 import data,protocol
 
 class DeoractorPCA(protocol.ExpIO):
@@ -10,6 +12,10 @@ class DeoractorPCA(protocol.ExpIO):
         for cs_i in cs:
             feats_i=np.concatenate([dataset.X,cs_i],axis=1)
             split_i= make_split(feats_i,dataset,exp_i):
+            all_splits.append(split_i)
+            pca_i = PCA(n_components=2).fit(dataset.X)
+            pca_feats_i=np.concatenate([pca_i,cs_i],axis=1)
+            split_i= make_split(pca_feats_i,dataset,exp_i):
             all_splits.append(split_i)
         return base.NECSCF(all_splits=all_splits)
 
