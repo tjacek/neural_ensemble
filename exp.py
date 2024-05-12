@@ -49,8 +49,8 @@ class Experiment(object):
 
 def make_exp(split_i,hyper_params):
     model_i=deep.ensemble_builder(params=split_i.dataset.params,
-                                  hyper_params=hyper_params,
-                                  alpha=0.5)
+                                  hyper_params=hyper_params)
+#                                  alpha=0.5)
     exp_i=Experiment(split=split_i,
                      hyper_params=hyper_params,
                      model=model_i)

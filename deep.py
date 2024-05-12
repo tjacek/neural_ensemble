@@ -5,7 +5,7 @@ from sklearn import preprocessing
 from tensorflow.keras.layers import Dense,BatchNormalization,Concatenate
 from tensorflow.keras import Input, Model
 
-def ensemble_builder(params,hyper_params,alpha=0.5):
+def ensemble_builder(params,hyper_params):
     input_layer = Input(shape=(params['dims']))
     class_dict=params['class_weights']
     single_cls,loss,metrics=[],{},{}
@@ -19,7 +19,7 @@ def ensemble_builder(params,hyper_params,alpha=0.5):
         single_cls.append(nn_i)
         loss[f'out_{i}']=weighted_loss(i=i,
                                        class_dict=class_dict,
-                                       alpha=alpha)
+                                       alpha=hyper_params['alpha'])
         metrics[f'out_{i}']= 'accuracy'
     model= Model(inputs=input_layer, outputs=single_cls)
     model.compile(loss=loss,
@@ -27,7 +27,12 @@ def ensemble_builder(params,hyper_params,alpha=0.5):
                   metrics=metrics)
     return model
 
-def nn_builder(params,hyper_params,input_layer=None,as_model=True,i=0,n_cats=None):
+def nn_builder(params,
+               hyper_params,
+               input_layer=None,
+               as_model=True,
+               i=0,
+               n_cats=None):
     if(input_layer is None):
         input_layer = Input(shape=(params['dims']))
     if(n_cats is None):
