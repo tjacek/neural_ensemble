@@ -2,7 +2,7 @@ import numpy as np
 from scipy import stats
 import base,data,protocol,utils
 
-@utils.DirFun([("data_path",0),("model_path",1)])
+#@utils.DirFun([("data_path",0),("model_path",1)])
 def stat_sig(data_path:str,
              model_path:str,
              protocol_obj:protocol.Protocol,
@@ -12,8 +12,8 @@ def stat_sig(data_path:str,
     rf_results,ne_results=[],[]
     for nescf_ij in exp_io.iter_necscf(dataset):
         nescf_ij.train(clf_type)
-        ne_results.append(nescf_ij.eval())#exp_ij.eval(protocol_obj.alg_params))        
-        rf_results.append(nescf_ij.baseline(dataset,clf_type))#exp_ij.split.eval(clf_type))
+        ne_results.append(nescf_ij.eval())     
+        rf_results.append(nescf_ij.baseline(dataset,clf_type))
 #    print(rf_results)
     pvalue,clf_mean,ne_mean=compute_pvalue(rf_results,ne_results)
     text=f"pvalue:{pvalue:.3f},clf:{clf_mean:.3f},ne:{ne_mean:.3f}"
@@ -46,11 +46,32 @@ def acc_stats(results):
     acc=[result_i.acc() for result_i in results]
     return f"mean:{np.mean(acc):.3f},std:{np.std(acc):.3f}"
 
+def indiv_acc(data_path:str,
+              model_path:str,
+              protocol_obj:protocol.Protocol,
+              clf_type="RF"):
+    dataset=data.get_data(data_path)
+    exp_io= protocol_obj.get_group(exp_path=model_path)
+    n_split=protocol_obj.split_gen.n_split
+
+    all_results,mean_acc=[[]],[]
+    for k,nescf_ij in enumerate(exp_io.iter_necscf(dataset)):
+        nescf_ij.train(clf_type)
+        result_k=nescf_ij.eval()
+        if((k% n_split)!=0):
+            all_results[-1].append(result_k.acc())
+        else:
+            mean_acc.append(np.mean(all_results[-1]))            
+            all_results.append([result_k.acc()])
+            print(mean_acc)
+    print(mean_acc)
+
 if __name__ == '__main__':
     prot=protocol.Protocol(io_type=protocol.NNetIO,
                            split_gen=protocol.SplitGenerator(n_split=10,
                                                              n_iters=10))
-    r_dict=stat_sig(data_path=f"../uci",
-                    model_path=f"../10-10",
+    r_dict=indiv_acc(data_path=f"../uci/cleveland",
+                    model_path=f"../cleveland",
                     protocol_obj=prot)
-    utils.print_dict(r_dict)
+    print(r_dict)
+#    utils.print_dict(r_dict)
