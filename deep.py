@@ -6,6 +6,8 @@ from tensorflow.keras.layers import Dense,BatchNormalization,Concatenate
 from tensorflow.keras import Input, Model
 
 def ensemble_builder(params,hyper_params):
+    if(not 'alpha' in hyper_params):
+        hyper_params['alpha']=0.5
     input_layer = Input(shape=(params['dims']))
     class_dict=params['class_weights']
     single_cls,loss,metrics=[],{},{}

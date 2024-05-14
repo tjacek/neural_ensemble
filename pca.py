@@ -5,6 +5,9 @@ import data,protocol,utils
 class DeoractorPCA(protocol.ExpIO):
     def __init__(self,io_type):
         self.io_type=io_type
+        self.exp_path=io_type.exp_path
+        self.n_iters=io_type.n_iters
+        self.n_split=io_type.n_split
 
     def get_necscf(self,i,j,path,dataset):
         exp_ij=self.io_type.get_exp(i,j,path,dataset)
@@ -40,7 +43,7 @@ def stat_sig(data_path:str,
     	print(nescf_ij)
 
 if __name__ == '__main__':
-    prot=protocol.Protocol(io_type=protocol.FeatIO,
+    prot=protocol.Protocol(io_type=protocol.NNetIO,
                            split_gen=protocol.SplitGenerator(n_split=3,
                                                              n_iters=3))
     hyper_dict=stat_sig(data_path=f"../uci/old/cleveland",
