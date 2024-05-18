@@ -12,6 +12,9 @@ class Dataset(object):
         self.y=y
         self.params=params
 
+    def dim(self):
+        return self.X.shape[0]
+
     def by_cat(self):
         by_cat=defaultdict(lambda :[])
         for i,cat_i in enumerate(self.y):
