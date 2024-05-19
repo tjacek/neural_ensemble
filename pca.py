@@ -13,9 +13,8 @@ class DeoractorPCA(protocol.ExpIO):
         exp_ij=self.io_type.get_exp(i,j,path,dataset)
         extractor= exp_ij.make_extractor()
         cs=extractor.predict(dataset.X)
-        dim=dataset.dim()
+        dim=dataset.params["dims"]
         pca_feats = PCA(n_components=dim).fit_transform(dataset.X)
-#        raise Exception(pca_feats.shape)
         all_splits=[]
         for cs_i in cs:
             feats_i=np.concatenate([dataset.X,cs_i],axis=1)
