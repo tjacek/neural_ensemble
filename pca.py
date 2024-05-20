@@ -3,11 +3,14 @@ from sklearn.decomposition import PCA
 import base,data,protocol,utils
 
 class DeoractorPCA(protocol.ExpIO):
-    def __init__(self,io_type):
+    def __init__(self,io_type,pca=True,raw=True,both=True):
         self.io_type=io_type
         self.exp_path=io_type.exp_path
         self.n_iters=io_type.n_iters
         self.n_split=io_type.n_split
+        self.pca=pca 
+        self.raw=raw
+        self.both=both
 
     def get_necscf(self,i,j,path,dataset):
         exp_ij=self.io_type.get_exp(i,j,path,dataset)
@@ -15,16 +18,23 @@ class DeoractorPCA(protocol.ExpIO):
         cs=extractor.predict(dataset.X)
         dim=dataset.params["dims"]
         pca_feats = PCA(n_components=dim).fit_transform(dataset.X)
-        all_splits=[]
+        raw_splits,pca_splits=[],[]
         for cs_i in cs:
             feats_i=np.concatenate([dataset.X,cs_i],axis=1)
             split_i= make_split(feats_i,dataset,exp_ij)
-            all_splits.append(split_i)
+            raw_splits.append(split_i)
             pca_feats_i=np.concatenate([pca_feats,cs_i],axis=1)
 #            raise Exception(pca_feats_i.shape)
             split_i= make_split(pca_feats_i,dataset,exp_ij)
-            all_splits.append(split_i)
-        return base.NECSCF(all_splits=all_splits)
+            pca_splits.append(split_i)
+        if(self.raw):
+            yield base.NECSCF(all_splits=raw_splits)
+
+        if(self.pca):
+            yield base.NECSCF(all_splits=pca_splits)
+
+        if(self.both):
+            yield base.NECSCF(all_splits=raw_splits+pca_splits)
 
 def make_split(feats_i,dataset,exp_i):
     data_i=data.Dataset(X=feats_i,
