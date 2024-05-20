@@ -1,5 +1,6 @@
 import itertools,random
 import numpy as np
+from collections.abc import Iterable
 import base,data,deep,exp,utils
 
 class Protocol(object):
@@ -84,7 +85,12 @@ class ExpIO(object):
     def iter_necscf(self,dataset):
         for i,j,path_ij in self.iter_paths():
             print(f'{i}/{j}')
-            yield self.get_necscf(i,j,path_ij,dataset)    
+            necscf_ij=self.get_necscf(i,j,path_ij,dataset)    
+            if isinstance(necscf_ij, Iterable):
+                for k in necscf_ij:
+                    yield k
+            else:
+                yield necscf_ij
 
     def iter_paths(self):
         for i in range(self.n_iters):
