@@ -12,6 +12,9 @@ class DeoractorPCA(protocol.ExpIO):
         self.raw=raw
         self.both=both
 
+    def n_necscf(self):
+        return int(self.pca) + int(self.raw) + int(self.both) 
+
     def get_necscf(self,i,j,path,dataset):
         exp_ij=self.io_type.get_exp(i,j,path,dataset)
         extractor= exp_ij.make_extractor()
@@ -24,7 +27,6 @@ class DeoractorPCA(protocol.ExpIO):
             split_i= make_split(feats_i,dataset,exp_ij)
             raw_splits.append(split_i)
             pca_feats_i=np.concatenate([pca_feats,cs_i],axis=1)
-#            raise Exception(pca_feats_i.shape)
             split_i= make_split(pca_feats_i,dataset,exp_ij)
             pca_splits.append(split_i)
         if(self.raw):
