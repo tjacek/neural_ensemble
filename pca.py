@@ -12,8 +12,8 @@ class DeoractorPCA(protocol.ExpIO):
         self.raw=raw
         self.both=both
 
-    def n_necscf(self):
-        return int(self.pca) + int(self.raw) + int(self.both) 
+#    def n_necscf(self):
+#        return int(self.pca) + int(self.raw) + int(self.both) 
 
     def get_necscf(self,i,j,path,dataset):
         exp_ij=self.io_type.get_exp(i,j,path,dataset)
@@ -30,13 +30,13 @@ class DeoractorPCA(protocol.ExpIO):
             split_i= make_split(pca_feats_i,dataset,exp_ij)
             pca_splits.append(split_i)
         if(self.raw):
-            yield base.NECSCF(all_splits=raw_splits)
+            yield "base",base.NECSCF(all_splits=raw_splits)
 
         if(self.pca):
-            yield base.NECSCF(all_splits=pca_splits)
+            yield "pca",base.NECSCF(all_splits=pca_splits)
 
         if(self.both):
-            yield base.NECSCF(all_splits=raw_splits+pca_splits)
+            yield "mixed",base.NECSCF(all_splits=raw_splits+pca_splits)
 
 def make_split(feats_i,dataset,exp_i):
     data_i=data.Dataset(X=feats_i,
@@ -46,6 +46,7 @@ def make_split(feats_i,dataset,exp_i):
                       train=exp_i.split.train,
                       test=exp_i.split.test)
 
+
 #@utils.DirFun([("data_path",0),("model_path",1)])
 def stat_sig(data_path:str,
              model_path:str,
@@ -54,12 +55,14 @@ def stat_sig(data_path:str,
     dataset=data.get_data(data_path)
     exp_io= protocol_obj.get_group(exp_path=model_path)
     exp_io=DeoractorPCA(exp_io)
-    ne_results=[]
-    for nescf_ij in exp_io.iter_necscf(dataset):
+    ne_results={"base":[],"pca":[],"mixed":[]}
+    for type_i,nescf_ij in exp_io.iter_necscf(dataset):
         print(nescf_ij)
         nescf_ij.train(clf_type)
-        ne_results.append(nescf_ij.eval().acc())    
-    print(np.mean(ne_results))
+        acc_ij=nescf_ij.eval().acc()
+        ne_results[type_i].append(acc_ij)    
+    for name_i,acc_i in ne_results.items(): 
+         print(f"{name_i}:{np.mean(acc_i):4f}")
 
 if __name__ == '__main__':
     prot=protocol.Protocol(io_type=protocol.NNetIO,
