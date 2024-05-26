@@ -39,17 +39,6 @@ class Split(object):
     def to_ncscf(self,extractor):
         cs=extractor.predict(self.dataset.X)
         return self.ncscf_from_feats(cs)
-#        all_splits=[]
-#        for cs_i in extractor.predict(self.dataset.X):
-#            feats_i=np.concatenate([self.dataset.X,cs_i],axis=1)
-#            data_i=data.Dataset(X=feats_i,
-#                                y=self.dataset.y,
-#                                params=self.dataset.params)
-#            split_i=Split(dataset=data_i,
-#                          train=self.train,
-#                          test=self.test)
-#            all_splits.append(split_i)
-#        return NECSCF(all_splits=all_splits)
 
     def ncscf_from_feats(self,cs):
         all_splits=[]
@@ -105,6 +94,9 @@ class NECSCF(object):
                     train=cs_split.train,
                     test=cs_split.test)
         return split.eval(clf_type)
+
+    def __str__(self):
+        return f'NECSCF:{len(self.clfs)}'
 
 class Result(object):
     def __init__(self,y_true,y_pred):
