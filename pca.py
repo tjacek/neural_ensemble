@@ -12,9 +12,6 @@ class DeoractorPCA(protocol.ExpIO):
         self.raw=raw
         self.both=both
 
-#    def n_necscf(self):
-#        return int(self.pca) + int(self.raw) + int(self.both) 
-
     def get_necscf(self,i,j,path,dataset):
         exp_ij=self.io_type.get_exp(i,j,path,dataset)
         extractor= exp_ij.make_extractor()
@@ -47,7 +44,7 @@ def make_split(feats_i,dataset,exp_i):
                       test=exp_i.split.test)
 
 
-#@utils.DirFun([("data_path",0),("model_path",1)])
+@utils.DirFun([("data_path",0),("model_path",1)])
 def stat_sig(data_path:str,
              model_path:str,
              protocol_obj:protocol.Protocol,
@@ -57,17 +54,21 @@ def stat_sig(data_path:str,
     exp_io=DeoractorPCA(exp_io)
     ne_results={"base":[],"pca":[],"mixed":[]}
     for type_i,nescf_ij in exp_io.iter_necscf(dataset):
-        print(nescf_ij)
         nescf_ij.train(clf_type)
+        print(nescf_ij)
         acc_ij=nescf_ij.eval().acc()
         ne_results[type_i].append(acc_ij)    
+    text=""
     for name_i,acc_i in ne_results.items(): 
-         print(f"{name_i}:{np.mean(acc_i):4f}")
+         text+=f"{name_i}:{np.mean(acc_i):4f}"
+         print(text)
+    return text
 
 if __name__ == '__main__':
     prot=protocol.Protocol(io_type=protocol.NNetIO,
                            split_gen=protocol.SplitGenerator(n_split=10,
                                                              n_iters=10))
-    hyper_dict=stat_sig(data_path=f"../uci/old/cleveland",
-                          model_path=f"../10-10/cleveland",
-                          protocol_obj=prot)
+    ret_dict=stat_sig(data_path=f"../uci/new",#/cleveland",
+                      model_path=f"../10-10/new",#cleveland",
+                      protocol_obj=prot)
+    print(ret_dict)
