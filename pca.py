@@ -61,8 +61,13 @@ def stat_sig(data_path:str,
     text=""
     for name_i,acc_i in ne_results.items(): 
          text+=f"{name_i}:{np.mean(acc_i):4f}"
-         print(text)
+    print(text)
     return text
+
+def show_result(ret_dict):
+    for data_i,text_i in ret_dict.items():
+        new_text=[f'{data_i},{line_j}' for line_j in text_i]
+        print('\n'.join(new_text))
 
 if __name__ == '__main__':
     prot=protocol.Protocol(io_type=protocol.NNetIO,
