@@ -24,6 +24,18 @@ def top_files(path):
     paths=sorted(paths)
     return paths
 
+class TimeLogging(object):
+    def __init__(self,log_path):
+        self.log = logging.getLogger(log_path)
+
+    def __call__(self, fun):
+        @wraps(fun)
+        def decor_fun(*args, **kwargs):
+            start_time = time.time()
+            fun(*args, **kwargs)
+            self.log.info( (time.time() - start_time))
+        return decor_fun
+
 class DirFun(object):
     def __init__(self,dir_args=None):
         if(dir_args is None):
