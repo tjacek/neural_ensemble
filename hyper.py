@@ -121,7 +121,7 @@ def find_alpha(alg_params,split,params,hyper_dict,verbose=1):
     best=np.argmax(acc)
     return  alpha[best],all_exp[best]
 
-@utils.DirFun([("data_path",0),("hyper_path",1)])
+#@utils.DirFun([("data_path",0),("hyper_path",1)])
 def mult_exp(data_path,hyper_path,prot_obj):
     print(data_path)
     dataset=data.get_data(data_path)
@@ -134,9 +134,15 @@ def mult_exp(data_path,hyper_path,prot_obj):
     return hyper_dict
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--data", type=str)
+    parser.add_argument("--hyper", type=str)
+    parser.add_argument("--n_split", type=int, default=3)
+    parser.add_argument("--n_iter", type=int, default=3)
+    args = parser.parse_args()
     prot=protocol.Protocol(io_type=protocol.NNetIO,
-                           split_gen=protocol.SplitGenerator(n_split=3,
-                                                             n_iters=3))
-    mult_exp(data_path='../uci',
-             hyper_path='../hyper',
+                           split_gen=protocol.SplitGenerator(n_split=args.n_split,
+                                                             n_iters=args.n_iter))
+    mult_exp(data_path=args.data,
+             hyper_path=args.hyper,
              prot_obj=prot)
