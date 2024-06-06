@@ -1,5 +1,6 @@
 import os,warnings
 import logging,time
+import parser
 from functools import wraps
 
 def silence_warnings():
@@ -83,3 +84,13 @@ class DirFun(object):
 def print_dict(return_dict):
     for id_i,value_i in return_dict.items():
         print(f'{id_i},{value_i}')
+
+def get_args(paths):
+    parser = argparse.ArgumentParser()
+#    parser.add_argument("--data", type=str)
+#    parser.add_argument("--hyper", type=str)
+    for path_i in paths:
+        parser.add_argument(f"--{path_i}", type=str)
+    parser.add_argument("--n_split", type=int, default=3)
+    parser.add_argument("--n_iter", type=int, default=3)
+    return parser
