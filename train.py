@@ -33,7 +33,7 @@ if __name__ == '__main__':
     parser =  utils.get_args(['data','hyper','model'])
     args = parser.parse_args()
 
-    prot=protocol.Protocol(io_type=protocol.FeatIO,
+    prot=protocol.Protocol(io_type=protocol.NNetIO,
                            split_gen=protocol.SplitGenerator(n_split=args.n_split,
                                                              n_iters=args.n_iter))
     hyper_dict=train_data(data_path=args.data,#'../uci/cleveland',
