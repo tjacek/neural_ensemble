@@ -67,11 +67,14 @@ def indiv_acc(data_path:str,
     print(mean_acc)
 
 if __name__ == '__main__':
+    parser =  utils.get_args(['data','model'])
+    args = parser.parse_args()
+
     prot=protocol.Protocol(io_type=protocol.NNetIO,
-                           split_gen=protocol.SplitGenerator(n_split=10,
-                                                             n_iters=10))
-    r_dict=indiv_acc(data_path=f"../uci/cleveland",
-                    model_path=f"../cleveland",
+                           split_gen=protocol.SplitGenerator(n_split=args.n_split,
+                                                             n_iters=args.n_iter))
+    r_dict=indiv_acc(data_path=args.data,
+                    model_path=args.model,
                     protocol_obj=prot)
     print(r_dict)
 #    utils.print_dict(r_dict)

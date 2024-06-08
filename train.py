@@ -29,12 +29,15 @@ def read_hyper(hyper_path,alg_params):
         return hyper_dict
 
 if __name__ == '__main__':
-    hyper_params={'units_0': 123, 'units_1': 65, 'batch': 0, 'layers': 2}
+#    hyper_params={'units_0': 123, 'units_1': 65, 'batch': 0, 'layers': 2}
+    parser =  utils.get_args(['data','hyper','model'])
+    args = parser.parse_args()
+
     prot=protocol.Protocol(io_type=protocol.FeatIO,
-                           split_gen=protocol.SplitGenerator(n_split=3,
-                                                             n_iters=3))
-    hyper_dict=train_data(data_path='../uci/cleveland',
-    	                  hyper_path='../hyper/cleveland',
-    	                  out_path="../cleveland",
+                           split_gen=protocol.SplitGenerator(n_split=args.n_split,
+                                                             n_iters=args.n_iter))
+    hyper_dict=train_data(data_path=args.data,#'../uci/cleveland',
+    	                  hyper_path=args.hyper,#'../hyper/cleveland',
+    	                  out_path=args.model,#"../cleveland",
                           protocol_obj=prot,
                           verbose=0)

@@ -130,15 +130,10 @@ def mult_exp(data_path,hyper_path,prot_obj):
                            protocol=prot_obj,
                            verbose=1)
     with open(hyper_path, 'w') as fp:
-        json.dump(hyper_dict, fp)                          
+        json.dump(hyper_dict, fp)
     return hyper_dict
 
 if __name__ == '__main__':
-#    parser = argparse.ArgumentParser()
-#    parser.add_argument("--data", type=str)
-#    parser.add_argument("--hyper", type=str)
-#    parser.add_argument("--n_split", type=int, default=3)
-#    parser.add_argument("--n_iter", type=int, default=3)
     parser =  utils.get_args(['data','hyper'])
     args = parser.parse_args()
     prot=protocol.Protocol(io_type=protocol.NNetIO,
