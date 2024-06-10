@@ -134,7 +134,8 @@ def mult_exp(data_path,hyper_path,prot_obj):
     return hyper_dict
 
 if __name__ == '__main__':
-    parser =  utils.get_args(['data','hyper'])
+    parser =  utils.get_args(['data','hyper'],
+                             ['n_split','n_iter'])
     args = parser.parse_args()
     prot=protocol.Protocol(io_type=protocol.NNetIO,
                            split_gen=protocol.SplitGenerator(n_split=args.n_split,

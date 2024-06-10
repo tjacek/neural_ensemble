@@ -67,7 +67,8 @@ def indiv_acc(data_path:str,
     print(mean_acc)
 
 if __name__ == '__main__':
-    parser =  utils.get_args(['data','model'])
+    parser =  utils.get_args(['data','model'],
+                             ['n_split','n_iter'])
     args = parser.parse_args()
 
     prot=protocol.Protocol(io_type=protocol.NNetIO,

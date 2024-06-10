@@ -30,7 +30,8 @@ def read_hyper(hyper_path,alg_params):
 
 if __name__ == '__main__':
 #    hyper_params={'units_0': 123, 'units_1': 65, 'batch': 0, 'layers': 2}
-    parser =  utils.get_args(['data','hyper','model'])
+    parser =  utils.get_args(['data','hyper','model'],
+                             ['n_split','n_iter'])
     args = parser.parse_args()
 
     prot=protocol.Protocol(io_type=protocol.NNetIO,
