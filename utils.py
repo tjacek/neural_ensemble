@@ -85,12 +85,11 @@ def print_dict(return_dict):
     for id_i,value_i in return_dict.items():
         print(f'{id_i},{value_i}')
 
-def get_args(paths):
+def get_args(paths,int_args):
     parser = argparse.ArgumentParser()
-#    parser.add_argument("--data", type=str)
-#    parser.add_argument("--hyper", type=str)
     for path_i in paths:
         parser.add_argument(f"--{path_i}", type=str)
-    parser.add_argument("--n_split", type=int, default=3)
-    parser.add_argument("--n_iter", type=int, default=3)
+    for arg_i in int_args:
+        parser.add_argument(f"--{arg_i}", type=int,default=3)    
+    parser.add_argument('--mult',action='store_true')
     return parser
