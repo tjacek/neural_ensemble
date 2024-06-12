@@ -91,5 +91,5 @@ def get_args(paths,int_args):
         parser.add_argument(f"--{path_i}", type=str)
     for arg_i in int_args:
         parser.add_argument(f"--{arg_i}", type=int,default=3)    
-    parser.add_argument('--mult',action='store_true')
+    parser.add_argument('--multi',action='store_true')
     return parser
