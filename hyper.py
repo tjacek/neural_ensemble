@@ -140,6 +140,8 @@ if __name__ == '__main__':
     prot=protocol.Protocol(io_type=protocol.NNetIO,
                            split_gen=protocol.SplitGenerator(n_split=args.n_split,
                                                              n_iters=args.n_iter))
+    if(args.multi):
+        mult_exp=utils.DirFun([("data_path",0),("hyper_path",1)])(mult_exp)
     mult_exp(data_path=args.data,
              hyper_path=args.hyper,
              prot_obj=prot)
