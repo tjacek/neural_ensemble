@@ -121,8 +121,7 @@ def find_alpha(alg_params,split,params,hyper_dict,verbose=1):
     best=np.argmax(acc)
     return  alpha[best],all_exp[best]
 
-#@utils.DirFun([("data_path",0),("hyper_path",1)])
-def mult_exp(data_path,hyper_path,prot_obj):
+def single_exp(data_path,hyper_path,prot_obj):
     print(data_path)
     dataset=data.get_data(data_path)
     hyper_dict=bayes_optim(dataset=dataset,
@@ -133,6 +132,15 @@ def mult_exp(data_path,hyper_path,prot_obj):
         json.dump(hyper_dict, fp)
     return hyper_dict
 
+def multiple_exp(args,prot):
+    if(args.multi):
+        exp=utils.DirFun([("data_path",0),("hyper_path",1)])(single_exp)
+    else:
+        exp=single_exp
+    exp(data_path=args.data,
+        hyper_path=args.hyper,
+        prot_obj=prot)
+
 if __name__ == '__main__':
     parser =  utils.get_args(['data','hyper'],
                              ['n_split','n_iter'])
@@ -140,8 +148,5 @@ if __name__ == '__main__':
     prot=protocol.Protocol(io_type=protocol.NNetIO,
                            split_gen=protocol.SplitGenerator(n_split=args.n_split,
                                                              n_iters=args.n_iter))
-    if(args.multi):
-        mult_exp=utils.DirFun([("data_path",0),("hyper_path",1)])(mult_exp)
-    mult_exp(data_path=args.data,
-             hyper_path=args.hyper,
-             prot_obj=prot)
+    multiple_exp(args,
+                 prot)

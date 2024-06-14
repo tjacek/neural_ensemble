@@ -6,7 +6,7 @@ import json
 import base,exp,protocol,utils
 
 #@utils.DirFun([("data_path",0),("hyper_path",1),('out_path',2)])
-def train_data(data_path:str,
+def single_exp(data_path:str,
 	           hyper_path:str,
 	           out_path:str,
 	           protocol_obj:protocol.Protocol,
@@ -21,6 +21,18 @@ def train_data(data_path:str,
         exp_i.train(protocol_obj.alg_params,
         	        verbose=verbose)
         exp_io.set(exp_i,i,j,dataset)
+
+def multiple_exp(args,prot):
+    if(args.multi):
+        exp=utils.DirFun([("data_path",0),("hyper_path",1),('out_path',2)])(single_exp)
+    else:
+        exp=single_exp
+    exp(data_path=args.data,
+        hyper_path=args.hyper,
+        out_path=args.model,
+        protocol_obj=prot,
+        verbose=0)
+
 
 def read_hyper(hyper_path,alg_params):
     with open(hyper_path) as out_file:
@@ -37,8 +49,4 @@ if __name__ == '__main__':
     prot=protocol.Protocol(io_type=protocol.NNetIO,
                            split_gen=protocol.SplitGenerator(n_split=args.n_split,
                                                              n_iters=args.n_iter))
-    hyper_dict=train_data(data_path=args.data,#'../uci/cleveland',
-    	                  hyper_path=args.hyper,#'../hyper/cleveland',
-    	                  out_path=args.model,#"../cleveland",
-                          protocol_obj=prot,
-                          verbose=0)
+    multiple_exp(args,prot)

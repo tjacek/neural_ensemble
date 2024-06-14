@@ -66,6 +66,17 @@ def indiv_acc(data_path:str,
             print(mean_acc)
     print(mean_acc)
 
+def multiple_exp(args,prot):
+    if(args.multi):
+        arg_names=[("data_path",0),("model_path",1)]
+        exp=utils.DirFun(arg_names)(indiv_acc)
+    else:
+        exp=indiv_acc
+    r_dict=exp(data_path=args.data,
+               model_path=args.model,
+                     protocol_obj=prot)
+    print(r_dict)
+
 if __name__ == '__main__':
     parser =  utils.get_args(['data','model'],
                              ['n_split','n_iter'])
@@ -74,8 +85,9 @@ if __name__ == '__main__':
     prot=protocol.Protocol(io_type=protocol.NNetIO,
                            split_gen=protocol.SplitGenerator(n_split=args.n_split,
                                                              n_iters=args.n_iter))
-    r_dict=indiv_acc(data_path=args.data,
-                    model_path=args.model,
-                    protocol_obj=prot)
-    print(r_dict)
+    multiple_exp(args,prot)
+#    r_dict=indiv_acc(data_path=args.data,
+#                    model_path=args.model,
+#                    protocol_obj=prot)
+#    print(r_dict)
 #    utils.print_dict(r_dict)
