@@ -25,6 +25,11 @@ class Protocol(object):
     def __str__(self):
         return f'split:{self.split_gen}\nio_type{self.io_type.get_id()}'
 
+def get_protocol(n_split,n_iters):
+    return Protocol(io_type=NNetIO,
+                    split_gen=SplitGenerator(n_split=n_split,
+                                             n_iters=n_iters))
+
 class SplitGenerator(object):
     def __init__(self,n_split=10,n_iters=10):
         self.n_split=n_split

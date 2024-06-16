@@ -2,7 +2,6 @@ import numpy as np
 from scipy import stats
 import base,data,protocol,utils
 
-#@utils.DirFun([("data_path",0),("model_path",1)])
 def stat_sig(data_path:str,
              model_path:str,
              protocol_obj:protocol.Protocol,
@@ -14,7 +13,6 @@ def stat_sig(data_path:str,
         nescf_ij.train(clf_type)
         ne_results.append(nescf_ij.eval())     
         rf_results.append(nescf_ij.baseline(dataset,clf_type))
-#    print(rf_results)
     pvalue,clf_mean,ne_mean=compute_pvalue(rf_results,ne_results)
     text=f"pvalue:{pvalue:.3f},clf:{clf_mean:.3f},ne:{ne_mean:.3f}"
     print(text)
@@ -26,7 +24,6 @@ def compute_pvalue(clf_results,ne_results):
     pvalue=stats.ttest_ind(clf_acc,ne_acc,equal_var=False)[1]
     return pvalue,np.mean(clf_acc),np.mean(ne_acc)
 
-@utils.DirFun([("data_path",0),("model_path",1)])
 def clf_comp(data_path:str,
              model_path:str,
              protocol_obj:protocol.Protocol,
@@ -82,7 +79,11 @@ if __name__ == '__main__':
                              ['n_split','n_iter'])
     args = parser.parse_args()
 
-    prot=protocol.Protocol(io_type=protocol.NNetIO,
-                           split_gen=protocol.SplitGenerator(n_split=args.n_split,
-                                                             n_iters=args.n_iter))
-    multiple_exp(args,prot)
+#    prot=protocol.Protocol(io_type=protocol.NNetIO,
+#                           split_gen=protocol.SplitGenerator(n_split=args.n_split,
+#                                                             n_iters=args.n_iter))
+    prot=protocol.get_protocol(n_split=args.n_split,
+                               n_iters=args.n_iter)
+    multiple_exp(args=args,
+                 prot=prot,
+                 fun=None)
