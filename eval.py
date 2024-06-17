@@ -61,7 +61,8 @@ def indiv_acc(data_path:str,
             mean_acc.append(np.mean(all_results[-1]))            
             all_results.append([result_k.acc()])
             print(mean_acc)
-    print(mean_acc)
+#    print(mean_acc)
+    return mean_acc
 
 def multiple_exp(args,prot,fun=None):
     if(fun is None):
@@ -72,6 +73,9 @@ def multiple_exp(args,prot,fun=None):
     r_dict=fun(data_path=args.data,
                model_path=args.model,
                protocol_obj=prot)
+    if(not args.multi):
+        name= args.data.split('/')[-1]
+        r_dict={name:r_dict}
     utils.print_dict(r_dict)
 
 if __name__ == '__main__':
@@ -79,9 +83,6 @@ if __name__ == '__main__':
                              ['n_split','n_iter'])
     args = parser.parse_args()
 
-#    prot=protocol.Protocol(io_type=protocol.NNetIO,
-#                           split_gen=protocol.SplitGenerator(n_split=args.n_split,
-#                                                             n_iters=args.n_iter))
     prot=protocol.get_protocol(n_split=args.n_split,
                                n_iters=args.n_iter)
     multiple_exp(args=args,
