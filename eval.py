@@ -57,12 +57,20 @@ def indiv_acc(data_path:str,
         result_k=nescf_ij.eval()
         if((k% n_split)!=0):
             all_results[-1].append(result_k.acc())
-        else:
-            mean_acc.append(np.mean(all_results[-1]))            
+        elif(len(all_results)>0):
             all_results.append([result_k.acc()])
+            mean_acc.append(np.mean(all_results[-1]))            
+
             print(mean_acc)
+        else:
+            pass
 #    print(mean_acc)
     return mean_acc
+
+#def base_clf(data_path:str,
+#             model_path:str,
+#             protocol_obj:protocol.Protocol,
+#             clf_type="RF"):
 
 def multiple_exp(args,prot,fun=None):
     if(fun is None):
