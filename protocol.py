@@ -199,7 +199,9 @@ class IterNE(object):
         n_split=protocol_obj.split_gen.n_split
         all_results=[]
         for k,necscf_ij in enumerate(exp_io.iter_necscf(dataset)):
-            result_i=self.iter_fun(k,necscf_ij)
+            mod_k= k % n_split
+            iter_i = int((k-mod_k)/n_split)
+            result_i=self.iter_fun(iter_i,mod_k,necscf_ij)
             all_results.append(result_i)
         return self.summary(all_results)
 
