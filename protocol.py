@@ -187,3 +187,24 @@ def read_protocol(in_path):
     with open(in_path, 'r') as file:
         for line in file:
             print(line)
+
+class IterNE(object):
+
+    def __call__(self,
+                 data_path:str,
+                 model_path:str,
+                 protocol_obj:Protocol):
+        dataset=data.get_data(data_path)
+        exp_io= protocol_obj.get_group(exp_path=model_path)
+        n_split=protocol_obj.split_gen.n_split
+        all_results=[]
+        for k,necscf_ij in enumerate(exp_io.iter_necscf(dataset)):
+            result_i=self.iter_fun(k,necscf_ij)
+            all_results.append(result_i)
+        return self.summary(all_results)
+
+    def iter_fun(self,k,necscf_ij,info):
+        raise NotImplementedError() 
+
+    def summary(self,all_results:list):
+        raise NotImplementedError() 

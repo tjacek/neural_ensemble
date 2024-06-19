@@ -60,17 +60,23 @@ def indiv_acc(data_path:str,
         elif(len(all_results)>0):
             all_results.append([result_k.acc()])
             mean_acc.append(np.mean(all_results[-1]))            
-
             print(mean_acc)
         else:
             pass
 #    print(mean_acc)
     return mean_acc
 
-#def base_clf(data_path:str,
-#             model_path:str,
-#             protocol_obj:protocol.Protocol,
-#             clf_type="RF"):
+class BaseClf(protocol.IterNE):
+    def __init__(self,clf_type="RF"):
+        self.clf_type=clf_type
+
+    def iter_fun(self,k,necscf_ij):
+        split_ij=necscf_ij.all_splits[0]
+        result_ij=split_ij.eval(self.clf_type)
+        return result_ij.acc()
+
+    def summary(self,all_results:list):
+        return np.mean(all_results)
 
 def multiple_exp(args,prot,fun=None):
     if(fun is None):
@@ -95,4 +101,4 @@ if __name__ == '__main__':
                                n_iters=args.n_iter)
     multiple_exp(args=args,
                  prot=prot,
-                 fun=None)
+                 fun=BaseClf())
