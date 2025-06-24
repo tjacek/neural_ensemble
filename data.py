@@ -14,6 +14,9 @@ class Dataset(object):
     def n_cats(self):
         return int(max(self.y))+1
 
+    def gini(self):
+        return self.weight_dict().gini()
+
     def weight_dict(self):
         return get_class_weights(self.y)
 
@@ -30,9 +33,16 @@ class WeightDict(dict):
             self[i]= self[i]/Z
         return self
     
-    def size_dict(self):
-        d={ i:(1.0/w_i) for i,w_i in self.items()}
-        return  WeightDict(d).norm()
+    def gini(self):
+        arr=list(self.values())
+        arr.sort()
+        arr=np.array(arr)
+        index = np.arange(1,arr.shape[0]+1)
+        n = arr.shape[0]     
+        return ((np.sum((2 * index - n  - 1) * arr)) / (n * np.sum(arr))) 
+#    def size_dict(self):
+#        d={ i:(1.0/w_i) for i,w_i in self.items()}
+#        return  WeightDict(d).norm()
 
 def get_class_weights(y):
     params=WeightDict() 
@@ -56,8 +66,9 @@ def read_arff(in_path:str):
                 y.append(line_i[-1])
                 X.append([float(cord_j)  for cord_j in line_i[:-1]])
     return Dataset(X=np.array(X),
-                y=y)
+                   y=y)
 
 if __name__ == '__main__':
     data=read_arff("AutoML/yeast.arff")
-    print(data.weight_dict())
+    w=(data.weight_dict())
+    print(w.gini())
