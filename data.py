@@ -1,4 +1,6 @@
 import numpy as np
+import pandas as pd
+import utils
 
 class Dataset(object):
     def __init__(self,X,y=None):
@@ -44,6 +46,39 @@ class WeightDict(dict):
 #        d={ i:(1.0/w_i) for i,w_i in self.items()}
 #        return  WeightDict(d).norm()
 
+class DFView(object):
+    def __init__(self,df):
+        self.df=df.round(4)
+
+    def to_csv(self):
+        text=",".join(self.df.columns)
+        for index, row in self.df.iterrows():
+            line_i=",".join([str(c_i) for c_i in row.to_list()])
+            text+="\n"+line_i
+        return text
+
+def make_df(helper,
+            iterable,
+            cols,
+            offset=None,
+            multi=False):
+    lines=[]
+    if(multi):
+        for arg_i in iterable:
+            lines+=helper(arg_i)
+    else:
+        for arg_i in iterable:
+            lines.append(helper(arg_i))
+    if(offset):
+        line_len=max([len(line_i) for line_i in lines])
+        for line_i in lines:
+            while(len(line_i)<line_len):
+                line_i.append(offset)
+        cols+=[str(i)for i in range(line_len-len(cols))]
+    df=pd.DataFrame.from_records(lines,
+                                columns=cols)
+    return DFView(df)
+
 def get_class_weights(y):
     params=WeightDict() 
     cats=  list(set(y))
@@ -54,21 +89,43 @@ def get_class_weights(y):
     print(params)
     return params.norm()
 
+def data_desc(in_path):
+    def helper(in_path):
+        name=in_path.split("/")[-1]
+        data=read_arff(in_path)
+        raise Exception(name)
+    df=make_df(helper=helper,
+            iterable=utils.top_files(in_path),
+            cols=["data","gini"],
+            offset=None,
+            multi=False)
 
 def read_arff(in_path:str):
     X,y=[],[]
     with open(in_path) as f:
         for line_i in f:
-            if( (not '@' in line_i) and
-                   (len(line_i) > 1)):
+            if( (not '@' in line_i) and 
+                (not '%' in line_i)):
                 line_i=line_i.rstrip()
                 line_i=line_i.split(",")
-                y.append(line_i[-1])
-                X.append([float(cord_j)  for cord_j in line_i[:-1]])
-    return Dataset(X=np.array(X),
+                if(len(line_i)>1):
+                    y.append(line_i[-1])
+#                X.append([float(cord_j)  for cord_j in line_i[:-1]])
+                    X.append(line_i[:-1])
+        X=[[row[i] for row in X] 
+                for i in range(len(X[0]) )]
+        return Dataset(X=np.array(X),
                    y=y)
 
+def is_float(element):
+    try:
+        float(element)
+        return True
+    except ValueError:
+        return False 
+
 if __name__ == '__main__':
-    data=read_arff("AutoML/yeast.arff")
-    w=(data.weight_dict())
-    print(w.gini())
+    data_desc("AutoML")
+#    data=read_arff("AutoML/yeast.arff")
+#    w=(data.weight_dict())
+#    print(w.gini())
