@@ -1,55 +1,60 @@
 import numpy as np
-import pandas as pd
-from scipy.io import arff
-from sklearn import preprocessing
-from collections import Counter
-from collections import defaultdict
-import utils
 
 class Dataset(object):
-    def __init__(self,X,y,params):
+    def __init__(self,X,y=None):
         self.X=X
         self.y=y
-        self.params=params
 
-    def by_cat(self):
-        by_cat=defaultdict(lambda :[])
-        for i,cat_i in enumerate(self.y):
-            by_cat[cat_i].append(i)
-        return by_cat
+    def __len__(self):
+        return len(self.y)
 
-def get_data(in_path):
-    df=pd.read_csv(in_path)
-    X,y=prepare_data(df,target=-1)
-    params=get_dataset_params(X,y)
-    return Dataset(X=X,
-                   y=y,
-                   params=params)
+    def dim(self):
+        return self.X.shape[1]
+        
+    def n_cats(self):
+        return int(max(self.y))+1
 
-def prepare_data(df,target=-1):
-    to_numeric(df)
-    X=df.to_numpy()
-    X=np.delete(X,[target], axis=1)
-    X=np.nan_to_num(X)
-#    X=preprocessing.scale(X) # data preprocessing
-#    print(f'X:{np.mean(X)}')
-    X= preprocessing.RobustScaler().fit_transform(X)
-    y=df.iloc[:,target]
-    cats={ cat_i:i for i,cat_i in enumerate(y.unique())}
-    y=y.to_numpy()
-    y=[cats[y_i] for y_i in y]
-    return X,np.array(y)
+class WeightDict(dict):
+    def __init__(self, arg=[]):
+        super(WeightDict, self).__init__(arg)
 
-def to_numeric(df):
-    for col_i,type_i in zip(df.columns,df.dtypes):
-        if(type_i=='object'):
-            values={value_i:i 
-                 for i,value_i in enumerate(df[col_i].unique())}
-            df[col_i]=df[col_i].apply(lambda x: values[x])
-    return df
+    def Z(self):
+        return sum(list(self.values()))
 
-def get_dataset_params(X,y):
-    return {'n_cats':max(y)+1,
-            'dims':X.shape[1],
-            'batch':X.shape[0],
-            'class_weights':dict(Counter(y))}
+    def norm(self):
+        Z=self.Z()
+        for i in self:
+            self[i]= self[i]/Z
+        return self
+    
+    def size_dict(self):
+        d={ i:(1.0/w_i) for i,w_i in self.items()}
+        return  WeightDict(d).norm()
+
+def get_class_weights(y):
+    params=WeightDict() 
+    n_cats=int(max(y))+1
+    for i in range(n_cats):
+        size_i=sum((y==i).astype(int))
+        if(size_i>0):
+            params[i]= 1.0/size_i
+        else:
+            params[i]=0
+    return params.norm()
+
+
+def read_arff(in_path:str):
+    X,y=[],[]
+    with open(in_path) as f:
+        for line_i in f:
+            if( (not '@' in line_i) and
+                   (len(line_i) > 1)):
+                line_i=line_i.rstrip()
+                line_i=line_i.split(",")
+                y.append(line_i[-1])
+                X.append([float(cord_j)  for cord_j in line_i[:-1]])
+    return Dataset(X=np.array(X),
+                y=y)
+
+if __name__ == '__main__':
+    read_arff("AutoML/yeast.arff")
