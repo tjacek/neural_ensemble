@@ -14,6 +14,9 @@ class Dataset(object):
     def n_cats(self):
         return int(max(self.y))+1
 
+    def weight_dict(self):
+        return get_class_weights(self.y)
+
 class WeightDict(dict):
     def __init__(self, arg=[]):
         super(WeightDict, self).__init__(arg)
@@ -33,13 +36,12 @@ class WeightDict(dict):
 
 def get_class_weights(y):
     params=WeightDict() 
-    n_cats=int(max(y))+1
-    for i in range(n_cats):
-        size_i=sum((y==i).astype(int))
-        if(size_i>0):
-            params[i]= 1.0/size_i
-        else:
-            params[i]=0
+    cats=  list(set(y))
+    n_cats= len(cats) #int(max(y))+1
+    params=WeightDict({cat_i:0 for cat_i in cats})
+    for y_i in y:
+        params[y_i]+=1
+    print(params)
     return params.norm()
 
 
@@ -57,4 +59,5 @@ def read_arff(in_path:str):
                 y=y)
 
 if __name__ == '__main__':
-    read_arff("AutoML/yeast.arff")
+    data=read_arff("AutoML/yeast.arff")
+    print(data.weight_dict())
