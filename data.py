@@ -57,6 +57,10 @@ class DFView(object):
             text+="\n"+line_i
         return text
 
+    def print(self,dec=4):
+        with pd.option_context('display.max_rows', None, 'display.max_columns', None):  
+            print(self.df)
+
 def make_df(helper,
             iterable,
             cols,
@@ -86,13 +90,15 @@ def get_class_weights(y):
     params=WeightDict({cat_i:0 for cat_i in cats})
     for y_i in y:
         params[y_i]+=1
-    print(params)
     return params.norm()
 
-def data_desc(in_path):
+def data_desc(in_path,first_set=None):
+    first_set=set(first_set)
     def helper(in_path):
         name=in_path.split("/")[-1]
-        data=read_arff(in_path)
+        name=name.split(".")[0]
+        data=read_arff(in_path,
+                       first=(name in first_set))
         return [name,data.gini(),data.n_cats(), 
                    data.dim(),len(data)]
     df=make_df(helper=helper,
@@ -100,9 +106,14 @@ def data_desc(in_path):
             cols=["data","gini","classes","feats","samples"],
             offset=None,
             multi=False)
-    print(df.to_csv())
+    df.print()
+#    print(df.to_csv())
 
-def read_arff(in_path:str):
+def read_arff(in_path:str,first=False):
+    if(first):
+        get_target=target_first
+    else:
+        get_target=target_last
     X,y=[],[]
     with open(in_path) as f:
         for line_i in f:
@@ -111,13 +122,20 @@ def read_arff(in_path:str):
                 line_i=line_i.rstrip()
                 line_i=line_i.split(",")
                 if(len(line_i)>1):
-                    y.append(line_i[-1])
-                    X.append(line_i[:-1])
+                    x_i,y_i=get_target(line_i)
+                    y.append(y_i)
+                    X.append(x_i)
         X=[[row[i] for row in X] 
                 for i in range(len(X[0]) )]
         X=[preproc(feat_i) for feat_i in X]
         return Dataset(X=np.array(X),
                    y=preproc(y))
+
+def target_last(line_i):
+    return line_i[:-1],line_i[-1]
+
+def target_first(line_i):
+    return line_i[1:],line_i[0]
 
 def preproc(feat):
     if(is_float(feat[0])):
@@ -141,7 +159,8 @@ def conv(f):
         return float(f)
 
 if __name__ == '__main__':
-    data_desc("AutoML")
+    data_desc("AutoML",
+              ["madeline","philippine","sylvine"])
 #    data=read_arff("AutoML/yeast.arff")
 #    w=(data.weight_dict())
 #    print(w.gini())
