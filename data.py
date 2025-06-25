@@ -11,7 +11,7 @@ class Dataset(object):
         return len(self.y)
 
     def dim(self):
-        return self.X.shape[1]
+        return self.X.shape[0]
         
     def n_cats(self):
         return int(max(self.y))+1
@@ -93,12 +93,14 @@ def data_desc(in_path):
     def helper(in_path):
         name=in_path.split("/")[-1]
         data=read_arff(in_path)
-        raise Exception(name)
+        return [name,data.gini(),data.n_cats(), 
+                   data.dim(),len(data)]
     df=make_df(helper=helper,
             iterable=utils.top_files(in_path),
-            cols=["data","gini"],
+            cols=["data","gini","classes","feats","samples"],
             offset=None,
             multi=False)
+    print(df.to_csv())
 
 def read_arff(in_path:str):
     X,y=[],[]
@@ -110,12 +112,20 @@ def read_arff(in_path:str):
                 line_i=line_i.split(",")
                 if(len(line_i)>1):
                     y.append(line_i[-1])
-#                X.append([float(cord_j)  for cord_j in line_i[:-1]])
                     X.append(line_i[:-1])
         X=[[row[i] for row in X] 
                 for i in range(len(X[0]) )]
+        X=[preproc(feat_i) for feat_i in X]
         return Dataset(X=np.array(X),
-                   y=y)
+                   y=preproc(y))
+
+def preproc(feat):
+    if(is_float(feat[0])):
+        return [conv(f) for f in feat]
+    else:
+        cats=list(set(feat))
+        cats={cat_i:i for i,cat_i in enumerate(cats)}
+        return [cats[f] for f in feat]
 
 def is_float(element):
     try:
@@ -123,6 +133,12 @@ def is_float(element):
         return True
     except ValueError:
         return False 
+
+def conv(f):
+    if(f=='?'):
+        return 0
+    else:
+        return float(f)
 
 if __name__ == '__main__':
     data_desc("AutoML")
