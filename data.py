@@ -6,6 +6,9 @@ class Dataset(object):
     def __init__(self,X,y=None):
         self.X=X
         self.y=y
+    
+    def weight_dict(self):
+        return get_class_weights(self.y)
 
     def __len__(self):
         return len(self.y)
@@ -19,8 +22,10 @@ class Dataset(object):
     def gini(self):
         return self.weight_dict().gini()
 
-    def weight_dict(self):
-        return get_class_weights(self.y)
+    def proportion(self):
+        weight_dict=self.weight_dict()
+        values=list(weight_dict.values())
+        return max(values)/min(values)
 
 class WeightDict(dict):
     def __init__(self, arg=[]):
@@ -42,9 +47,6 @@ class WeightDict(dict):
         index = np.arange(1,arr.shape[0]+1)
         n = arr.shape[0]     
         return ((np.sum((2 * index - n  - 1) * arr)) / (n * np.sum(arr))) 
-#    def size_dict(self):
-#        d={ i:(1.0/w_i) for i,w_i in self.items()}
-#        return  WeightDict(d).norm()
 
 class DFView(object):
     def __init__(self,df):
@@ -99,11 +101,13 @@ def data_desc(in_path,first_set=None):
         name=name.split(".")[0]
         data=read_arff(in_path,
                        first=(name in first_set))
-        return [name,data.gini(),data.n_cats(), 
-                   data.dim(),len(data)]
+        return [name,data.gini(),data.n_cats(), #data.dim(),
+                len(data),data.proportion()]
     df=make_df(helper=helper,
             iterable=utils.top_files(in_path),
-            cols=["data","gini","classes","feats","samples"],
+            cols=["data","gini","classes",
+#                  "feats",
+                  "samples","propor"],
             offset=None,
             multi=False)
     df.print()
