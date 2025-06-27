@@ -111,8 +111,8 @@ def data_desc(in_path,first_set=None):
         name=name.split(".")[0]
         data=read_arff(in_path,
                        first=(name in first_set))
-        return [name,data.gini(),data.n_cats(), #data.dim(),
-                len(data),data.proportion()]
+        return [name,data.gini(),data.n_cats(), 
+                data.dim(),len(data)]
     df=make_df(helper=helper,
             iterable=utils.top_files(in_path),
             cols=["data","gini","classes",
@@ -143,7 +143,7 @@ def read_arff(in_path:str,first=False):
                 for i in range(len(X[0]) )]
         X=[preproc(feat_i) for feat_i in X]
         return Dataset(X=np.array(X),
-                   y=preproc(y))
+                   y=preproc(y,target=True))
 
 def target_last(line_i):
     return line_i[:-1],line_i[-1]
@@ -151,8 +151,8 @@ def target_last(line_i):
 def target_first(line_i):
     return line_i[1:],line_i[0]
 
-def preproc(feat):
-    if(is_float(feat[0])):
+def preproc(feat,target=False):
+    if(is_float(feat[0]) and (not target)):
         return [conv(f) for f in feat]
     else:
         cats=list(set(feat))
@@ -180,8 +180,5 @@ def arff_to_csv(in_path,out_path,first_set=None):
         data_i.save_csv(f"{out_path}/{id_i}")
 
 if __name__ == '__main__':
-    arff_to_csv("AutoML","csv",
+    data_desc("AutoML",#"csv",
               ["madeline","philippine","sylvine"])
-#    data=read_arff("AutoML/yeast.arff")
-#    w=(data.weight_dict())
-#    print(w.gini())
