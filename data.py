@@ -34,6 +34,7 @@ class Dataset(object):
                 line_i=x_i.tolist()
                 line_i.append(y_i)
                 line_i=",".join([str(c_j) for c_j in line_i])
+                line_i+="\n"
                 f.write(line_i)
 #            raise Exception(line_i)
 
@@ -98,7 +99,7 @@ def make_df(helper,
 def get_class_weights(y):
     params=WeightDict() 
     cats=  list(set(y))
-    n_cats= len(cats) #int(max(y))+1
+    n_cats= len(cats) 
     params=WeightDict({cat_i:0 for cat_i in cats})
     for y_i in y:
         params[y_i]+=1
@@ -175,10 +176,10 @@ def conv(f):
 def arff_to_csv(in_path,out_path,first_set=None):
     utils.make_dir(out_path)
     for i,path_i in enumerate(utils.top_files(in_path)):
-        id_i=path_i.split("/")[-1]
+        id_i=path_i.split("/")[-1].split(".")[0]
         data_i=read_arff(path_i)
         data_i.save_csv(f"{out_path}/{id_i}")
 
 if __name__ == '__main__':
-    data_desc("AutoML",#"csv",
+    arff_to_csv("AutoML","csv",
               ["madeline","philippine","sylvine"])
