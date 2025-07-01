@@ -126,8 +126,10 @@ def data_desc(in_path,first_set=None):
 
 def read_arff(in_path:str,first=False):
     if(first):
+        print(in_path)
         get_target=target_first
     else:
+        print(in_path)
         get_target=target_last
     X,y=[],[]
     with open(in_path) as f:
@@ -138,8 +140,8 @@ def read_arff(in_path:str,first=False):
                 line_i=line_i.split(",")
                 if(len(line_i)>1):
                     x_i,y_i=get_target(line_i)
-                    y.append(y_i)
                     X.append(x_i)
+                    y.append(y_i)
         X=[[row[i] for row in X] 
                 for i in range(len(X[0]) )]
         X=[preproc(feat_i) for feat_i in X]
@@ -174,10 +176,11 @@ def conv(f):
         return float(f)
 
 def arff_to_csv(in_path,out_path,first_set=None):
+    first_set=set(first_set)
     utils.make_dir(out_path)
     for i,path_i in enumerate(utils.top_files(in_path)):
         id_i=path_i.split("/")[-1].split(".")[0]
-        data_i=read_arff(path_i)
+        data_i=read_arff(path_i,first=(id_i in first_set))
         data_i.save_csv(f"{out_path}/{id_i}")
 
 if __name__ == '__main__':
