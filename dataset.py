@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from sklearn import preprocessing
 import utils
 
 class Dataset(object):
@@ -57,7 +58,19 @@ class WeightDict(dict):
         arr=np.array(arr)
         index = np.arange(1,arr.shape[0]+1)
         n = arr.shape[0]     
-        return ((np.sum((2 * index - n  - 1) * arr)) / (n * np.sum(arr))) 
+        return ((np.sum((2 * index - n  - 1) * arr)) / (n * np.sum(arr)))
+
+def read_csv(in_path:str):
+    if(type(in_path)==tuple):
+        X,y=in_path
+        return Dataset(X,y)
+    if(type(in_path)!=str):
+        return in_path
+    df=pd.read_csv(in_path,header=None)
+    raw=df.to_numpy()
+    X,y=raw[:,:-1],raw[:,-1]
+    X= preprocessing.RobustScaler().fit_transform(X)
+    return Dataset(X,y)
 
 class DFView(object):
     def __init__(self,df):

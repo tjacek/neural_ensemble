@@ -25,71 +25,62 @@ def top_files(path):
     paths=sorted(paths)
     return paths
 
-class TimeLogging(object):
-    def __init__(self,log_path):
-        self.log = logging.getLogger(log_path)
+class DirFun(object):
+    def __init__(self,
+                 dir_args=None,
+                 input_arg='in_path',
+                 out_arg='out_path'):
+        if(dir_args is None):
+            dir_args={"in_path":0}
+        self.dir_args=dir_args
+        self.input_arg=input_arg
+        self.out_arg=out_arg
 
     def __call__(self, fun):
         @wraps(fun)
         def decor_fun(*args, **kwargs):
-            start_time = time.time()
-            fun(*args, **kwargs)
-            self.log.info( (time.time() - start_time))
-        return decor_fun
-
-class DirFun(object):
-    def __init__(self,dir_args=None):
-        if(dir_args is None):
-            dir_args=[("in_path",0)]
-        self.dir_args=dir_args
-
-    def __call__(self, fun):#*args, **kwargs):
-        @wraps(fun)
-        def decor_fun(*args, **kwargs):
-            in_path=self.get_input(*args, **kwargs)
-            make_dir(self.get_output(*args, **kwargs))
-            return_dict={}
+            original_args=FunArgs(args,kwargs)
+            input_pair=self.get_pair(self.input_arg)
+            in_path=original_args.get(input_pair)
+            if(not os.path.isdir(in_path)):
+                return fun(*args, **kwargs)
+            if(self.out_arg):
+                out_pair=self.get_pair(self.out_arg)
+                out_path=original_args.get(out_pair)
+                make_dir(out_path)
+            result_dict={}
             for in_i in top_files(in_path):
                 id_i=in_i.split('/')[-1]
-                new_args,new_kwargs=self.new_args(id_i,*args, **kwargs)
-                return_dict[id_i]=fun(*new_args, **new_kwargs)
-            return return_dict
-        return decor_fun 
+                arg_i=original_args.copy()
+                for pair_j in self.dir_args.items():
+                    path_j=arg_i.get(pair_j)
+                    arg_i.set(pair_j,f"{path_j}/{id_i}")
+                result_dict[id_i]=fun(*arg_i.args,**arg_i.kwargs)
+            return result_dict
+        return decor_fun
     
-    def get_input(self,*args, **kwargs):
-        name,i=self.dir_args[0]
-        if(name in kwargs):
-            return kwargs[name]
-        return args[0]
+    def get_pair(self,name):
+        return name,self.dir_args[name]
 
-    def get_output(self,*args, **kwargs):
-        name,i=self.dir_args[-1]
-        if(name in kwargs):
-            return kwargs[name]
-        return args[-1]
+class FunArgs(object):
+    def __init__(self,args,kwargs):
+        self.args=list(args)
+        self.kwargs=kwargs
+    
+    def copy(self):
+        return FunArgs(args=self.args.copy(),
+                       kwargs=self.kwargs.copy())
+    
+    def get(self,pair):
+        name,index=pair
+        if(name in self.kwargs):
+            return self.kwargs[name]
+        else:
+            return self.args[index]
 
-    def new_args(self,id_k,*args, **kwargs):
-        new_args=list(args).copy()
-        new_kwargs=kwargs.copy()
-        for name_i,i in self.dir_args:
-            if(name_i in kwargs):
-                value_i=kwargs[name_i]
-                new_kwargs[name_i]=f"{value_i}/{id_k}"
-            else:
-                print(i)
-                value_i=args[i]
-                new_args[i]=f"{value_i}/{id_k}"
-        return tuple(new_args),new_kwargs
-
-def print_dict(return_dict):
-    for id_i,value_i in return_dict.items():
-        print(f'{id_i},{value_i}')
-
-def get_args(paths,int_args):
-    parser = argparse.ArgumentParser()
-    for path_i in paths:
-        parser.add_argument(f"--{path_i}", type=str)
-    for arg_i in int_args:
-        parser.add_argument(f"--{arg_i}", type=int,default=3)    
-    parser.add_argument('--multi',action='store_true')
-    return parser
+    def set(self,pair,value):
+        name,index=pair
+        if(name in self.kwargs):
+            self.kwargs[name]=value
+        else:
+            self.args[index]=value

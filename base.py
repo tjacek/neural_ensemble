@@ -1,126 +1,81 @@
-import tensorflow as tf
 import numpy as np
-import json#,random
+from sklearn.model_selection import RepeatedStratifiedKFold
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import balanced_accuracy_score,classification_report,f1_score
-from sklearn import ensemble
-import data
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn import svm
+import dataset
 
-class AlgParams(object):
-    def __init__(self,hyper_type='eff',epochs=300,callbacks=None,alpha=0.5,
-                    bayes_iter=5,rest_clf=None):
-        self.hyper_type=hyper_type
-        self.epochs=epochs
-        self.alpha=alpha
-        self.bayes_iter=bayes_iter
-        self.rest_clf=rest_clf
+class DataSplits(object):
+    def __init__(self,data,splits):
+        self.data=data
+        self.splits=splits
 
-    def get_callback(self):
-        return tf.keras.callbacks.EarlyStopping(monitor='val_loss', 
-                                                patience=5)
+class SplitProtocol(object):
+    def __init__(self,n_splits,n_repeats):
+        self.n_splits=n_splits
+        self.n_repeats=n_repeats
+
+    def get_split(self,data):
+        rskf=RepeatedStratifiedKFold(n_repeats=self.n_repeats, 
+                                     n_splits=self.n_splits, 
+                                     random_state=0)
+        splits=[]
+        for train_index,test_index in rskf.split(data.X,data.y):
+            splits.append(Split(train_index,test_index))
+        return splits
 
 class Split(object):
-    def __init__(self,dataset,train,test):
-        self.dataset=dataset
-        self.train=train
-#        self.valid=valid
-        self.test=test
-    
-    def get_train(self):
-        return self.dataset.X[self.train],self.dataset.y[self.train]
-    
-    def get_valid(self):
-        return self.get_train()
+    def __init__(self,train_index,test_index):
+        self.train_index=train_index
+        self.test_index=test_index
+
         
-    def get_test(self):
-        return self.dataset.X[self.test],self.dataset.y[self.test]
+    def eval(self,data,clf):
+        return data.eval(train_index=self.train_index,
+                         test_index=self.test_index,
+                         clf=clf,
+                         as_result=True)
+       
+    def fit_clf(self,data,clf):
+        return data.fit_clf(self.train_index,clf)
 
-    def to_ncscf(self,extractor):
-        cs=extractor.predict(self.dataset.X)
-        return self.ncscf_from_feats(cs)
+    def pred(self,data,clf):
+        return data.pred(self.test_index,
+                         clf=clf,
+                         as_result=True)
 
-    def ncscf_from_feats(self,cs):
-        all_splits=[]
-        for cs_i in cs:
-            feats_i=np.concatenate([self.dataset.X,cs_i],axis=1)
-            data_i=data.Dataset(X=feats_i,
-                                y=self.dataset.y,
-                                params=self.dataset.params)
-            split_i=Split(dataset=data_i,
-                          train=self.train,
-                          test=self.test)
-            all_splits.append(split_i)
-        return NECSCF(all_splits=all_splits)
-
-    def eval(self,clf_type):
-        clf_i=get_clf(clf_type)
-        X_train,y_train=self.get_train()
-        clf_i.fit(X_train,y_train)
-        X_test,y_test=self.get_test()
-        y_pred=clf_i.predict(X_test)
-        return Result(y_true=y_test,
-                      y_pred=y_pred)
+    def save(self,out_path):
+        return np.savez(out_path,self.train_index,self.test_index)
 
     def __str__(self):
-        return f"{len(self.train)}:{len(self.test)}"
+        train_size=self.train_index.shape[0]
+        test_size=self.test_index.shape[0]
+        return f"train:{train_size},test:{test_size}"
 
-class NECSCF(object):
-    def __init__(self,all_splits):
-        self.all_splits=all_splits
-        self.clfs=[]
+def get_clf(clf_type):
+    if(clf_type=="RF"): 
+        return RandomForestClassifier(class_weight="balanced")
+    if(clf_type=="LR"):
+        return LogisticRegression(solver='liblinear')
+    if(clf_type=="SVM"):
+        return svm.SVC(kernel='rbf')
+    if(clf_type=="GRAD"):
+        return GradientBoostingClassifier()
+    raise Exception(f"Unknow clf type:{clf_type}")
 
-    def train(self,clf_type="RF"):
-        for split_i in self.all_splits:
-            clf_i=get_clf(clf_type)
-            X_train,y_train=split_i.get_train()
-            clf_i.fit(X_train,y_train)
-            self.clfs.append(clf_i)
+def get_paths(out_path,ens_type,dirs):
+    ens_path=f"{out_path}/{ens_type}"
+    path_dir={dir_i:f"{ens_path}/{dir_i}" 
+                    for dir_i in dirs}
+    path_dir['ens']=ens_path
+    path_dir['splits']=f"{out_path}/splits"
+    return path_dir
 
-    def eval(self):
-        votes=[]
-        for split_i,clf_i in zip(self.all_splits,self.clfs):
-            X_test,y_test=split_i.get_test()
-            votes.append(clf_i.predict_proba(X_test).T)
-        votes= np.array(votes)
-        y_pred= np.sum(votes,axis=0).T
-        y_pred=np.argmax(y_pred,axis=1)
-        return Result(y_true=y_test,
-                      y_pred=y_pred)
-
-    def baseline(self,dataset,clf_type):
-        cs_split=self.all_splits[0]
-        split=Split(dataset=dataset,
-                    train=cs_split.train,
-                    test=cs_split.test)
-        return split.eval(clf_type)
-
-    def __str__(self):
-        return f'NECSCF:{len(self.clfs)}'
-
-class Result(object):
-    def __init__(self,y_true,y_pred):
-        self.y_true=y_true
-        self.y_pred=y_pred
-
-    def acc(self):
-        return accuracy_score(self.y_true,self.y_pred)
-
-    def save(self,out_path:str):
-        with open(out_path, 'w') as json_file:
-            json.dump((self.y_true,self.y_pred), json_file)
-
-def read_result(in_path):
-    with open(in_path, 'r') as json_file:
-         y_true,y_pred = json.load(json_file)
-         return Result(y_true=y_true,
-                       y_pred=y_pred) 
-
-def get_clf(name_i):
-    if(type(name_i)!=str):
-        return name_i
-    if(name_i=="RF"):
-        return ensemble.RandomForestClassifier(class_weight='balanced_subsample')
-    if(name_i=="LR"):
-        return LogisticRegression(solver='liblinear',
-            class_weight='balanced')
+def get_splits(data_path,
+               n_splits=10,
+               n_repeats=1):
+    data=dataset.read_csv(data_path)
+    protocol=SplitProtocol(n_splits,n_repeats)
+    return DataSplits(data=data,
+                      splits=protocol.get_split(data))
