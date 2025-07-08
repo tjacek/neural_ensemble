@@ -4,7 +4,52 @@ import numpy as np
 from tqdm import tqdm
 import os.path
 import argparse,json
-import base,dataset,ens,utils
+import base,clfs,dataset,utils
+
+class SplitIterator(object):
+    def __init__(self,start,step):
+        self.start=start
+        self.step=step
+
+    def get_splits(self,path):
+        indexs=[self.start+j for j in range(self.step)]
+        for i in indexs:
+            split_path_i=f"{path}/{i}.npz"
+            split_i=base.read_split(split_path_i)
+            yield i,split_i
+#    def get_paths(self,dir_path:str):
+#        indexs=[self.start+j for j in range(self.step)]
+#        paths=[ (index,f"{dir_path}/{index}.keras") 
+#               for index in indexs]
+#        if(not os.path.isdir(model_path)):
+#                return paths
+#        paths=[ (i,model_i)
+#                for i,model_i in paths
+#                    if(not (os.path.isfile(model_i) or
+#                         os.path.isdir(model_i)))]
+#        return paths
+
+def train(data_path:str,
+               out_path:str,
+               clf_type="class_ens",
+               start=0,
+               step=10):
+    split_iter=SplitIterator(start,step)
+    @utils.DirFun("in_path","exp_path")
+    def helper(in_path,exp_path):
+        data=dataset.read_csv(in_path)
+        path_dir=base.get_paths(out_path=exp_path,
+                                 ens_type=clf_type,
+                                 dirs=['results','info.js'])
+        clf_factory=clfs.get_clfs(clf_type)
+        for i,split_i in tqdm(split_iter.get_splits(path_dir['splits'])):
+            clf_i=clf_factory()
+            split_i.fit_clf(data,clf_i)
+            result_i=clf_i.eval(data,split_i)
+            result_i.save(f"{path_dir['results']}/{i}.npz")
+        utils.save_json(value=clf_factory.get_info(),
+                        out_path=path_dir['info.js'])
+    helper(data_path,out_path)            
 
 #def pred_clf(data_path:str,
 #                 exp_path:str,
@@ -30,7 +75,7 @@ import base,dataset,ens,utils
 #    helper(data_path,exp_path)
 
 
-def base_train(data_path:str,
+def nn_train(data_path:str,
                out_path:str,
                ens_type="class_ens",
                start=0,
@@ -75,15 +120,15 @@ def get_model_paths(model_path,start,step):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type=str, default="../uci/wall-following")
-    parser.add_argument("--out_path", type=str, default="new_exp/wall-following")
+    parser.add_argument("--data", type=str, default="bad_exp/data")
+    parser.add_argument("--out_path", type=str, default="bad_exp/exp")
     parser.add_argument("--start", type=int, default=0)
     parser.add_argument("--step", type=int, default=100)
-    parser.add_argument("--ens_type", type=str, default="separ_purity_ens")
+    parser.add_argument("--clf_type", type=str, default="RF")
     args = parser.parse_args()
     print(args)
-    base_train(data_path=args.data,
-               out_path=args.out_path,
-               start=args.start,
-               step=args.step,
-               ens_type=args.ens_type)
+    train(data_path=args.data,
+          out_path=args.out_path,
+          start=args.start,
+          step=args.step,
+          clf_type=args.clf_type)

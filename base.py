@@ -6,7 +6,9 @@ from sklearn.ensemble import GradientBoostingClassifier
 from sklearn import svm
 import dataset
 
+
 NEURAL_CLFS=set(["MLP"])
+OTHER_CLFS=set(["RF","GRAD","LR","SVM"])
 
 class DataSplits(object):
     def __init__(self,data,splits):
@@ -55,6 +57,11 @@ class Split(object):
         test_size=self.test_index.shape[0]
         return f"train:{train_size},test:{test_size}"
 
+def read_split(in_path):
+    raw_split=np.load(in_path)
+    return Split(train_index=raw_split["arr_0"],
+                 test_index=raw_split["arr_1"])
+
 def get_clf(clf_type):
     if(clf_type=="RF"): 
         return RandomForestClassifier(class_weight="balanced")
@@ -82,57 +89,34 @@ def get_splits(data_path,
     return DataSplits(data=data,
                       splits=protocol.get_split(data))
 
-class ClfFactory(object):
-    def __init__(self,hyper_params=None,
-                      loss_gen=None):
-        if(hyper_params is None):
-           hyper_params=default_hyperparams()
-        self.params=None
-        self.hyper_params=hyper_params
-        self.class_dict=None
-        self.loss_gen=loss_gen
+class ClasicalClfFactory(object):
+    def __init__(self,clf_type="RF"):
+        self.clf_type=clf_type
     
     def init(self,data):
-        self.params={'dims': (data.dim(),),
-                     'n_cats':data.n_cats(),
-                     'n_epochs':1000}
-        self.class_dict=dataset.get_class_weights(data.y)
+        pass
 
     def __call__(self):
-        raise NotImplementedError()
+        return ClasicalClfAdapter(get_clf(self.clf_type))
 
     def read(self,model_path):
-        raise NotImplementedError()
+        raise Exception(f"Clasical Clf {self.clf_type} cannot be serialized ")
 
     def get_info(self):
-        raise NotImplementedError()
+        return {"ens":self.clf_type,"callback":None,"hyper":None}
 
-class ClfAdapter(object):
-    def __init__(self, params,
-                       hyper_params,
-                       class_dict=None,
-                       model=None,
-                       loss_gen=None,
-                       verbose=0):
-        self.params=params
-        self.hyper_params=hyper_params
-        self.class_dict=class_dict
-        self.model = model
-        self.loss_gen=loss_gen
-        self.verbose=verbose
-
+class ClasicalClfAdapter(object):
+    def __init__(self,clf):
+        self.clf=clf
+    
     def fit(self,X,y):
-        raise NotImplementedError()
+        return self.clf.fit(X,y)
 
     def eval(self,data,split_i):
-        test_data_i=data.selection(split_i.test_index)
-        raw_partial_i=self.partial_predict(test_data_i.X)
-        result_i=dataset.PartialResults(y_true=test_data_i.y,
-                                        y_partial=raw_partial_i)
-        return result_i
+        return split_i.pred(data,self.clf)
 
     def save(self,out_path):
-        raise NotImplementedError()
+        pass
 
 def default_hyperparams():
     return {'layers':2, 'units_0':2,

@@ -27,11 +27,13 @@ def top_files(path):
 
 class DirFun(object):
     def __init__(self,
-                 dir_args=None,
                  input_arg='in_path',
-                 out_arg='out_path'):
+                 out_arg='out_path',
+                 dir_args=None):
         if(dir_args is None):
-            dir_args={"in_path":0}
+            dir_args={input_arg:0}
+        if(out_arg and (not out_arg in dir_args)):
+            dir_args[out_arg]=len(dir_args)
         self.dir_args=dir_args
         self.input_arg=input_arg
         self.out_arg=out_arg

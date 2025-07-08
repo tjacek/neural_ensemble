@@ -2,11 +2,67 @@ import tensorflow as tf
 import base
 
 def get_clfs(clf_type):
+    if(clf_type in base.OTHER_CLFS):
+        return base.ClasicalClfFactory(clf_type)
     if(clf_type=="MLP"):
         return MLPFactory()
     raise Exception(f"Unknown clf type:{clf_type}")	
 
-class MLPFactory(base.ClfFactory):
+class ClfFactory(object):
+    def __init__(self,hyper_params=None,
+                      loss_gen=None):
+        if(hyper_params is None):
+           hyper_params=default_hyperparams()
+        self.params=None
+        self.hyper_params=hyper_params
+        self.class_dict=None
+        self.loss_gen=loss_gen
+    
+    def init(self,data):
+        self.params={'dims': (data.dim(),),
+                     'n_cats':data.n_cats(),
+                     'n_epochs':1000}
+        self.class_dict=dataset.get_class_weights(data.y)
+
+    def __call__(self):
+        raise NotImplementedError()
+
+    def read(self,model_path):
+        raise NotImplementedError()
+
+    def get_info(self):
+        raise NotImplementedError()
+
+class ClfAdapter(object):
+    def __init__(self, params,
+                       hyper_params,
+                       class_dict=None,
+                       model=None,
+                       loss_gen=None,
+                       verbose=0):
+        self.params=params
+        self.hyper_params=hyper_params
+        self.class_dict=class_dict
+        self.model = model
+        self.loss_gen=loss_gen
+        self.verbose=verbose
+
+    def fit(self,X,y):
+        raise NotImplementedError()
+
+    def eval(self,data,split_i):
+        test_data_i=data.selection(split_i.test_index)
+        raw_partial_i=self.partial_predict(test_data_i.X)
+        result_i=dataset.PartialResults(y_true=test_data_i.y,
+                                        y_partial=raw_partial_i)
+        return result_i
+
+    def save(self,out_path):
+        raise NotImplementedError()
+
+
+
+class MLPFactory(object):
     def __call__(self):
         return Deep(params=self.params,
                     hyper_params=self.hyper_params,
@@ -22,7 +78,7 @@ class MLPFactory(base.ClfFactory):
     def get_info(self):
         return {"ens":"deep","callback":"total","hyper":self.hyper_params}
 
-class MLP(base.ClfAdapter):
+class MLP(object):
 
     def fit(self,X,y):
         if(self.model is None):
