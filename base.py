@@ -4,7 +4,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn import svm
-import dataset
+import dataset,utils
 
 
 NEURAL_CLFS=set(["MLP"])
@@ -46,8 +46,7 @@ class Split(object):
 
     def pred(self,data,clf):
         return data.pred(self.test_index,
-                         clf=clf,
-                         as_result=True)
+                         clf=clf)
 
     def save(self,out_path):
         return np.savez(out_path,self.train_index,self.test_index)
@@ -56,6 +55,52 @@ class Split(object):
         train_size=self.train_index.shape[0]
         test_size=self.test_index.shape[0]
         return f"train:{train_size},test:{test_size}"
+
+class Interval(object):
+    def __init__(self,start,step):
+        self.start=start
+        self.step=step
+
+    def __call__(self):
+        return [self.start+j 
+                    for j in range(self.step)]
+
+class DirProxy(object):
+    def __init__(self,split_path,clf_dict):
+        self.split_path=split_path
+        self.clf_dict=clf_dict
+
+    def make_dir(self,key):
+        utils.make_dir(self.clf_dict[key])
+
+    def get_splits(self,interval):
+        split_paths=[f"{self.split_path}/{i}.npz" 
+                        for i in interval()]
+        raise Exception(interval())
+        return [read_split(split_path_i) 
+                    for split_path_i in split_paths]
+
+    def get_paths(self,interval,
+                       key,
+                       postfix="npz"):
+        path=self.clf_dict[key]
+        return [ f"{path}/{i}.{postfix}" for i in interval()]
+
+    def save_info(self,clf_factory):
+        utils.save_json(value=clf_factory.get_info(),
+                        out_path=self.clf_dict['info.js'])
+
+def get_dir_path(out_path,clf_type):
+    clf_path=f"{out_path}/{clf_type}"
+    utils.make_dir(clf_path)
+    split_path=f"{out_path}/splits"
+    keys=["results","info.js"]
+    if(clf_type in NEURAL_CLFS):
+        keys+=["models","history"]
+    clf_dict={key_i:f"{clf_path}/{key_i}" 
+                for key_i in keys}
+    return DirProxy(split_path=split_path,
+                    clf_dict=clf_dict)
 
 def read_split(in_path):
     raw_split=np.load(in_path)
@@ -72,14 +117,6 @@ def get_clf(clf_type):
     if(clf_type=="GRAD"):
         return GradientBoostingClassifier()
     raise Exception(f"Unknow clf type:{clf_type}")
-
-def get_paths(out_path,ens_type,dirs):
-    ens_path=f"{out_path}/{ens_type}"
-    path_dir={dir_i:f"{ens_path}/{dir_i}" 
-                    for dir_i in dirs}
-    path_dir['ens']=ens_path
-    path_dir['splits']=f"{out_path}/splits"
-    return path_dir
 
 def get_splits(data_path,
                n_splits=10,

@@ -6,17 +6,6 @@ import os.path
 import argparse,json
 import base,clfs,dataset,utils
 
-class SplitIterator(object):
-    def __init__(self,start,step):
-        self.start=start
-        self.step=step
-
-    def get_splits(self,path):
-        indexs=[self.start+j for j in range(self.step)]
-        for i in indexs:
-            split_path_i=f"{path}/{i}.npz"
-            split_i=base.read_split(split_path_i)
-            yield i,split_i
 #    def get_paths(self,dir_path:str):
 #        indexs=[self.start+j for j in range(self.step)]
 #        paths=[ (index,f"{dir_path}/{index}.keras") 
@@ -34,21 +23,24 @@ def train(data_path:str,
                clf_type="class_ens",
                start=0,
                step=10):
-    split_iter=SplitIterator(start,step)
+    interval=base.Interval(start,step)
     @utils.DirFun("in_path","exp_path")
     def helper(in_path,exp_path):
         data=dataset.read_csv(in_path)
-        path_dir=base.get_paths(out_path=exp_path,
-                                 ens_type=clf_type,
-                                 dirs=['results','info.js'])
+        dir_proxy=base.get_dir_path(out_path=exp_path,
+                                    clf_type=clf_type)
         clf_factory=clfs.get_clfs(clf_type)
-        for i,split_i in tqdm(split_iter.get_splits(path_dir['splits'])):
+        splits=dir_proxy.get_splits(interval)
+        raise Exception(len(splits))
+        dir_proxy.make_dir("results")
+        result_paths=dir_proxy.get_paths(interval,
+                            key="results")
+        for i,split_i in tqdm(enumerate(splits)):
             clf_i=clf_factory()
             split_i.fit_clf(data,clf_i)
             result_i=clf_i.eval(data,split_i)
-            result_i.save(f"{path_dir['results']}/{i}.npz")
-        utils.save_json(value=clf_factory.get_info(),
-                        out_path=path_dir['info.js'])
+            result_i.save(result_paths[i])
+        dir_proxy.save_info(clf_factory)
     helper(data_path,out_path)            
 
 #def pred_clf(data_path:str,
@@ -123,7 +115,7 @@ if __name__ == '__main__':
     parser.add_argument("--data", type=str, default="bad_exp/data")
     parser.add_argument("--out_path", type=str, default="bad_exp/exp")
     parser.add_argument("--start", type=int, default=0)
-    parser.add_argument("--step", type=int, default=100)
+    parser.add_argument("--step", type=int, default=20)
     parser.add_argument("--clf_type", type=str, default="RF")
     args = parser.parse_args()
     print(args)

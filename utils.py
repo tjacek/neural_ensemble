@@ -1,6 +1,6 @@
 import os,warnings
 import logging,time
-import argparse
+import argparse,json
 from functools import wraps
 
 def silence_warnings():
@@ -24,6 +24,15 @@ def top_files(path):
         paths=path
     paths=sorted(paths)
     return paths
+
+def read_json(in_path):
+    with open(in_path, 'r') as file:
+        data = json.load(file)
+        return data
+
+def save_json(value,out_path):
+    with open(out_path, 'w') as f:
+        json.dump(value, f)
 
 class DirFun(object):
     def __init__(self,
