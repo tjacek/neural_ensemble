@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from sklearn.metrics import accuracy_score,f1_score,balanced_accuracy_score
 from sklearn import preprocessing
 import utils
 
@@ -37,7 +38,16 @@ class Dataset(object):
                 line_i=",".join([str(c_j) for c_j in line_i])
                 line_i+="\n"
                 f.write(line_i)
-#            raise Exception(line_i)
+    
+    def fit_clf(self,train,clf):
+        X_train,y_train=self.X[train],self.y[train]
+        history=clf.fit(X_train,y_train)
+        return clf,history
+
+    def pred(self,test_index,clf):
+        X_test,y_test=self.X[test_index],self.y[test_index]
+        y_pred=clf.predict(X_test)
+        return Result(y_pred,y_test)
 
 class WeightDict(dict):
     def __init__(self, arg=[]):
@@ -71,6 +81,69 @@ def read_csv(in_path:str):
     X,y=raw[:,:-1],raw[:,-1]
     X= preprocessing.RobustScaler().fit_transform(X)
     return Dataset(X,y)
+
+class Result(object):
+    def __init__(self,y_pred,y_true):
+        self.y_pred=y_pred
+        self.y_true=y_true
+
+    def get_acc(self):
+        return accuracy_score(self.y_pred,self.y_true)
+
+    def get_balanced(self):
+        return balanced_accuracy_score(self.y_pred,self.y_true)
+
+    def get_metric(self,metric_type):
+        if(type(metric_type)==str):
+            metric=dispatch_metric(metric_type)
+        else:
+            raise Exception(f"Arg metric_type should be str is {type(metric_type)}")
+        return metric(self.y_pred,self.y_true)
+
+    def report(self):
+        print(classification_report(self.y_pred,self.y_true,digits=4))
+
+    def true_pos(self):
+        pos= [int(pred_i==true_i) 
+                for pred_i,true_i in zip(self.y_pred,self.y_true)]
+        return np.array(pos)
+
+    def save(self,out_path):
+        y_pair=np.array([self.y_pred,self.y_true])
+        np.savez(out_path,y_pair)
+
+class ResultGroup(object):
+    def __init__(self,results):
+        self.results=results
+
+    def get_metric(self,metric_type):
+        return [result_j.get_metric(metric_type) 
+                    for result_j in self.results]
+    def get_acc(self):
+        return [result_j.get_acc() 
+                    for result_j in self.results]
+
+    def get_balanced(self):
+        return [result_j.get_balanced() 
+                    for result_j in self.results]
+
+    def save(self,out_path):
+        utils.make_dir(out_path)
+        for i,result_i in enumerate(self.results):
+            result_i.save(f"{out_path}/{i}")
+
+def read_result(in_path:str):
+    if(type(in_path)==Result):
+        return in_path
+    raw=list(np.load(in_path).values())[0]
+    y_pred,y_true=raw[0],raw[1]
+    return Result(y_pred=y_pred,
+                  y_true=y_true)
+
+def read_result_group(in_path:str):
+    results= [ read_result(path_i) 
+                 for path_i in utils.top_files(in_path)]
+    return ResultGroup(results)
 
 class DFView(object):
     def __init__(self,df):

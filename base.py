@@ -90,7 +90,14 @@ class DirProxy(object):
         utils.save_json(value=clf_factory.get_info(),
                         out_path=self.clf_dict['info.js'])
 
-def get_dir_path(out_path,clf_type):
+    def read_results(self):
+        return dataset.read_result_group(self.clf_dict["results"])
+
+def get_dir_path(out_path,clf_type=None):
+    if(clf_type is None):
+        raw=out_path.split("/")
+        clf_type=raw[-1]
+        out_path="/".join(raw[:-1])
     clf_path=f"{out_path}/{clf_type}"
     utils.make_dir(clf_path)
     split_path=f"{out_path}/splits"
