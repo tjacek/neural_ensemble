@@ -66,25 +66,40 @@ class Interval(object):
                     for j in range(self.step)]
 
 class DirProxy(object):
-    def __init__(self,split_path,clf_dict):
+    def __init__(self,clf_type,split_path,clf_dict):
+        self.clf_type=clf_type
         self.split_path=split_path
         self.clf_dict=clf_dict
 
     def make_dir(self,key):
+        if(type(key)==list):
+            for key_i in key:
+                self.make_dir(key_i)
+            return
         utils.make_dir(self.clf_dict[key])
-
+  
     def get_splits(self,interval):
-        split_paths=[f"{self.split_path}/{i}.npz" 
-                        for i in interval()]
-        raise Exception(interval())
+        split_paths,_=self.get_paths(interval,"splits")
         return [read_split(split_path_i) 
                     for split_path_i in split_paths]
 
     def get_paths(self,interval,
                        key,
                        postfix="npz"):
-        path=self.clf_dict[key]
-        return [ f"{path}/{i}.{postfix}" for i in interval()]
+        if(key=="splits"):
+            dir_path=self.split_path
+        else:
+            dir_path=self.clf_dict[key]
+        if(interval is None):
+            return utils.top_files(dir_path),None
+        if(type(interval)==Interval):
+            indexes=interval()
+        else:
+            indexes=interval
+        paths=[ f"{dir_path}/{i}.{postfix}" for i in interval()]
+        return paths,indexes
+
+#    def select_paths(self,key):
 
     def save_info(self,clf_factory):
         utils.save_json(value=clf_factory.get_info(),
@@ -106,7 +121,8 @@ def get_dir_path(out_path,clf_type=None):
         keys+=["models","history"]
     clf_dict={key_i:f"{clf_path}/{key_i}" 
                 for key_i in keys}
-    return DirProxy(split_path=split_path,
+    return DirProxy(clf_type=clf_type,
+                    split_path=split_path,
                     clf_dict=clf_dict)
 
 def read_split(in_path):

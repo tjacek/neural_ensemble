@@ -31,7 +31,6 @@ def train(data_path:str,
                                     clf_type=clf_type)
         clf_factory=clfs.get_clfs(clf_type)
         splits=dir_proxy.get_splits(interval)
-        raise Exception(len(splits))
         dir_proxy.make_dir("results")
         result_paths=dir_proxy.get_paths(interval,
                             key="results")
@@ -41,6 +40,22 @@ def train(data_path:str,
             result_i=clf_i.eval(data,split_i)
             result_i.save(result_paths[i])
         dir_proxy.save_info(clf_factory)
+    helper(data_path,out_path)            
+
+def nn_train(data_path:str,
+               out_path:str,
+               clf_type="class_ens",
+               start=0,
+               step=10):
+    interval=base.Interval(start,step)
+    @utils.DirFun("in_path","exp_path")
+    def helper(in_path,exp_path):
+        data=dataset.read_csv(in_path)
+        dir_proxy=base.get_dir_path(out_path=exp_path,
+                                    clf_type=clf_type)
+        clf_factory=clfs.get_clfs(clf_type)
+
+        raise Exception(dir_proxy.clf_dict)
     helper(data_path,out_path)            
 
 #def pred_clf(data_path:str,
@@ -67,36 +82,36 @@ def train(data_path:str,
 #    helper(data_path,exp_path)
 
 
-def nn_train(data_path:str,
-               out_path:str,
-               ens_type="class_ens",
-               start=0,
-               step=10):
-    path_dict=base.get_paths(out_path=out_path,
-                             ens_type=ens_type,
-                             dirs=['models','history','info.js'])
-    utils.make_dir(path_dict['ens'])    
-    model_paths=get_model_paths(path_dict['models'],start,step)
-    print(model_paths)
-    if(len(model_paths)==0):
-        raise Exception("Models exist")
-    utils.make_dir(path_dict['models'])
-    utils.make_dir(path_dict['history'])
-    data=dataset.read_csv(data_path)
-    clf_factory=clfs.get_clfs(ens_type)
-    clf_factory.init(data)
-    for index,model_path in tqdm(model_paths):
-        raw_split=np.load(f"{path_dict['splits']}/{index}.npz")
-        split_j=base.UnaggrSplit.Split(train_index=raw_split["arr_0"],
-                                       test_index=raw_split["arr_1"])
-        clf_j=clf_factory()
-        clf_j,history_j=split_j.fit_clf(data,clf_j)  
-        hist_dict_j=utils.history_to_dict(history_j)
-        clf_j.save(model_path)
-        with open(f"{path_dict['history']}/{index}", 'w') as f:
-            json.dump(hist_dict_j, f)
-    with open(path_dict['info.js'], 'w') as f:
-        json.dump(clf_factory.get_info(),f)
+#def nn_train(data_path:str,
+#               out_path:str,
+#               ens_type="class_ens",
+#               start=0,
+#               step=10):
+#    path_dict=base.get_paths(out_path=out_path,
+#                             ens_type=ens_type,
+#                             dirs=['models','history','info.js'])
+#    utils.make_dir(path_dict['ens'])    
+#    model_paths=get_model_paths(path_dict['models'],start,step)
+#    print(model_paths)
+#    if(len(model_paths)==0):
+#        raise Exception("Models exist")
+#    utils.make_dir(path_dict['models'])
+#    utils.make_dir(path_dict['history'])
+#    data=dataset.read_csv(data_path)
+#    clf_factory=clfs.get_clfs(ens_type)
+#    clf_factory.init(data)
+#    for index,model_path in tqdm(model_paths):
+#        raw_split=np.load(f"{path_dict['splits']}/{index}.npz")
+#        split_j=base.UnaggrSplit.Split(train_index=raw_split["arr_0"],
+#                                       test_index=raw_split["arr_1"])
+#        clf_j=clf_factory()
+#        clf_j,history_j=split_j.fit_clf(data,clf_j)  
+#        hist_dict_j=utils.history_to_dict(history_j)
+#        clf_j.save(model_path)
+#        with open(f"{path_dict['history']}/{index}", 'w') as f:
+#            json.dump(hist_dict_j, f)
+#    with open(path_dict['info.js'], 'w') as f:
+#        json.dump(clf_factory.get_info(),f)
 
 def get_model_paths(model_path,start,step):
     indexs=[start+j for j in range(step)]
