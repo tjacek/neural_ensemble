@@ -4,8 +4,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn import svm
+import os.path
 import dataset,utils
-
 
 NEURAL_CLFS=set(["MLP"])
 OTHER_CLFS=set(["RF","GRAD","LR","SVM"])
@@ -66,44 +66,60 @@ class Interval(object):
                     for j in range(self.step)]
 
 class DirProxy(object):
-    def __init__(self,clf_type,split_path,clf_dict):
+    def __init__(self,clf_type,
+                      info_path,
+                      clf_dict,
+                      ext_dict):
         self.clf_type=clf_type
-        self.split_path=split_path
+        self.info_path=info_path
         self.clf_dict=clf_dict
+        self.ext_dict=ext_dict
 
     def make_dir(self,key):
         if(type(key)==list):
             for key_i in key:
                 self.make_dir(key_i)
-            return
-        utils.make_dir(self.clf_dict[key])
+        else:
+            utils.make_dir(self.clf_dict[key])
   
-    def get_splits(self,interval):
-        split_paths,_=self.get_paths(interval,"splits")
-        return [read_split(split_path_i) 
-                    for split_path_i in split_paths]
-
-    def get_paths(self,interval,
-                       key,
-                       postfix="npz"):
-        if(key=="splits"):
-            dir_path=self.split_path
-        else:
-            dir_path=self.clf_dict[key]
-        if(interval is None):
+    def get_paths(self,indexes,
+                       key):
+        dir_path=self.clf_dict[key]
+        if(indexes is None):
             return utils.top_files(dir_path),None
-        if(type(interval)==Interval):
-            indexes=interval()
-        else:
-            indexes=interval
-        paths=[ f"{dir_path}/{i}.{postfix}" for i in interval()]
+        if(type(indexes)==Interval):
+            indexes=indexes()
+        ext=self.ext_dict[key]
+        paths=[ f"{dir_path}/{i}.{ext}" for i in indexes]
         return paths,indexes
 
-#    def select_paths(self,key):
+#    def get_splits(self,interval):
+#        split_paths,_=self.get_paths(interval,"splits")
+#        return [read_split(split_path_i) 
+#                    for split_path_i in split_paths]
 
+    def select_paths(self,indexes,
+                          key):
+        paths,indexes=self.get_paths(indexes,
+                                     key)
+        s_paths,s_indexes=[],[]
+        for i,path_i in enumerate(paths):
+            if(not os.path.exists(path_i)):
+                s_paths.append(path_i)
+                s_indexes.append(i)
+        return s_paths,s_indexes
+
+    def path_dict(self,indexes,
+                       key="models"):
+        if(key is None):
+            paths,indexes=self.select_paths(indexes,
+                                            key)
+        return {key_i:self.get_paths(indexes,key_i)[0] 
+                    for key_i in self.clf_dict}
+    
     def save_info(self,clf_factory):
         utils.save_json(value=clf_factory.get_info(),
-                        out_path=self.clf_dict['info.js'])
+                        out_path=self.info_path)
 
     def read_results(self):
         return dataset.read_result_group(self.clf_dict["results"])
@@ -116,14 +132,20 @@ def get_dir_path(out_path,clf_type=None):
     clf_path=f"{out_path}/{clf_type}"
     utils.make_dir(clf_path)
     split_path=f"{out_path}/splits"
-    keys=["results","info.js"]
+    info_path=f"{clf_path}/info.js"
+    keys,ext_keys=["results"],["npz"]
     if(clf_type in NEURAL_CLFS):
         keys+=["models","history"]
+        ext_keys+=["keras","txt"]
     clf_dict={key_i:f"{clf_path}/{key_i}" 
                 for key_i in keys}
+    clf_dict["splits"]=split_path
+    ext_dict=dict(zip(keys,ext_keys))
+    ext_dict["splits"]="npz"
     return DirProxy(clf_type=clf_type,
-                    split_path=split_path,
-                    clf_dict=clf_dict)
+                    info_path=info_path,
+                    clf_dict=clf_dict,
+                    ext_dict=ext_dict)
 
 def read_split(in_path):
     raw_split=np.load(in_path)

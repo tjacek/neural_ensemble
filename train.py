@@ -54,8 +54,14 @@ def nn_train(data_path:str,
         dir_proxy=base.get_dir_path(out_path=exp_path,
                                     clf_type=clf_type)
         clf_factory=clfs.get_clfs(clf_type)
-
-        raise Exception(dir_proxy.clf_dict)
+        dir_proxy.make_dir(["history","models","results"])
+        path_dict=dir_proxy.path_dict(indexes=interval,
+                                         key="models")
+        raise Exception(path_dict)
+        splits=dir_proxy.get_splits(indexes)
+        for i,split_i in tqdm(enumerate(splits)):
+            clf_i=clf_factory()
+        raise Exception(model_paths)
     helper(data_path,out_path)            
 
 #def pred_clf(data_path:str,
@@ -113,17 +119,17 @@ def nn_train(data_path:str,
 #    with open(path_dict['info.js'], 'w') as f:
 #        json.dump(clf_factory.get_info(),f)
 
-def get_model_paths(model_path,start,step):
-    indexs=[start+j for j in range(step)]
-    paths=[ (index,f"{model_path}/{index}.keras") 
-               for index in indexs]
-    if(not os.path.isdir(model_path)):
-        return paths
-    paths=[ (i,model_i)
-              for i,model_i in paths
-                  if(not (os.path.isfile(model_i) or
-                         os.path.isdir(model_i)))]
-    return paths
+#def get_model_paths(model_path,start,step):
+#    indexs=[start+j for j in range(step)]
+#    paths=[ (index,f"{model_path}/{index}.keras") 
+#               for index in indexs]
+#    if(not os.path.isdir(model_path)):
+#        return paths
+#    paths=[ (i,model_i)
+#              for i,model_i in paths
+#                  if(not (os.path.isfile(model_i) or
+#                         os.path.isdir(model_i)))]
+#    return paths
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -131,10 +137,10 @@ if __name__ == '__main__':
     parser.add_argument("--out_path", type=str, default="bad_exp/exp")
     parser.add_argument("--start", type=int, default=0)
     parser.add_argument("--step", type=int, default=20)
-    parser.add_argument("--clf_type", type=str, default="RF")
+    parser.add_argument("--clf_type", type=str, default="MLP")
     args = parser.parse_args()
     print(args)
-    train(data_path=args.data,
+    nn_train(data_path=args.data,
           out_path=args.out_path,
           start=args.start,
           step=args.step,
