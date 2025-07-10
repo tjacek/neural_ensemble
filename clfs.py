@@ -1,5 +1,5 @@
 import tensorflow as tf
-import base
+import base,dataset,deep
 
 def get_clfs(clf_type):
     if(clf_type in base.OTHER_CLFS):
@@ -62,9 +62,9 @@ class ClfAdapter(object):
 
 
 
-class MLPFactory(object):
+class MLPFactory(ClfFactory):
     def __call__(self):
-        return Deep(params=self.params,
+        return MLP(params=self.params,
                     hyper_params=self.hyper_params,
                     class_dict=self.class_dict)
     
@@ -78,7 +78,7 @@ class MLPFactory(object):
     def get_info(self):
         return {"ens":"deep","callback":"total","hyper":self.hyper_params}
 
-class MLP(object):
+class MLP(ClfAdapter):
 
     def fit(self,X,y):
         if(self.model is None):
@@ -89,7 +89,7 @@ class MLP(object):
         return self.model.fit(x=X,
                               y=y,
                               epochs=self.params['n_epochs'],
-                              callbacks=ens_depen.basic_callback(),
+                              callbacks=basic_callback(),
                               verbose=self.verbose)
 
     def predict(self,X):
@@ -114,3 +114,7 @@ class MLP(object):
 def basic_callback():
     return tf.keras.callbacks.EarlyStopping(monitor='accuracy', 
                                             patience=15)
+
+def default_hyperparams():
+    return {'layers':2, 'units_0':2,
+            'units_1':1,'batch':False}

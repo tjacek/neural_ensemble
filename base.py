@@ -199,7 +199,3 @@ class ClasicalClfAdapter(object):
 
     def save(self,out_path):
         pass
-
-def default_hyperparams():
-    return {'layers':2, 'units_0':2,
-            'units_1':1,'batch':False}

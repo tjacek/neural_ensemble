@@ -54,13 +54,18 @@ def nn_train(data_path:str,
         dir_proxy=base.get_dir_path(out_path=exp_path,
                                     clf_type=clf_type)
         clf_factory=clfs.get_clfs(clf_type)
+        clf_factory.init(data)
         dir_proxy.make_dir(["history","models","results"])
         path_dict=dir_proxy.path_dict(indexes=interval,
                                          key="models")
-        raise Exception(path_dict)
-        splits=dir_proxy.get_splits(indexes)
-        for i,split_i in tqdm(enumerate(splits)):
+#        splits=dir_proxy.get_splits(indexes)
+        for i,split_path_i in tqdm(enumerate(path_dict['splits'])):
             clf_i=clf_factory()
+            split_i=base.read_split(split_path_i)
+            split_i.fit_clf(data,clf_i)
+            result_i=clf_i.eval(data,split_i)
+            result_i.save(path_dict["results"][i])
+
         raise Exception(model_paths)
     helper(data_path,out_path)            
 
