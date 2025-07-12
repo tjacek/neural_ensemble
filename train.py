@@ -69,6 +69,17 @@ def nn_train(data_path:str,
         raise Exception(model_paths)
     helper(data_path,out_path)            
 
+
+def history_to_dict(history):
+    if(type(history)==list):
+        return [history_to_dict(history_i) for history_i in history]
+    history=history.history
+    key=list(history.keys())[0]
+    hist_dict={'n_epochs':len(history[key])}
+    for key_i in history.keys():
+        hist_dict[key_i]=history[key_i][-1]
+    return hist_dict
+
 #def pred_clf(data_path:str,
 #                 exp_path:str,
 #                 clf_type="RF"):
