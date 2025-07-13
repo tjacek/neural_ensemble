@@ -58,11 +58,14 @@ def nn_train(data_path:str,
         dir_proxy.make_dir(["history","models","results"])
         path_dict=dir_proxy.path_dict(indexes=interval,
                                          key="models")
+        if( len(path_dict['models'])==0):
+            raise Exception("Model exists")
 #        splits=dir_proxy.get_splits(indexes)
         for i,split_path_i in tqdm(enumerate(path_dict['splits'])):
             clf_i=clf_factory()
             split_i=base.read_split(split_path_i)
-            split_i.fit_clf(data,clf_i)
+            clf_i,history_i=split_i.fit_clf(data,clf_i)
+            clfs.save(path_dict["models"][i])
             result_i=clf_i.eval(data,split_i)
             result_i.save(path_dict["results"][i])
 
