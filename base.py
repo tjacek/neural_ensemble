@@ -171,12 +171,35 @@ def get_splits(data_path,
     return DataSplits(data=data,
                       splits=protocol.get_split(data))
 
-class ClasicalClfFactory(object):
-    def __init__(self,clf_type="RF"):
-        self.clf_type=clf_type
+
+class AbstractClfFactory(object):
     
     def init(self,data):
         pass
+
+    def __call__(self):
+        raise NotImplementedError()
+
+    def read(self,model_path):
+        raise NotImplementedError()
+
+    def get_info(self):
+        raise NotImplementedError()
+
+class AbstractClfAdapter(object):
+
+    def fit(self,X,y):
+        raise NotImplementedError()
+
+    def eval(self,data,split_i):
+        raise NotImplementedError()
+
+    def save(self,out_path):
+        pass
+
+class ClasicalClfFactory(AbstractClfFactory):
+    def __init__(self,clf_type="RF"):
+        self.clf_type=clf_type
 
     def __call__(self):
         return ClasicalClfAdapter(get_clf(self.clf_type))
@@ -185,9 +208,9 @@ class ClasicalClfFactory(object):
         raise Exception(f"Clasical Clf {self.clf_type} cannot be serialized ")
 
     def get_info(self):
-        return {"ens":self.clf_type,"callback":None,"hyper":None}
+        return {"clf_type":self.clf_type,"callback":None,"hyper":None}
 
-class ClasicalClfAdapter(object):
+class ClasicalClfAdapter(AbstractClfAdapter):
     def __init__(self,clf):
         self.clf=clf
     
@@ -196,6 +219,3 @@ class ClasicalClfAdapter(object):
 
     def eval(self,data,split_i):
         return split_i.pred(data,self.clf)
-
-    def save(self,out_path):
-        pass

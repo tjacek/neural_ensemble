@@ -16,7 +16,7 @@ class Dataset(object):
         return len(self.y)
 
     def dim(self):
-        return self.X.shape[0]
+        return self.X.shape[1]
         
     def n_cats(self):
         return int(max(self.y))+1
