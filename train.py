@@ -72,7 +72,7 @@ def nn_train(data_path:str,
             clf_i.save(path_dict["models"][i])
             result_i=clf_i.eval(data,split_i)
             result_i.save(path_dict["results"][i])
-        path_dict.save_info(clf_factory)
+        dir_proxy.save_info(clf_factory)
     helper(data_path,out_path)            
 
 
