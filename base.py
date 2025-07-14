@@ -104,6 +104,7 @@ class DirProxy(object):
                                      key)
         s_paths,s_indexes=[],[]
         for i,path_i in enumerate(paths):
+#            raise Exception(path_i)
             if(not os.path.exists(path_i)):
                 s_paths.append(path_i)
                 s_indexes.append(i)
@@ -111,7 +112,7 @@ class DirProxy(object):
 
     def path_dict(self,indexes,
                        key="models"):
-        if(key is None):
+        if(not key is None):
             paths,indexes=self.select_paths(indexes,
                                             key)
         return {key_i:self.get_paths(indexes,key_i)[0] 
