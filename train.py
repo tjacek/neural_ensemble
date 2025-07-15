@@ -93,7 +93,7 @@ if __name__ == '__main__':
     parser.add_argument("--out_path", type=str, default="bad_exp/exp")
     parser.add_argument("--start", type=int, default=0)
     parser.add_argument("--step", type=int, default=20)
-    parser.add_argument("--clf_type", type=str, default="RF")
+    parser.add_argument("--clf_type", type=str, default="TREE")
     args = parser.parse_args()
     print(args)
     train(data_path=args.data,

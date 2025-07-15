@@ -1,6 +1,7 @@
 import os,warnings
 import logging,time
 import argparse,json
+import multiprocessing
 from functools import wraps
 
 def silence_warnings():
@@ -95,3 +96,17 @@ class FunArgs(object):
             self.kwargs[name]=value
         else:
             self.args[index]=value
+
+class ParallelDirFun(object):
+    def __call__(self, fun):
+        @wraps(fun)
+        def decor_fun(*args, **kwargs):
+            data_path=args[0]
+            for path_i in top_files(data_path):
+                id_i=path_i.split('/')[-1]
+                new_args=[f"{arg_j}/{id_i}" for arg_j in args]
+                p_i=multiprocessing.Process(target=fun, 
+                                            args=new_args)
+                p_i.start()
+                p_i.join()
+        return decor_fun

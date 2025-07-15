@@ -3,12 +3,13 @@ from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import GradientBoostingClassifier
+from sklearn import tree
 from sklearn import svm
 import os.path
 import dataset,utils
 
 NEURAL_CLFS=set(["MLP"])
-OTHER_CLFS=set(["RF","GRAD","LR","SVM"])
+OTHER_CLFS=set(["RF","GRAD","LR","SVM","TREE"])
 
 class DataSplits(object):
     def __init__(self,data,splits):
@@ -104,7 +105,6 @@ class DirProxy(object):
                                      key)
         s_paths,s_indexes=[],[]
         for i,path_i in enumerate(paths):
-#            raise Exception(path_i)
             if(not os.path.exists(path_i)):
                 s_paths.append(path_i)
                 s_indexes.append(i)
@@ -162,6 +162,8 @@ def get_clf(clf_type):
         return svm.SVC(kernel='rbf')
     if(clf_type=="GRAD"):
         return GradientBoostingClassifier()
+    if(clf_type=="TREE"):
+        return tree.DecisionTreeClassifier(class_weight="balanced")
     raise Exception(f"Unknow clf type:{clf_type}")
 
 def get_splits(data_path,
@@ -171,7 +173,6 @@ def get_splits(data_path,
     protocol=SplitProtocol(n_splits,n_repeats)
     return DataSplits(data=data,
                       splits=protocol.get_split(data))
-
 
 class AbstractClfFactory(object):
     
