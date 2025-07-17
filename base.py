@@ -94,11 +94,6 @@ class DirProxy(object):
         paths=[ f"{dir_path}/{i}.{ext}" for i in indexes]
         return paths,indexes
 
-#    def get_splits(self,interval):
-#        split_paths,_=self.get_paths(interval,"splits")
-#        return [read_split(split_path_i) 
-#                    for split_path_i in split_paths]
-
     def select_paths(self,indexes,
                           key):
         paths,indexes=self.get_paths(indexes,

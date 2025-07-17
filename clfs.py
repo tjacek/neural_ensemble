@@ -1,3 +1,4 @@
+import numpy as np
 import tensorflow as tf
 import base,dataset,deep
 
@@ -6,7 +7,15 @@ def get_clfs(clf_type):
         return base.ClasicalClfFactory(clf_type)
     if(clf_type=="MLP"):
         return MLPFactory()
-    raise Exception(f"Unknown clf type:{clf_type}")	
+    raise Exception(f"Unknown clf type:{clf_type}")
+
+def basic_callback():
+    return tf.keras.callbacks.EarlyStopping(monitor='accuracy', 
+                                            patience=15)
+
+def default_hyperparams():
+    return {'layers':2, 'units_0':2,
+            'units_1':1,'batch':False}
 
 class NeuralClfFactory(base.AbstractClfFactory):
     def __init__(self,hyper_params=None):
@@ -14,32 +23,28 @@ class NeuralClfFactory(base.AbstractClfFactory):
             hyper_params=default_hyperparams()
         self.params=None
         self.hyper_params=hyper_params
-        self.class_dict=None
     
     def init(self,data):
+        class_dict=dataset.get_class_weights(data.y)
         self.params={'dims': (data.dim(),),
                      'n_cats':data.n_cats(),
-                     'n_epochs':1000}
-        self.class_dict=dataset.get_class_weights(data.y)
+                     'n_epochs':1000,
+                     "class_weights":class_dict}
 
 class NeuralClfAdapter(base.AbstractClfAdapter):
     def __init__(self, params,
                        hyper_params,
-                       class_dict=None,
                        model=None,
                        verbose=0):
         self.params=params
         self.hyper_params=hyper_params
-        self.class_dict=class_dict
         self.model = model
         self.verbose=verbose
 
 class MLPFactory(NeuralClfFactory):
     def __call__(self):
         return MLP(params=self.params,
-                  hyper_params=self.hyper_params,
-                  class_dict=self.class_dict)
-
+                  hyper_params=self.hyper_params)
     def read(self,model_path):
         model_i=tf.keras.models.load_model(model_path)
         clf_i=self()
@@ -52,11 +57,9 @@ class MLPFactory(NeuralClfFactory):
 class MLP(NeuralClfAdapter):
 
     def fit(self,X,y):
-#        raise Exception(X.shape)
         if(self.model is None):
             self.model=deep.single_builder(params=self.params,
-                                           hyper_params=self.hyper_params,
-                                           class_dict=self.class_dict)
+                                           hyper_params=self.hyper_params)
         y=tf.one_hot(y,depth=self.params['n_cats'])
         return self.model.fit(x=X,
                               y=y,
@@ -83,10 +86,16 @@ class MLP(NeuralClfAdapter):
                                 y_pred=raw_partial_i)
         return result_i
 
-def basic_callback():
-    return tf.keras.callbacks.EarlyStopping(monitor='accuracy', 
-                                            patience=15)
+    def __str__(self):
+        return "MLP"
 
-def default_hyperparams():
-    return {'layers':2, 'units_0':2,
-            'units_1':1,'batch':False}
+class TreeMLP(NeuralClfAdapter):
+    def __init__(self, params,
+                       hyper_params,
+                       model=None,
+                       verbose=0):
+
+        self.params=params
+        self.hyper_params=hyper_params
+        self.model = model
+        self.verbose=verbose

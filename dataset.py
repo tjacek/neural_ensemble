@@ -45,9 +45,16 @@ class Dataset(object):
         return clf,history
 
     def pred(self,test_index,clf):
-        X_test,y_test=self.X[test_index],self.y[test_index]
+        if(test_index is None):
+            X_test,y_test=self.X,self.y
+        else:
+            X_test,y_test=self.X[test_index],self.y[test_index]
         y_pred=clf.predict(X_test)
         return Result(y_pred,y_test)
+
+    def selection(self,indices):
+        return Dataset(X=self.X[indices],
+                       y=self.y[indices])
 
 class WeightDict(dict):
     def __init__(self, arg=[]):

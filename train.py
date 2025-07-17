@@ -10,23 +10,25 @@ def train(data_path:str,
               out_path:str,
               clf_type="class_ens",
               start=0,
-              step=10):
+              step=10,
+              retrain=False):
     if(clf_type in base.NEURAL_CLFS):
         train_fun=nn_train
     else:
         train_fun=clf_train
+    interval=base.Interval(start,step)
     train_fun(data_path=data_path,
               out_path=out_path,
               clf_type=clf_type,
-              start=start,
-              step=step)
+              interval=interval,
+              retrain=retrain)
 
 def clf_train(data_path:str,
                out_path:str,
                clf_type="class_ens",
-               start=0,
-               step=10):
-    interval=base.Interval(start,step)
+               interval=None,
+               retrain=False):
+#    interval=base.Interval(start,step)
     @utils.ParallelDirFun()#("in_path","exp_path")
     def helper(in_path,exp_path):
         data=dataset.read_csv(in_path)
@@ -48,9 +50,8 @@ def clf_train(data_path:str,
 def nn_train(data_path:str,
                out_path:str,
                clf_type="class_ens",
-               start=0,
-               step=10):
-    interval=base.Interval(start,step)
+               interval=None,
+               retrain=False):
     @utils.DirFun("in_path","exp_path")
     def helper(in_path,exp_path):
         data=dataset.read_csv(in_path)
@@ -59,8 +60,9 @@ def nn_train(data_path:str,
         clf_factory=clfs.get_clfs(clf_type)
         clf_factory.init(data)
         dir_proxy.make_dir(["history","models","results"])
+        key = None if(retrain) else "models"
         path_dict=dir_proxy.path_dict(indexes=interval,
-                                         key="models")
+                                      key=key)
         print(path_dict['models'])
         if( len(path_dict['models'])==0):
             raise Exception("Model exists")
@@ -93,11 +95,13 @@ if __name__ == '__main__':
     parser.add_argument("--out_path", type=str, default="bad_exp/exp")
     parser.add_argument("--start", type=int, default=0)
     parser.add_argument("--step", type=int, default=20)
-    parser.add_argument("--clf_type", type=str, default="TREE")
+    parser.add_argument('--retrain', action='store_true')
+    parser.add_argument("--clf_type", type=str, default="MLP")
     args = parser.parse_args()
     print(args)
     train(data_path=args.data,
           out_path=args.out_path,
           start=args.start,
           step=args.step,
-          clf_type=args.clf_type)
+          clf_type=args.clf_type,
+          retrain=args.retrain)
