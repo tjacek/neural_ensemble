@@ -27,6 +27,7 @@ class SplitProtocol(object):
                                      random_state=0)
         splits=[]
         for train_index,test_index in rskf.split(data.X,data.y):
+            raise Exception(train_index)
             splits.append(Split(train_index,test_index))
         return splits
 

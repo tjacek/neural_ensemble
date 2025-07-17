@@ -7,6 +7,8 @@ def get_clfs(clf_type):
         return base.ClasicalClfFactory(clf_type)
     if(clf_type=="MLP"):
         return MLPFactory()
+    if(clf_type=="TREE-MLP"):
+        return TreeMLPFactory()
     raise Exception(f"Unknown clf type:{clf_type}")
 
 def basic_callback():
@@ -45,6 +47,7 @@ class MLPFactory(NeuralClfFactory):
     def __call__(self):
         return MLP(params=self.params,
                   hyper_params=self.hyper_params)
+    
     def read(self,model_path):
         model_i=tf.keras.models.load_model(model_path)
         clf_i=self()
@@ -89,13 +92,32 @@ class MLP(NeuralClfAdapter):
     def __str__(self):
         return "MLP"
 
+class TreeMLPFactory(NeuralClfFactory):
+    def __call__(self):
+        return TreeMLP(params=self.params,
+                       hyper_params=self.hyper_params)
+
 class TreeMLP(NeuralClfAdapter):
     def __init__(self, params,
                        hyper_params,
                        model=None,
                        verbose=0):
 
+        if(model is None):
+            nn_model,tree=None,None
+        else:
+            nn_model,tree=model
         self.params=params
         self.hyper_params=hyper_params
-        self.model = model
+        self.model = nn_model
+        self.tree=tree
         self.verbose=verbose
+
+    def fit(self,X,y):
+        self.tree=base.get_clf("TREE")
+        self.tree.fit(X,y)
+        node_depths=self.tree.tree_.compute_node_depths()
+        s_nodes= [ i for i,depth_i in enumerate(node_depths[1:])
+                     if(depth_i<4)]
+        tree_struct=self.tree.tree_.__getstate__()['nodes']
+        raise Exception(s_nodes)
