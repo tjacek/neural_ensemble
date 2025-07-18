@@ -114,10 +114,21 @@ class TreeMLP(NeuralClfAdapter):
         self.verbose=verbose
 
     def fit(self,X,y):
-        self.tree=base.get_clf("TREE")
-        self.tree.fit(X,y)
-        node_depths=self.tree.tree_.compute_node_depths()
-        s_nodes= [ i for i,depth_i in enumerate(node_depths[1:])
-                     if(depth_i<4)]
-        tree_struct=self.tree.tree_.__getstate__()['nodes']
-        raise Exception(s_nodes)
+        tree=base.get_clf("TREE")
+        tree.fit(X,y)
+        tree_feats=make_tree_features(tree)
+        raise Exception(tree_feats.selected_nodes)
+
+class TreeFeatures(object):
+    def  __init__(self,tree_repr,
+                       selected_nodes):
+        self.tree_repr=tree_repr
+        self.selected_nodes=selected_nodes
+
+def make_tree_features(tree,threshold=4):
+    node_depths=tree.tree_.compute_node_depths()
+    selected_nodes= [ i for i,depth_i in enumerate(node_depths[1:])
+                     if(depth_i<threshold)]
+    selected_nodes.sort()
+    tree_repr=tree.tree_.__getstate__()['nodes']
+    return TreeFeatures(tree_repr,selected_nodes)
