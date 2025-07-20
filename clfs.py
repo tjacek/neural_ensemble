@@ -116,9 +116,12 @@ class TreeMLP(NeuralClfAdapter):
     def fit(self,X,y):
         tree=base.get_clf("TREE")
         tree.fit(X,y)
-        tree_feats=make_tree_features(tree)
-        tree_feats(X)
-        raise Exception(tree_feats.selected_nodes)
+        self.tree=make_tree_features(tree)
+        new_X=self.tree(X)
+        if(self.model is None):
+            self.model=MLP(params=self.params,
+                           hyper_params=self.hyper_params)
+        raise Exception(new_X.shape)
 
 class TreeFeatures(object):
     def  __init__(self,tree_repr,
@@ -128,7 +131,10 @@ class TreeFeatures(object):
 
     def __call__(self,X):
         new_feats=[self.compute_feats(x_i) for x_i in X]
-        raise Exception(np.sum(np.array(new_feats),axis=0))    
+        new_feats=np.array(new_feats)
+        new_feats=np.concatenate([X,new_feats],axis=1)
+        return new_feats
+#        raise Exception(np.sum(np.array(new_feats),axis=0))    
 
     def compute_feats(self,x_i):
         new_feats=[]
