@@ -58,6 +58,20 @@ class Split(object):
         test_size=self.test_index.shape[0]
         return f"train:{train_size},test:{test_size}"
 
+def random_split(n_samples,p=0.9):
+    if(type(n_samples)==dataset.Dataset):
+        n_samples=len(n_samples)
+    train_index,test_index=[],[]
+    for i in range(n_samples):
+        if(np.random.rand()<p):
+            train_index.append(i)
+        else:
+            test_index.append(i)
+#        print(train_index[-1])
+#        print(test_index[-1])
+    return Split(train_index=np.array(train_index),
+                 test_index=np.array(test_index))
+
 class Interval(object):
     def __init__(self,start,step):
         self.start=start
