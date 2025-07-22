@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-import base,dataset,deep
+import base,dataset,deep,utils
 
 def get_clfs(clf_type):
     if(clf_type in base.OTHER_CLFS):
@@ -42,6 +42,13 @@ class NeuralClfAdapter(base.AbstractClfAdapter):
         self.hyper_params=hyper_params
         self.model = model
         self.verbose=verbose
+    
+    def eval(self,data,split_i):
+        test_data_i=data.selection(split_i.test_index)
+        raw_partial_i=self.predict(test_data_i.X)
+        result_i=dataset.Result(y_true=test_data_i.y,
+                                y_pred=raw_partial_i)
+        return result_i
 
 class MLPFactory(NeuralClfFactory):
     def __call__(self):
@@ -82,13 +89,6 @@ class MLP(NeuralClfAdapter):
     def save(self,out_path):
         self.model.save(out_path) 
 
-    def eval(self,data,split_i):
-        test_data_i=data.selection(split_i.test_index)
-        raw_partial_i=self.predict(test_data_i.X)
-        result_i=dataset.Result(y_true=test_data_i.y,
-                                y_pred=raw_partial_i)
-        return result_i
-
     def __str__(self):
         return "MLP"
 
@@ -96,6 +96,19 @@ class TreeMLPFactory(NeuralClfFactory):
     def __call__(self):
         return TreeMLP(params=self.params,
                        hyper_params=self.hyper_params)
+    
+    def read(self,model_path):
+        model_i=tf.keras.models.load_model(f"{model_path}/nn")
+        tree_repr=np.load(f"{model_path}/tree.npy")
+        nodes=np.load(f"{model_path}/nodes.npy")
+        tree=TreeFeatures(tree_repr,nodes)
+        clf_i= TreeMLP(params=self.params,
+                       hyper_params=self.hyper_params,
+                       model=(model_i,tree))
+        return clf_i
+    
+    def get_info(self):
+        return {"clf_type":"TREE-MLP","callback":"basic","hyper":self.hyper_params}
 
 class TreeMLP(NeuralClfAdapter):
     def __init__(self, params,
@@ -117,6 +130,7 @@ class TreeMLP(NeuralClfAdapter):
         tree=base.get_clf("TREE")
         tree.fit(X,y)
         self.tree=make_tree_features(tree)
+#        raise Exception(self.tree.tree_repr.dtype)
         new_X=self.tree(X)
         if(self.model is None):
             params_i=self.params.copy()
@@ -124,13 +138,17 @@ class TreeMLP(NeuralClfAdapter):
             params_i["dims"]=(dims[0]+self.tree.n_feats(),)
             self.model=MLP(params=params_i,
                            hyper_params=self.hyper_params)
-        self.model.fit(new_X,y)
+        return self.model.fit(new_X,y)
     
     def predict(self,X):
-        new_X=self.tree(X)
-        return self.model.predict(new_X)#,
-#                             verbose=self.verbose)
-#        return np.argmax(y,axis=1)
+        new_X=self.tree(X,concat=True)
+        return self.model.predict(new_X)
+    
+    def save(self,out_path):
+        utils.make_dir(out_path)
+        np.save(f"{out_path}/tree.npy",self.tree.tree_repr)
+        np.save(f"{out_path}/nodes.npy",self.tree.selected_nodes)
+        self.model.save(f"{out_path}/nn.keras") 
 
 class TreeFeatures(object):
     def  __init__(self,tree_repr,

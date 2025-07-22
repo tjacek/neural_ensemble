@@ -96,7 +96,7 @@ if __name__ == '__main__':
     parser.add_argument("--start", type=int, default=0)
     parser.add_argument("--step", type=int, default=20)
     parser.add_argument('--retrain', action='store_true')
-    parser.add_argument("--clf_type", type=str, default="MLP")
+    parser.add_argument("--clf_type", type=str, default="TREE-MLP")
     args = parser.parse_args()
     print(args)
     train(data_path=args.data,

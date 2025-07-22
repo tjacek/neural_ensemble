@@ -67,7 +67,10 @@ class DirFun(object):
                 for pair_j in self.dir_args.items():
                     path_j=arg_i.get(pair_j)
                     arg_i.set(pair_j,f"{path_j}/{id_i}")
-                result_dict[id_i]=fun(*arg_i.args,**arg_i.kwargs)
+                try:
+                    result_dict[id_i]=fun(*arg_i.args,**arg_i.kwargs)
+                except Exception as e:
+                    print(e)
             return result_dict
         return decor_fun
     

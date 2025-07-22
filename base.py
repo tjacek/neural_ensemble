@@ -8,7 +8,7 @@ from sklearn import svm
 import os.path
 import dataset,utils
 
-NEURAL_CLFS=set(["MLP"])
+NEURAL_CLFS=set(["MLP","TREE-MLP"])
 OTHER_CLFS=set(["RF","GRAD","LR","SVM","TREE"])
 
 class DataSplits(object):
