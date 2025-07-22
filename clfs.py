@@ -129,12 +129,12 @@ class TreeFeatures(object):
         self.tree_repr=tree_repr
         self.selected_nodes=selected_nodes
 
-    def __call__(self,X):
+    def __call__(self,X,concat=True):
         new_feats=[self.compute_feats(x_i) for x_i in X]
         new_feats=np.array(new_feats)
-        new_feats=np.concatenate([X,new_feats],axis=1)
+        if(concat):
+            return np.concatenate([X,new_feats],axis=1)
         return new_feats
-#        raise Exception(np.sum(np.array(new_feats),axis=0))    
 
     def compute_feats(self,x_i):
         new_feats=[]

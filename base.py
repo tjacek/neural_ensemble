@@ -38,6 +38,8 @@ class Split(object):
 
         
     def eval(self,data,clf):
+        if(type(clf)==str):
+            clf=get_clf(clf)
         return data.eval(train_index=self.train_index,
                          test_index=self.test_index,
                          clf=clf,
@@ -67,8 +69,6 @@ def random_split(n_samples,p=0.9):
             train_index.append(i)
         else:
             test_index.append(i)
-#        print(train_index[-1])
-#        print(test_index[-1])
     return Split(train_index=np.array(train_index),
                  test_index=np.array(test_index))
 
