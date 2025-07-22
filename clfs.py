@@ -119,15 +119,27 @@ class TreeMLP(NeuralClfAdapter):
         self.tree=make_tree_features(tree)
         new_X=self.tree(X)
         if(self.model is None):
-            self.model=MLP(params=self.params,
+            params_i=self.params.copy()
+            dims=params_i["dims"]
+            params_i["dims"]=(dims[0]+self.tree.n_feats(),)
+            self.model=MLP(params=params_i,
                            hyper_params=self.hyper_params)
-        raise Exception(new_X.shape)
+        self.model.fit(new_X,y)
+    
+    def predict(self,X):
+        new_X=self.tree(X)
+        return self.model.predict(new_X)#,
+#                             verbose=self.verbose)
+#        return np.argmax(y,axis=1)
 
 class TreeFeatures(object):
     def  __init__(self,tree_repr,
                        selected_nodes):
         self.tree_repr=tree_repr
         self.selected_nodes=selected_nodes
+
+    def n_feats(self):
+        return len(self.selected_nodes)
 
     def __call__(self,X,concat=True):
         new_feats=[self.compute_feats(x_i) for x_i in X]
