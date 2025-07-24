@@ -16,6 +16,13 @@ class DataSplits(object):
         self.data=data
         self.splits=splits
 
+    def eval(self,clf_factory):
+        for split_i in self.splits:
+            clf_i=clf_factory()
+            split_i.fit_clf(self.data,clf_i)
+            result_i=split_i.pred(self.data,clf_i)
+            yield clf_i,result_i
+
 class SplitProtocol(object):
     def __init__(self,n_splits,n_repeats):
         self.n_splits=n_splits
@@ -27,7 +34,6 @@ class SplitProtocol(object):
                                      random_state=0)
         splits=[]
         for train_index,test_index in rskf.split(data.X,data.y):
-            raise Exception(train_index)
             splits.append(Split(train_index,test_index))
         return splits
 
@@ -42,8 +48,7 @@ class Split(object):
             clf=get_clf(clf)
         return data.eval(train_index=self.train_index,
                          test_index=self.test_index,
-                         clf=clf,
-                         as_result=True)
+                         clf=clf)
        
     def fit_clf(self,data,clf):
         return data.fit_clf(self.train_index,clf)
