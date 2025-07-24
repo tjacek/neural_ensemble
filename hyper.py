@@ -2,15 +2,62 @@ import numpy as np
 from sklearn import tree
 import base
 
+class TreeFeatClf(object):
+    def __init__(self,tree_factory,
+                      clf_type,
+                      concat=False):
+        self.tree_factory=tree_factory
+        self.tree_feats=None
+        self.clf_type=clf_type
+        self.concat=concat
+        self.clf=None
+
+    def fit(self,X,y):
+        tree=tree_factory()
+        tree.fit(X,y)
+        self.tree_feats=make_tree_feats(tree)
+        self.clf=base.get_clf(self.clf_type)
+        X=self.tree_feats(X=X,
+                          concat=self.concat)
+        self.clf.fit(X,y)
+
+    def predict(self,X):
+        X=self.tree_feats(X=X,
+                          concat=self.concat)
+        return self.clf.predict(X)
+
 class TreeFeatures(object):
     def __init__(self,features,thresholds):
         self.features=features
         self.thresholds=thresholds
 
-#    def 
+    def n_feats(self):
+        return len(self.features)
+
+    def __call__(self,X,concat=True):
+        new_feats=[self.compute_feats(x_i) for x_i in X]
+        new_feats=np.array(new_feats)
+        if(concat):
+            return np.concatenate([X,new_feats],axis=1)
+        return new_feats
+
+    def compute_feats(self,x_i):
+        new_feats=[]
+        for i,feat_i in enumerate(self.features):
+            value_i=x_i[feat_i]
+            thres_i=self.thresholds[i]
+            new_feats.append(int(value_i<thres_i) )
+        return np.array(new_feats)
 
 def make_tree_feats(tree):
-    tree_repr=tree.tree_.__getstate__()['nodes']
+    raw_tree=tree.tree_.__getstate__()['nodes']
+    feats,thres=[],[]
+    for node_i in raw_tree:
+        feat_i=node_i[2]
+        if(feat_i>=0):
+            feats.append(feat_i)
+            thres.append(node_i[3])
+    return TreeFeatures(feats,thres)
 
 def gradient_tree():
     return tree.DecisionTreeClassifier(max_depth=3,
@@ -20,10 +67,12 @@ def eval_features(in_path):
     data_split=base.get_splits(data_path=in_path,
                                n_splits=10,
                                n_repeats=1)
+    def helper():
+        return TreeFeatClf(tree_factory=gradient_tree,
+                           clf_type="SVM",
+                           concat=False)
     acc=[]
-    for clf_i,result_i in data_split.eval(gradient_tree):
-#        result_i,_=split_i.eval(data_split.data,
-#                      gradient_tree())
+    for clf_i,result_i in data_split.eval(helper):
         acc.append(result_i.get_acc())
     print(np.mean(acc))
 
