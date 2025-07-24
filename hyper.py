@@ -13,7 +13,7 @@ class TreeFeatClf(object):
         self.clf=None
 
     def fit(self,X,y):
-        tree=tree_factory()
+        tree=self.tree_factory()
         tree.fit(X,y)
         self.tree_feats=make_tree_feats(tree)
         self.clf=base.get_clf(self.clf_type)
@@ -64,16 +64,25 @@ def gradient_tree():
                                        class_weight="balanced")
 
 def eval_features(in_path):
-    data_split=base.get_splits(data_path=in_path,
-                               n_splits=10,
-                               n_repeats=1)
+
     def helper():
         return TreeFeatClf(tree_factory=gradient_tree,
                            clf_type="SVM",
                            concat=False)
-    acc=[]
-    for clf_i,result_i in data_split.eval(helper):
-        acc.append(result_i.get_acc())
-    print(np.mean(acc))
+    clf_dict={"TREE":helper,
+              "SVM":"SVM"}
+    compare_clf(in_path,clf_dict)
+
+def compare_clf(in_path,clf_dict):
+    data_split=base.get_splits(data_path=in_path,
+                               n_splits=10,
+                               n_repeats=1)
+    for name_i,clf_factory_i in clf_dict.items():
+        if(type(clf_factory_i)==str):
+            clf_factory_i=base.ClasicalClfFactory(clf_factory_i)
+        acc_i=[]
+        for clf_j,result_j in data_split.eval(clf_factory_i):
+            acc_i.append(result_j.get_acc())
+        print(f"{name_i}:{np.mean(acc_i):.4f}")
 
 eval_features("bad_exp/data/wine-quality-red")
