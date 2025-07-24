@@ -21,9 +21,11 @@ def get_type(clf):
 def get_indiv_trees(clf):
     clf_type=get_type(clf)
     if(clf_type=="GRAD"):
-        return [est_j
-                for est_i in clf.estimators_
-                    for est_j in est_i] 
+        trees=[]
+        for est_i in clf.estimators_:
+            trees+=list(est_i)
+        raise Exception(trees[0]==trees[-1])
+        return trees
     else:	
         return clf.estimators_
 
@@ -55,7 +57,9 @@ def tree_acc(in_path,clf_type="RF"):
     acc=[]
     indv_trees=get_indiv_trees(clf)
     for tree_j in tqdm(indv_trees):
-        result_j,_=split.eval(data,clf)
+        result_j,_=split.eval(data,tree_j)
+        result_j.y_pred= result_j.y_pred.astype(int)
+#        raise Exception(result_j.y_true ,result_j.y_pred)
         acc.append(result_j.get_acc())
     acc=np.array(acc)
     print(acc)
@@ -75,7 +79,7 @@ def hoover_index(x):
     diff=np.abs(x-np.mean(x))
     return 0.5*np.sum(diff)/np.sum(x)
 
-#clf=get_clf("bad_exp/data/wine-quality-red",
-#	        clf_type="GRAD")
+clf=tree_acc("bad_exp/data/wine-quality-red",
+	        clf_type="GRAD")
 #tree_histogram(clf)
-stats("uci")
+#stats("uci")
