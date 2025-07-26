@@ -3,19 +3,19 @@ from sklearn import tree
 import base
 
 class TreeFeatClf(object):
-    def __init__(self,tree_factory,
+    def __init__(self,extract_feats,
                       clf_type,
                       concat=False):
-        self.tree_factory=tree_factory
-        self.tree_feats=None
+        self.extract_feats=extract_feats
         self.clf_type=clf_type
         self.concat=concat
+        self.tree_feats=None
         self.clf=None
 
     def fit(self,X,y):
-        tree=self.tree_factory()
-        tree.fit(X,y)
-        self.tree_feats=make_tree_feats(tree)
+#        tree=self.tree_factory()
+#        tree.fit(X,y)
+        self.tree_feats=self.extract_feats(X,y) #make_tree_feats(tree)
         self.clf=base.get_clf(self.clf_type)
         X=self.tree_feats(X=X,
                           concat=self.concat)
@@ -49,6 +49,28 @@ class TreeFeatures(object):
             new_feats.append(int(value_i<thres_i) )
         return np.array(new_feats)
 
+class FeatureExtractor(object):
+    def __init__(self,tree_factory=None):
+        if(tree_factory is None):
+            tree_factory=gradient_tree
+        self.tree_factory=tree_factory
+
+    def __call__(self,X,y):
+        tree=self.tree_factory()
+        tree.fit(X,y)
+        return make_tree_feats(tree)
+        
+class SpecificTreeFeatures(object):
+    def __init__(self,specifc_trees):
+        self.specifc_trees=specifc_trees
+
+    def __call__(self,X):
+        feats=[tree_i(X,concat=False) 
+                  for tree_i in self.specifc_trees]
+        feats=np.concatenate(X,axis=0)
+        raise Exception(feats.shape)
+        return feats
+
 def make_tree_feats(tree):
     raw_tree=tree.tree_.__getstate__()['nodes']
     feats,thres=[],[]
@@ -64,13 +86,14 @@ def gradient_tree():
                                        class_weight="balanced")
 
 def eval_features(in_path):
-
     def helper():
         return TreeFeatClf(tree_factory=gradient_tree,
-                           clf_type="SVM",
+                           extract_feats=make_tree_feats,
+                           clf_type="LR",
                            concat=False)
-    clf_dict={"TREE":helper,
-              "SVM":"SVM"}
+    clf_dict={"TREE":gradient_tree,
+              "TREE-SVM":helper,
+              "SVM":"LR"}
     compare_clf(in_path,clf_dict)
 
 def compare_clf(in_path,clf_dict):
