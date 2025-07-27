@@ -10,10 +10,14 @@ class TreeFeatFactory(object):
         return TreeFeatClf(**self.arg_dict)
 
 class TreeFeatClf(object):
-    def __init__(self,extract_feats,
-                      clf_type,
-                      concat=False):
-        self.extract_feats=extract_feats
+    def __init__(self,
+                 tree_type,
+                 extract_feats,
+                 clf_type,
+                 concat=False):
+        tree_factory=get_tree(tree_type)
+        extract_feats=get_extractor(extract_feats)
+        self.extract_feats=extract_feats(tree_factory)
         self.clf_type=clf_type
         self.concat=concat
         self.clf=None
@@ -30,38 +34,21 @@ class TreeFeatClf(object):
                           concat=self.concat)
         return self.clf.predict(X)
 
-class TreeFeatures(object):
-    def __init__(self,features,thresholds):
-        self.features=features
-        self.thresholds=thresholds
+def get_tree(tree_type):
+    return GradientTree()
 
-    def n_feats(self):
-        return len(self.features)
+class GradientTree(object):
+    def __call__(self):
+        return tree.DecisionTreeClassifier(max_depth=3,
+                                       class_weight="balanced")
 
-    def __call__(self,X,concat=True):
-        new_feats=[self.compute_feats(x_i) for x_i in X]
-        new_feats=np.array(new_feats)
-        if(concat):
-            return np.concatenate([X,new_feats],axis=1)
-        return new_feats
+    def __str__(self):
+        return "GradientTree"
 
-    def compute_feats(self,x_i):
-        new_feats=[]
-        for i,feat_i in enumerate(self.features):
-            value_i=x_i[feat_i]
-            thres_i=self.thresholds[i]
-            new_feats.append(int(value_i<thres_i) )
-        return np.array(new_feats)
-
-def make_tree_feats(tree):
-    raw_tree=tree.tree_.__getstate__()['nodes']
-    feats,thres=[],[]
-    for node_i in raw_tree:
-        feat_i=node_i[2]
-        if(feat_i>=0):
-            feats.append(feat_i)
-            thres.append(node_i[3])
-    return TreeFeatures(feats,thres)
+def get_extractor(extr_feats):
+    if(extr_feats=="CS"):
+        return CSExtractor
+    return FeatureExtractor
 
 class FeatureExtractor(object):
     def __init__(self,tree_factory=None):
@@ -103,40 +90,72 @@ class CSExtractor(object):
         feats=np.concatenate(feats,axis=1)
         return feats
 
-def gradient_tree():
-    return tree.DecisionTreeClassifier(max_depth=3,
-                                       class_weight="balanced")
+class TreeFeatures(object):
+    def __init__(self,features,thresholds):
+        self.features=features
+        self.thresholds=thresholds
+
+    def n_feats(self):
+        return len(self.features)
+
+    def __call__(self,X,concat=True):
+        new_feats=[self.compute_feats(x_i) for x_i in X]
+        new_feats=np.array(new_feats)
+        if(concat):
+            return np.concatenate([X,new_feats],axis=1)
+        return new_feats
+
+    def compute_feats(self,x_i):
+        new_feats=[]
+        for i,feat_i in enumerate(self.features):
+            value_i=x_i[feat_i]
+            thres_i=self.thresholds[i]
+            new_feats.append(int(value_i<thres_i) )
+        return np.array(new_feats)
+
+def make_tree_feats(tree):
+    raw_tree=tree.tree_.__getstate__()['nodes']
+    feats,thres=[],[]
+    for node_i in raw_tree:
+        feat_i=node_i[2]
+        if(feat_i>=0):
+            feats.append(feat_i)
+            thres.append(node_i[3])
+    return TreeFeatures(feats,thres)
 
 def eval_features(in_path):
-#    def helper():
-#        return TreeFeatClf(extract_feats=CSExtractor(),
-#                           clf_type="LR",
-#                           concat=True)
-    clf_dict={
-              "TREE":gradient_tree,
-              
-              "TREE-FEATS":{ "extract_feats":FeatureExtractor(),
-                           "clf_type":"SVM",
-                           "concat":False},
-              "TREE-CS":{ "extract_feats":CSExtractor(),
-                           "clf_type":"SVM",
-                           "concat":False},
-              "LR":"LR",
-              "SVM":"SVM"}
-    compare_clf(in_path,clf_dict)
+    clfs=[ GradientTree(),
+           { "tree_type":"gradient", 
+             "extract_feats":"baisc",
+             "clf_type":"SVM",
+             "concat":False},
+           { "tree_type":"gradient",
+             "extract_feats":"CS",
+             "clf_type":"SVM",
+             "concat":False},
+          "LR",
+          "SVM"]
+    compare_clf(in_path,clfs)
 
-def compare_clf(in_path,clf_dict):
+def compare_clf(in_path,clfs):
     data_split=base.get_splits(data_path=in_path,
                                n_splits=10,
                                n_repeats=1)
-    for name_i,clf_factory_i in clf_dict.items():
+    for clf_factory_i in clfs:
         if(type(clf_factory_i)==str):
+            desc_i=clf_factory_i
             clf_factory_i=base.ClasicalClfFactory(clf_factory_i)
-        if(type(clf_factory_i)==dict):
+        elif(type(clf_factory_i)==dict):
+            names=list(clf_factory_i.keys())
+            names.sort()
+            desc=[str(clf_factory_i[name_i]) for name_i in names]
+            desc_i=",".join(desc)
             clf_factory_i=TreeFeatFactory(clf_factory_i)
+        else:
+            desc_i=str(clf_factory_i)
         acc_i=[]
         for clf_j,result_j in data_split.eval(clf_factory_i):
             acc_i.append(result_j.get_acc())
-        print(f"{name_i}:{np.mean(acc_i):.4f}")
+        print(f"{desc_i}:{np.mean(acc_i):.4f}")
 
 eval_features("bad_exp/data/wine-quality-red")
