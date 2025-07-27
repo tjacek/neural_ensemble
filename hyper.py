@@ -2,6 +2,13 @@ import numpy as np
 from sklearn import tree
 import base,dataset
 
+class TreeFeatFactory(object):
+    def __init__(self,arg_dict):
+        self.arg_dict=arg_dict
+
+    def __call__(self):
+        return TreeFeatClf(**self.arg_dict)
+
 class TreeFeatClf(object):
     def __init__(self,extract_feats,
                       clf_type,
@@ -101,13 +108,20 @@ def gradient_tree():
                                        class_weight="balanced")
 
 def eval_features(in_path):
-    def helper():
-        return TreeFeatClf(extract_feats=CSExtractor(),
-                           clf_type="LR",
-                           concat=True)
+#    def helper():
+#        return TreeFeatClf(extract_feats=CSExtractor(),
+#                           clf_type="LR",
+#                           concat=True)
     clf_dict={
               "TREE":gradient_tree,
-              "TREE-SVM":helper,
+              
+              "TREE-FEATS":{ "extract_feats":FeatureExtractor(),
+                           "clf_type":"SVM",
+                           "concat":False},
+              "TREE-CS":{ "extract_feats":CSExtractor(),
+                           "clf_type":"SVM",
+                           "concat":False},
+              "LR":"LR",
               "SVM":"SVM"}
     compare_clf(in_path,clf_dict)
 
@@ -118,6 +132,8 @@ def compare_clf(in_path,clf_dict):
     for name_i,clf_factory_i in clf_dict.items():
         if(type(clf_factory_i)==str):
             clf_factory_i=base.ClasicalClfFactory(clf_factory_i)
+        if(type(clf_factory_i)==dict):
+            clf_factory_i=TreeFeatFactory(clf_factory_i)
         acc_i=[]
         for clf_j,result_j in data_split.eval(clf_factory_i):
             acc_i.append(result_j.get_acc())
