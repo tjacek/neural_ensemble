@@ -35,6 +35,8 @@ class TreeFeatClf(object):
         return self.clf.predict(X)
 
 def get_tree(tree_type):
+    if(tree_type=="random"):
+        return RandomTree()
     return GradientTree()
 
 class GradientTree(object):
@@ -44,6 +46,14 @@ class GradientTree(object):
 
     def __str__(self):
         return "GradientTree"
+
+class RandomTree(object):
+    def __call__(self):
+        return tree.DecisionTreeClassifier(max_features='sqrt',
+                                           class_weight="balanced")
+
+    def __str__(self):
+        return "RandomTree"
 
 def get_extractor(extr_feats):
     if(extr_feats=="CS"):
@@ -125,6 +135,15 @@ def make_tree_feats(tree):
 
 def eval_features(in_path):
     clfs=[ GradientTree(),
+           RandomTree(),
+           { "tree_type":"random", 
+             "extract_feats":"baisc",
+             "clf_type":"SVM",
+             "concat":False},
+           { "tree_type":"random",
+             "extract_feats":"CS",
+             "clf_type":"SVM",
+             "concat":False},
            { "tree_type":"gradient", 
              "extract_feats":"baisc",
              "clf_type":"SVM",
