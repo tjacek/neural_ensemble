@@ -1,5 +1,6 @@
 import numpy as np
 from sklearn import tree
+from sklearn.decomposition import PCA
 import base,dataset
 
 class TreeFeatFactory(object):
@@ -49,8 +50,8 @@ class GradientTree(object):
 
 class RandomTree(object):
     def __call__(self):
-        return tree.DecisionTreeClassifier(max_features='sqrt',
-                                           class_weight="balanced")
+        return tree.DecisionTreeClassifier(max_features='sqrt')#,
+#                                           class_weight="balanced")
 
     def __str__(self):
         return "RandomTree"
@@ -58,6 +59,8 @@ class RandomTree(object):
 def get_extractor(extr_feats):
     if(extr_feats=="CS"):
         return CSExtractor
+    if(extr_feats=="PCA"):
+        return PCAExtractor
     return FeatureExtractor
 
 class FeatureExtractor(object):
@@ -100,6 +103,28 @@ class CSExtractor(object):
         feats=np.concatenate(feats,axis=1)
         return feats
 
+class PCAExtractor(object):
+    def __init__(self,tree_factory=None):
+        if(tree_factory is None):
+            tree_factory=gradient_tree
+        self.tree_factory=tree_factory
+        self.pca_feats=None
+
+    def fit(self,X,y):
+        tree=self.tree_factory()
+        tree.fit(X,y)
+        self.tree_feats=make_tree_feats(tree)
+        n_feats=2*X.shape[1]
+        tree_X=self.tree_feats(X,concat=False)
+        self.pca_feats = PCA(n_components=n_feats).fit(tree_X)
+    
+    def __call__(self,X,concat=True):
+        tree_X=self.tree_feats(X,concat=False)
+        new_X=self.pca_feats.transform(tree_X)
+        if(concat):
+            new_X=np.concatenate([X,new_X],axis=1)
+        return new_X
+
 class TreeFeatures(object):
     def __init__(self,features,thresholds):
         self.features=features
@@ -137,21 +162,21 @@ def eval_features(in_path):
     clfs=[ GradientTree(),
            RandomTree(),
            { "tree_type":"random", 
-             "extract_feats":"baisc",
-             "clf_type":"SVM",
-             "concat":False},
-           { "tree_type":"random",
-             "extract_feats":"CS",
-             "clf_type":"SVM",
-             "concat":False},
-           { "tree_type":"gradient", 
-             "extract_feats":"baisc",
-             "clf_type":"SVM",
-             "concat":False},
-           { "tree_type":"gradient",
-             "extract_feats":"CS",
-             "clf_type":"SVM",
-             "concat":False},
+             "extract_feats":"PCA",
+             "clf_type":"LR",
+             "concat":True},
+           { "tree_type":"random", 
+             "extract_feats":"basic",
+             "clf_type":"LR",
+             "concat":True},
+#           { "tree_type":"gradient", 
+#             "extract_feats":"baisc",
+#             "clf_type":"SVM",
+#             "concat":False},
+#           { "tree_type":"gradient",
+#             "extract_feats":"CS",
+#             "clf_type":"SVM",
+#             "concat":False},
           "LR",
           "SVM"]
     compare_clf(in_path,clfs)
