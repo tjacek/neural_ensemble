@@ -56,7 +56,19 @@ def make_tree_feats(tree):
             thres.append(node_i[3])
     return TreeFeatures(feats,thres)
 
-#class ThresholdFeats(object):
+class ThresholdFeats(object):
+    def __init__(self,thres_dict):
+        self.thres_dict=thres_dict
+
+    def propor(self):
+        keys=list(self.thres_dict.keys())
+        keys.sort()
+        for key_i in keys:
+            thres_i=self.thres_dict[key_i]
+            thres_i-=thres_i[0]
+            thres_i/=thres_i[-1]
+            thres_i=np.round(thres_i,4)
+            print(thres_i)
 
 def make_thres_feats(tree):
     raw_tree=tree.tree_.__getstate__()['nodes']
@@ -65,16 +77,17 @@ def make_thres_feats(tree):
         feat_i=node_i[2]
         if(feat_i>=0):
             thres_dict[feat_i].append(node_i[3])
+    new_dict={}
     for feat_i,thres_i in thres_dict.items():
         thres_i.sort()
         thres_i=np.array(thres_i)
-        print(feat_i)
-        thres_i-=thres_i[0]
-        print( thres_i/thres_i[-1])
+        new_dict[feat_i]=thres_i
+    return ThresholdFeats(new_dict)
 
 if __name__ == '__main__':
     import base,dataset
     data=dataset.read_csv("bad_exp/data/wine-quality-red")
     clf=get_tree("random")()
     clf.fit(data.X,data.y)
-    make_thres_feats(clf)
+    thres_feat=make_thres_feats(clf)
+    thres_feat.propor()
