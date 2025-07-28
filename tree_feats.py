@@ -23,20 +23,24 @@ class RandomTree(object):
     def __str__(self):
         return "RandomTree"
 
-class TreeFeatures(object):
+class TabFeatures(object):
+    def __call__(self,X,concat=True):
+        new_feats=[self.compute_feats(x_i) for x_i in X]
+        new_feats=np.array(new_feats)
+        if(concat):
+            return np.concatenate([X,new_feats],axis=1)
+        return new_feats 
+
+    def compute_feats(self,x_i):
+        raise NotImplementedError()
+
+class TreeFeatures(TabFeatures):
     def __init__(self,features,thresholds):
         self.features=features
         self.thresholds=thresholds
 
     def n_feats(self):
         return len(self.features)
-
-    def __call__(self,X,concat=True):
-        new_feats=[self.compute_feats(x_i) for x_i in X]
-        new_feats=np.array(new_feats)
-        if(concat):
-            return np.concatenate([X,new_feats],axis=1)
-        return new_feats
 
     def compute_feats(self,x_i):
         new_feats=[]
@@ -56,9 +60,25 @@ def make_tree_feats(tree):
             thres.append(node_i[3])
     return TreeFeatures(feats,thres)
 
-class ThresholdFeats(object):
+class ThresholdFeats(TabFeatures):
     def __init__(self,thres_dict):
         self.thres_dict=thres_dict
+#    def __call__(self,X,concat=True):
+    
+    def compute_feats(self,x):
+        new_feats=[]
+        for feat_i,x_i in enumerate(x):
+            if(feat_i in self.thres_dict):
+                thres_i=self.thres_dict[feat_i]
+                value_i=None
+                for j,thres_j in enumerate(thres_i):
+                    if(x_i<thres_j):
+                        value_i=j
+                        break
+                if(value_i is None):
+                    value_i=len(thres_i)
+                new_feats.append(value_i)
+        return new_feats
 
     def propor(self):
         keys=list(self.thres_dict.keys())
@@ -84,10 +104,16 @@ def make_thres_feats(tree):
         new_dict[feat_i]=thres_i
     return ThresholdFeats(new_dict)
 
+def thre_stats(X):
+    for feat_i in X.T:
+#        print(x_i.shape)
+        print(np.unique(feat_i).shape)
+
 if __name__ == '__main__':
     import base,dataset
     data=dataset.read_csv("bad_exp/data/wine-quality-red")
     clf=get_tree("random")()
     clf.fit(data.X,data.y)
     thres_feat=make_thres_feats(clf)
-    thres_feat.propor()
+    new_X=thres_feat(data.X,concat=False)
+    thre_stats(new_X)

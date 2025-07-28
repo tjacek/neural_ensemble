@@ -39,6 +39,8 @@ def get_extractor(extr_feats):
         return CSExtractor
     if(extr_feats=="PCA"):
         return PCAExtractor
+    if(extr_feats=="thres"):
+        return ThresExtractor
     return FeatureExtractor
 
 class FeatureExtractor(object):
@@ -103,25 +105,40 @@ class PCAExtractor(object):
             new_X=np.concatenate([X,new_X],axis=1)
         return new_X
 
+class ThresExtractor(object):
+    def __init__(self,tree_factory=None):
+        if(tree_factory is None):
+            tree_factory=gradient_tree
+        self.tree_factory=tree_factory
+        self.thres_feats=None
+
+    def fit(self,X,y):
+        tree=self.tree_factory()
+        tree.fit(X,y)
+        self.thres_feats=tree_feats.make_thres_feats(tree)
+
+    def __call__(self,X,concat=True):
+        return self.thres_feats(X,concat)
+
 def eval_features(in_path):
     clfs=[ tree_feats.GradientTree(),
            tree_feats.RandomTree(),
            { "tree_type":"random", 
-             "extract_feats":"PCA",
-             "clf_type":"LR",
+             "extract_feats":"thres",
+             "clf_type":"SVM",
+             "concat":False},
+           { "tree_type":"random", 
+             "extract_feats":"thres",
+             "clf_type":"SVM",
              "concat":True},
            { "tree_type":"random", 
              "extract_feats":"basic",
-             "clf_type":"LR",
+             "clf_type":"SVM",
+             "concat":False},
+           { "tree_type":"random", 
+             "extract_feats":"basic",
+             "clf_type":"SVM",
              "concat":True},
-#           { "tree_type":"gradient", 
-#             "extract_feats":"baisc",
-#             "clf_type":"SVM",
-#             "concat":False},
-#           { "tree_type":"gradient",
-#             "extract_feats":"CS",
-#             "clf_type":"SVM",
-#             "concat":False},
           "LR",
           "SVM"]
     compare_clf(in_path,clfs)
