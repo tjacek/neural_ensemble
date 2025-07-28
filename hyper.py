@@ -116,7 +116,8 @@ class ThresExtractor(object):
         tree=self.tree_factory()
         tree.fit(X,y)
         self.thres_feats=tree_feats.make_thres_feats(tree)
-
+        self.thres_feats.group()
+        
     def __call__(self,X,concat=True):
         return self.thres_feats(X,concat)
 

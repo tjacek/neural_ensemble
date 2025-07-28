@@ -1,5 +1,5 @@
 import numpy as np
-from collections import defaultdict
+from collections import Counter,defaultdict
 from sklearn import tree
 
 def get_tree(tree_type):
@@ -63,7 +63,6 @@ def make_tree_feats(tree):
 class ThresholdFeats(TabFeatures):
     def __init__(self,thres_dict):
         self.thres_dict=thres_dict
-#    def __call__(self,X,concat=True):
     
     def compute_feats(self,x):
         new_feats=[]
@@ -90,6 +89,17 @@ class ThresholdFeats(TabFeatures):
             thres_i=np.round(thres_i,4)
             print(thres_i)
 
+    def group(self,eps=0.05):
+        new_thres={}
+        for feat_i,thres_i in self.thres_dict.items():
+            delta_i= np.abs(eps*(thres_i[-1]-thres_i[0]))
+            diff_i=np.diff(thres_i)
+            indexes=[j for j,diff_j in enumerate(diff_i)
+                         if(np.abs(diff_j)>delta_i)]
+            new_thres_i=[thres_i[j] for j in indexes]
+            new_thres[feat_i]=np.array(new_thres_i)
+        self.thres_dict= new_thres
+
 def make_thres_feats(tree):
     raw_tree=tree.tree_.__getstate__()['nodes']
     thres_dict=defaultdict(lambda:[])
@@ -104,10 +114,21 @@ def make_thres_feats(tree):
         new_dict[feat_i]=thres_i
     return ThresholdFeats(new_dict)
 
-def thre_stats(X):
+def thre_stats(X,y):
+    y=[int(y_i) for y_i in y]
+    n_cats=int(np.amax(y)+1)
+    cat_sizes=Counter(y)
     for feat_i in X.T:
-#        print(x_i.shape)
-        print(np.unique(feat_i).shape)
+        n_thres=np.unique(feat_i).shape[0]
+        hist_i=np.zeros((n_thres,n_cats))
+        for j,cat_j in enumerate(y):
+            value_j=feat_i[j]
+            hist_i[value_j][cat_j]+=1
+        for cat_i,size_i in cat_sizes.items():
+            hist_i[:,cat_i]/=size_i
+#            print(hist_i[:,cat_i])
+        hist_i=np.round(hist_i,2)
+        print(hist_i.T)
 
 if __name__ == '__main__':
     import base,dataset
@@ -115,5 +136,6 @@ if __name__ == '__main__':
     clf=get_tree("random")()
     clf.fit(data.X,data.y)
     thres_feat=make_thres_feats(clf)
+    thres_feat.group()
     new_X=thres_feat(data.X,concat=False)
-    thre_stats(new_X)
+    thre_stats(new_X,data.y)
