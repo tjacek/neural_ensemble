@@ -1,7 +1,6 @@
 import numpy as np
-from sklearn import tree
 from sklearn.decomposition import PCA
-import base,dataset
+import base,dataset,tree_feats
 
 class TreeFeatFactory(object):
     def __init__(self,arg_dict):
@@ -16,7 +15,7 @@ class TreeFeatClf(object):
                  extract_feats,
                  clf_type,
                  concat=False):
-        tree_factory=get_tree(tree_type)
+        tree_factory=tree_feats.get_tree(tree_type)
         extract_feats=get_extractor(extract_feats)
         self.extract_feats=extract_feats(tree_factory)
         self.clf_type=clf_type
@@ -35,27 +34,6 @@ class TreeFeatClf(object):
                           concat=self.concat)
         return self.clf.predict(X)
 
-def get_tree(tree_type):
-    if(tree_type=="random"):
-        return RandomTree()
-    return GradientTree()
-
-class GradientTree(object):
-    def __call__(self):
-        return tree.DecisionTreeClassifier(max_depth=3,
-                                       class_weight="balanced")
-
-    def __str__(self):
-        return "GradientTree"
-
-class RandomTree(object):
-    def __call__(self):
-        return tree.DecisionTreeClassifier(max_features='sqrt')#,
-#                                           class_weight="balanced")
-
-    def __str__(self):
-        return "RandomTree"
-
 def get_extractor(extr_feats):
     if(extr_feats=="CS"):
         return CSExtractor
@@ -73,7 +51,7 @@ class FeatureExtractor(object):
     def fit(self,X,y):
         tree=self.tree_factory()
         tree.fit(X,y)
-        self.tree_feats=make_tree_feats(tree)
+        self.tree_feats=tree_feats.make_tree_feats(tree)
 
     def __call__(self,X,concat=True):
         return self.tree_feats(X,concat)
@@ -113,7 +91,7 @@ class PCAExtractor(object):
     def fit(self,X,y):
         tree=self.tree_factory()
         tree.fit(X,y)
-        self.tree_feats=make_tree_feats(tree)
+        self.tree_feats=tree_feats.make_tree_feats(tree)
         n_feats=2*X.shape[1]
         tree_X=self.tree_feats(X,concat=False)
         self.pca_feats = PCA(n_components=n_feats).fit(tree_X)
@@ -125,42 +103,9 @@ class PCAExtractor(object):
             new_X=np.concatenate([X,new_X],axis=1)
         return new_X
 
-class TreeFeatures(object):
-    def __init__(self,features,thresholds):
-        self.features=features
-        self.thresholds=thresholds
-
-    def n_feats(self):
-        return len(self.features)
-
-    def __call__(self,X,concat=True):
-        new_feats=[self.compute_feats(x_i) for x_i in X]
-        new_feats=np.array(new_feats)
-        if(concat):
-            return np.concatenate([X,new_feats],axis=1)
-        return new_feats
-
-    def compute_feats(self,x_i):
-        new_feats=[]
-        for i,feat_i in enumerate(self.features):
-            value_i=x_i[feat_i]
-            thres_i=self.thresholds[i]
-            new_feats.append(int(value_i<thres_i) )
-        return np.array(new_feats)
-
-def make_tree_feats(tree):
-    raw_tree=tree.tree_.__getstate__()['nodes']
-    feats,thres=[],[]
-    for node_i in raw_tree:
-        feat_i=node_i[2]
-        if(feat_i>=0):
-            feats.append(feat_i)
-            thres.append(node_i[3])
-    return TreeFeatures(feats,thres)
-
 def eval_features(in_path):
-    clfs=[ GradientTree(),
-           RandomTree(),
+    clfs=[ tree_feats.GradientTree(),
+           tree_feats.RandomTree(),
            { "tree_type":"random", 
              "extract_feats":"PCA",
              "clf_type":"LR",
