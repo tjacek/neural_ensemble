@@ -17,7 +17,7 @@ class GradientTree(object):
 
 class RandomTree(object):
     def __call__(self):
-        return tree.DecisionTreeClassifier(max_features='sqrt')#,
+        return tree.DecisionTreeClassifier(max_features='sqrt')
 #                                           class_weight="balanced")
 
     def __str__(self):
@@ -130,12 +130,33 @@ def thre_stats(X,y):
         hist_i=np.round(hist_i,2)
         print(hist_i.T)
 
+def inform_nodes(clf,y):
+    cat_sizes=Counter(y)
+    disc,nodes_desc=[],[]
+    for i,value_i in enumerate(clf.tree_.value):
+        n_samples=clf.tree_.weighted_n_node_samples[i]
+        value_i=value_i.flatten()
+        desc_i=[ (n_samples*value_i[int(cat_j)])/size_j 
+                 for cat_j,size_j in cat_sizes.items()]
+        nodes_desc.append(desc_i)
+        disc.append(np.amax(value_i)/np.amin(value_i[value_i!=0]))
+    indexes=np.argsort(disc)
+    for i in indexes[-10:]:
+        print(disc[i])
+#        print(clf.tree_.weighted_n_node_samples[i])
+        print(nodes_desc[i])
+
+
+
 if __name__ == '__main__':
     import base,dataset
     data=dataset.read_csv("bad_exp/data/wine-quality-red")
     clf=get_tree("random")()
     clf.fit(data.X,data.y)
-    thres_feat=make_thres_feats(clf)
-    thres_feat.group()
-    new_X=thres_feat(data.X,concat=False)
-    thre_stats(new_X,data.y)
+    inform_nodes(clf,data.y)
+#    tree.plot_tree(clf, proportion=True)
+#    plt.show()
+#    thres_feat=make_thres_feats(clf)
+#    thres_feat.group()
+#    new_X=thres_feat(data.X,concat=False)
+#    thre_stats(new_X,data.y)
