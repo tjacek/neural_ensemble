@@ -131,26 +131,48 @@ def thre_stats(X,y):
         print(hist_i.T)
 
 def inform_nodes(clf,y):
+    cls_dist=get_disc_dist(y)
+    print(clf.tree_.value[0])
+    raise Exception(cls_dist)
+#    disc,nodes_desc=[],[]
+#    for i,value_i in enumerate(clf.tree_.value):
+#        n_samples=clf.tree_.weighted_n_node_samples[i]
+#        value_i=value_i.flatten()
+#        desc_i=[ (n_samples*value_i[int(cat_j)])/size_j 
+#                 for cat_j,size_j in cat_sizes.items()]
+#        nodes_desc.append(desc_i)
+#        disc.append(np.amax(value_i)/np.amin(value_i[value_i!=0]))
+#    indexes=np.argsort(disc)
+#    for i in indexes[-10:]:
+#        print(disc[i])
+#        print(nodes_desc[i])
+
+def get_disc_dist(y):
     cat_sizes=Counter(y)
-    disc,nodes_desc=[],[]
-    for i,value_i in enumerate(clf.tree_.value):
-        n_samples=clf.tree_.weighted_n_node_samples[i]
-        value_i=value_i.flatten()
-        desc_i=[ (n_samples*value_i[int(cat_j)])/size_j 
-                 for cat_j,size_j in cat_sizes.items()]
-        nodes_desc.append(desc_i)
-        disc.append(np.amax(value_i)/np.amin(value_i[value_i!=0]))
-    indexes=np.argsort(disc)
-    for i in indexes[-10:]:
-        print(disc[i])
-#        print(clf.tree_.weighted_n_node_samples[i])
-        print(nodes_desc[i])
+    keys=list(cat_sizes.keys())
+    keys.sort()
+    cls_dist=np.array([cat_sizes[key_i] 
+                        for key_i in keys],
+                        dtype=float)
+    cls_dist/=np.sum(cls_dist)
+    return cls_dist    
 
-
+def path_stat(clf,data):
+    prob=[]
+    for i in range(data.n_cats()):
+        data_i=data.selection(data.y==i)
+        path_i=clf.decision_path(data_i.X)
+        prob_i= path_i.sum(axis=0)/len(data_i)
+        prob.append(prob_i)
+    prob=np.array(prob)
+    for p in prob.T:
+        print(p)
+#    raise Exception(prob_i)
 
 if __name__ == '__main__':
     import base,dataset
     data=dataset.read_csv("bad_exp/data/wine-quality-red")
+    data.y= data.y.astype(int)
     clf=get_tree("random")()
     clf.fit(data.X,data.y)
     inform_nodes(clf,data.y)
