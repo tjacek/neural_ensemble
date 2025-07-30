@@ -132,20 +132,18 @@ def thre_stats(X,y):
 
 def inform_nodes(clf,y):
     cls_dist=get_disc_dist(y)
-    print(clf.tree_.value[0])
-    raise Exception(cls_dist)
-#    disc,nodes_desc=[],[]
-#    for i,value_i in enumerate(clf.tree_.value):
-#        n_samples=clf.tree_.weighted_n_node_samples[i]
-#        value_i=value_i.flatten()
-#        desc_i=[ (n_samples*value_i[int(cat_j)])/size_j 
-#                 for cat_j,size_j in cat_sizes.items()]
-#        nodes_desc.append(desc_i)
-#        disc.append(np.amax(value_i)/np.amin(value_i[value_i!=0]))
-#    indexes=np.argsort(disc)
-#    for i in indexes[-10:]:
-#        print(disc[i])
-#        print(nodes_desc[i])
+    div,desc=[],[]
+    for i,value_i in enumerate(clf.tree_.value):
+        n_samples=clf.tree_.weighted_n_node_samples[i]
+        kl_i=KL(value_i,cls_dist)
+        div.append(kl_i*np.log(n_samples))
+        desc.append((n_samples,value_i))
+    indexes=np.argsort(div)
+    for i in indexes[:10]:
+        print(div[i])
+        n_samples,value=desc[i]
+        print(n_samples)
+        print(value)
 
 def get_disc_dist(y):
     cat_sizes=Counter(y)
@@ -156,6 +154,9 @@ def get_disc_dist(y):
                         dtype=float)
     cls_dist/=np.sum(cls_dist)
     return cls_dist    
+
+def KL(x,y):
+    return np.sum(np.where(x != 0, x * np.log(x / y), 0))
 
 def path_stat(clf,data):
     prob=[]
