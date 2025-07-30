@@ -1,5 +1,6 @@
 import numpy as np
 from collections import Counter,defaultdict
+from scipy.stats import entropy 
 from sklearn import tree
 
 def get_tree(tree_type):
@@ -132,18 +133,28 @@ def thre_stats(X,y):
 
 def inform_nodes(clf,y):
     cls_dist=get_disc_dist(y)
-    div,desc=[],[]
+    n_samples=len(y)
+    offset=np.ones(cls_dist.shape)
+    h_cls=np.sum(entropy(cls_dist,nan_policy='omit'))
+    div=[]#,desc=[],[]
     for i,value_i in enumerate(clf.tree_.value):
-        n_samples=clf.tree_.weighted_n_node_samples[i]
-        kl_i=KL(value_i,cls_dist)
-        div.append(kl_i*np.log(n_samples))
-        desc.append((n_samples,value_i))
-    indexes=np.argsort(div)
-    for i in indexes[:10]:
-        print(div[i])
-        n_samples,value=desc[i]
-        print(n_samples)
-        print(value)
+        samples_i=clf.tree_.weighted_n_node_samples[i]
+        p_y= samples_i/ n_samples
+        h_yx=p_y*entropy(value_i[0],nan_policy='omit')
+        h_yx+=(1-p_y)*entropy(offset-value_i[0])
+        i_xy=h_cls-h_yx
+        div.append(i_xy)
+#        desc.append((samples_i,value_i))
+    return np.argsort(div)
+   
+def show_nodes(clf,indexes):
+    base=clf.tree_.value[0]
+    for i in indexes:
+        value_i=clf.tree_.value[i]
+        samples_i=clf.tree_.weighted_n_node_samples[i]
+        print(samples_i)
+        print(value_i)
+        print(value_i-base)    
 
 def get_disc_dist(y):
     cat_sizes=Counter(y)
@@ -155,8 +166,11 @@ def get_disc_dist(y):
     cls_dist/=np.sum(cls_dist)
     return cls_dist    
 
-def KL(x,y):
-    return np.sum(np.where(x != 0, x * np.log(x / y), 0))
+#def KL(x,y):
+#    return np.sum(np.where(x != 0, x * np.log(x / y), 0))
+
+#def entropy(x):
+#    return -np.sum(np.where(x != 0, x * np.log2(x), 0))
 
 def path_stat(clf,data):
     prob=[]
@@ -176,7 +190,8 @@ if __name__ == '__main__':
     data.y= data.y.astype(int)
     clf=get_tree("random")()
     clf.fit(data.X,data.y)
-    inform_nodes(clf,data.y)
+    indexes=inform_nodes(clf,data.y)
+    show_nodes(clf,indexes[:20])
 #    tree.plot_tree(clf, proportion=True)
 #    plt.show()
 #    thres_feat=make_thres_feats(clf)
