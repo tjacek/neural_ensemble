@@ -42,6 +42,8 @@ def get_extractor(extr_feats):
         return PCAExtractor
     if(extr_feats=="thres"):
         return ThresExtractor
+    if(extr_feats=="mutual"):
+        return MutualExtractor
     return FeatureExtractor
 
 class FeatureExtractor(object):
@@ -122,9 +124,41 @@ class ThresExtractor(object):
     def __call__(self,X,concat=True):
         return self.thres_feats(X,concat)
 
+class MutualExtractor(object):
+    def __init__(self,tree_factory):
+        if(tree_factory is None):
+            tree_factory=gradient_tree
+        self.tree_factory=tree_factory
+        self.tree=None
+        self.selected_feats=None
+
+    def fit(self,X,y):
+        self.tree=self.tree_factory()
+        self.tree.fit(X,y)
+        indexes=tree_feats.inform_nodes(self.tree,y)
+        n_feats=2*X.shape[1]
+        self.selected_feats=indexes[:]
+            
+    def __call__(self,X,concat=True):
+        ind_vars=self.tree.decision_path(X)
+        new_X=[ind_vars[:,i].toarray() 
+                    for i in self.selected_feats]
+        new_X=np.concatenate(new_X,axis=1)       
+        if(concat):
+            new_X=np.concatenate([X,new_X],axis=1)
+        return new_X
+
 def eval_features(in_path):
     clfs=[ tree_feats.GradientTree(),
            tree_feats.RandomTree(),
+            { "tree_type":"random", 
+             "extract_feats":"mutual",
+             "clf_type":"SVM",
+             "concat":False},
+           { "tree_type":"random", 
+             "extract_feats":"mutual",
+             "clf_type":"SVM",
+             "concat":True},
            { "tree_type":"random", 
              "extract_feats":"basic",
              "clf_type":"SVM",
@@ -133,15 +167,6 @@ def eval_features(in_path):
              "extract_feats":"basic",
              "clf_type":"SVM",
              "concat":True},
-           { "tree_type":"random", 
-             "extract_feats":"thres",
-             "clf_type":"SVM",
-             "concat":False},
-           { "tree_type":"random", 
-             "extract_feats":"thres",
-             "clf_type":"SVM",
-             "concat":True},
-
           "LR",
           "SVM"]
     compare_clf(in_path,clfs)

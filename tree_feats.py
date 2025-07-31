@@ -144,7 +144,6 @@ def inform_nodes(clf,y):
         h_yx+=(1-p_y)*entropy(offset-value_i[0])
         i_xy=h_cls-h_yx
         div.append(i_xy)
-#        desc.append((samples_i,value_i))
     return np.argsort(div)
    
 def show_nodes(clf,indexes):
