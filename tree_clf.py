@@ -17,9 +17,17 @@ def make_tree_dict(clf):
     tree_dict["value"]=[ value_i.flatten() 
                             for value_i in clf.tree_.value]
     tree_dict["samples"]=clf.tree_.weighted_n_node_samples
-    print(tree_dict["samples"])
+    n_nodes=len(tree_dict["feat"])
+    tree_dict["parents"]= -np.ones((n_nodes,))
+    for i in range(n_nodes):
+        left_i=tree_dict["left"][i]
+        right_i=tree_dict["right"][i]
+        if(left_i>=0):
+            tree_dict["parents"][left_i]=i
+            tree_dict["parents"][right_i]=i
+    print(tree_dict["parents"])
     print(dir(clf.tree_))
-    
+
 if __name__ == '__main__':
     import base,dataset
     data=dataset.read_csv("bad_exp/data/wine-quality-red")
