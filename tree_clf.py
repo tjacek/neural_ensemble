@@ -2,6 +2,14 @@ import numpy as np
 import tree_feats
 
 class TreeDict(dict):
+
+    def get_node(self,i):
+        keys=self.keys()
+        keys.sort()
+        if(type(i)==int):
+            return [self[key_j][i] for key_j in keys]
+        return [[self[key_j][k] for key_j in keys]
+                         for k in i]
     def show(self,i):
         value_i=clf.tree_.value[i]
         samples_i=clf.tree_.weighted_n_node_samples[i]
@@ -25,8 +33,7 @@ def make_tree_dict(clf):
         if(left_i>=0):
             tree_dict["parents"][left_i]=i
             tree_dict["parents"][right_i]=i
-    print(tree_dict["parents"])
-    print(dir(clf.tree_))
+    return tree_dict
 
 if __name__ == '__main__':
     import base,dataset
