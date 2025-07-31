@@ -39,6 +39,10 @@ class Dataset(object):
                 line_i+="\n"
                 f.write(line_i)
     
+    def selection(self,indices):
+        return Dataset(X=self.X[indices],
+                       y=self.y[indices])
+
     def fit_clf(self,train,clf):
         X_train,y_train=self.X[train],self.y[train]
         history=clf.fit(X_train,y_train)
@@ -52,10 +56,16 @@ class Dataset(object):
         y_pred=clf.predict(X_test)
         return Result(y_pred,y_test)
 
-    def selection(self,indices):
-        return Dataset(X=self.X[indices],
-                       y=self.y[indices])
+    def eval(self,train_index,test_index,clf,as_result=True):
+        clf,history=self.fit_clf(train_index,clf)
+        result=self.pred(test_index,clf)
+        return result,history
 
+    def binarize(self,k):
+        y_k=[ int(k==y_i) for y_i in self.y]  
+        return Dataset(X=self.X,
+                       y=y_k)
+        
 class WeightDict(dict):
     def __init__(self, arg=[]):
         super(WeightDict, self).__init__(arg)
@@ -151,6 +161,18 @@ def read_result_group(in_path:str):
     results= [ read_result(path_i) 
                  for path_i in utils.top_files(in_path)]
     return ResultGroup(results)
+
+def dispatch_metric(metric_type):
+    metric_type=metric_type.lower()
+    if(metric_type=="acc"):
+        return accuracy_score
+    if(metric_type=="accuracy"):
+        return accuracy_score
+    if(metric_type=="balance"):
+        return balanced_accuracy_score
+    if(metric_type=="balanced accuracy"):
+        return balanced_accuracy_score
+    raise Exception(f"Unknow metric type:{metric_type}")
 
 class DFView(object):
     def __init__(self,df):

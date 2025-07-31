@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn.decomposition import PCA
-import base,dataset,tree_feats
+import base,dataset,tree_feats,utils
+utils.silence_warnings()
 
 class TreeFeatFactory(object):
     def __init__(self,arg_dict):
@@ -116,8 +117,8 @@ class ThresExtractor(object):
         tree=self.tree_factory()
         tree.fit(X,y)
         self.thres_feats=tree_feats.make_thres_feats(tree)
-        self.thres_feats.group()
-        
+#        self.thres_feats.group()
+
     def __call__(self,X,concat=True):
         return self.thres_feats(X,concat)
 
@@ -125,14 +126,6 @@ def eval_features(in_path):
     clfs=[ tree_feats.GradientTree(),
            tree_feats.RandomTree(),
            { "tree_type":"random", 
-             "extract_feats":"thres",
-             "clf_type":"SVM",
-             "concat":False},
-           { "tree_type":"random", 
-             "extract_feats":"thres",
-             "clf_type":"SVM",
-             "concat":True},
-           { "tree_type":"random", 
              "extract_feats":"basic",
              "clf_type":"SVM",
              "concat":False},
@@ -140,6 +133,15 @@ def eval_features(in_path):
              "extract_feats":"basic",
              "clf_type":"SVM",
              "concat":True},
+           { "tree_type":"random", 
+             "extract_feats":"thres",
+             "clf_type":"SVM",
+             "concat":False},
+           { "tree_type":"random", 
+             "extract_feats":"thres",
+             "clf_type":"SVM",
+             "concat":True},
+
           "LR",
           "SVM"]
     compare_clf(in_path,clfs)
@@ -160,9 +162,10 @@ def compare_clf(in_path,clfs):
             clf_factory_i=TreeFeatFactory(clf_factory_i)
         else:
             desc_i=str(clf_factory_i)
-        acc_i=[]
+        acc_i,balance_i=[],[]
         for clf_j,result_j in data_split.eval(clf_factory_i):
             acc_i.append(result_j.get_acc())
-        print(f"{desc_i}:{np.mean(acc_i):.4f}")
+            balance_i.append(result_j.get_metric("balance"))
+        print(f"{desc_i}:{np.mean(acc_i):.4f},{np.mean(balance_i):.4f}")
 
 eval_features("bad_exp/data/wine-quality-red")
