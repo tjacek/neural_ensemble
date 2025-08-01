@@ -48,7 +48,7 @@ def prepare_clfs(clfs):
 clfs=[ tree_feats.GradientTree(),
        tree_feats.RandomTree(),
        { "tree_factory":"random",
-         "extr_factory":"info",
+         "extr_factory":"cs",
          "clf_type":"SVM"},
        { "tree_factory":"random",
          "extr_factory":"info",
