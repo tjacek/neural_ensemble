@@ -32,18 +32,29 @@ def get_clf(clf_factory):
     desc=str(clf_factory)
     return desc,clf_factory
 
+def prepare_clfs(clfs):
+    new_clfs=[]
+    for clf_i in clfs:
+        if(type(clf_i)==dict):
+            conc_clf_i=clf_i.copy()
+            conc_clf_i["concat"]=True
+            new_clfs.append(conc_clf_i) 
+            clf_i["concat"]=False
+            new_clfs.append(clf_i)
+        else:
+            new_clfs.append(clf_i)
+    return new_clfs
+
 clfs=[ tree_feats.GradientTree(),
        tree_feats.RandomTree(),
        { "tree_factory":"random",
-         "extr_factory":"disc",
-         "clf_type":"SVM",
-         "concat":False},
+         "extr_factory":"info",
+         "clf_type":"SVM"},
        { "tree_factory":"random",
-         "extr_factory":"disc",
-         "clf_type":"SVM",
-         "concat":True},
+         "extr_factory":"info",
+         "clf_type":"SVM"},
        "LR",
        "SVM"]
-
+clfs=prepare_clfs(clfs)
 compare_exp(in_path="bad_exp/data/wine-quality-red",
 	        clfs=clfs)
