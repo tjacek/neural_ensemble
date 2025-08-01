@@ -51,17 +51,17 @@ class TreeFeatures(TabFeatures):
             new_feats.append(int(value_i<thres_i) )
         return np.array(new_feats)
 
-def make_tree_feats(tree):
-    raw_tree=tree.tree_.__getstate__()['nodes']
-    feats,thres=[],[]
-    for node_i in raw_tree:
-        feat_i=node_i[2]
-        if(feat_i>=0):
-            feats.append(feat_i)
-            thres.append(node_i[3])
-    return TreeFeatures(feats,thres)
+#def make_tree_feats(tree):
+#    raw_tree=tree.tree_.__getstate__()['nodes']
+#    feats,thres=[],[]
+#    for node_i in raw_tree:
+#        feat_i=node_i[2]
+#        if(feat_i>=0):
+#            feats.append(feat_i)
+#            thres.append(node_i[3])
+#    return TreeFeatures(feats,thres)
 
-class ThresholdFeats(TabFeatures):
+class DiscFeats(TabFeatures):
     def __init__(self,thres_dict):
         self.thres_dict=thres_dict
     
@@ -80,26 +80,39 @@ class ThresholdFeats(TabFeatures):
                 new_feats.append(value_i)
         return new_feats
 
-    def propor(self):
-        keys=list(self.thres_dict.keys())
-        keys.sort()
-        for key_i in keys:
-            thres_i=self.thres_dict[key_i]
-            thres_i-=thres_i[0]
-            thres_i/=thres_i[-1]
-            thres_i=np.round(thres_i,4)
-            print(thres_i)
+#    def propor(self):
+#        keys=list(self.thres_dict.keys())
+#        keys.sort()
+#        for key_i in keys:
+#            thres_i=self.thres_dict[key_i]
+#            thres_i-=thres_i[0]
+#            thres_i/=thres_i[-1]
+#            thres_i=np.round(thres_i,4)
+#            print(thres_i)
 
-    def group(self,eps=0.05):
-        new_thres={}
-        for feat_i,thres_i in self.thres_dict.items():
-            delta_i= np.abs(eps*(thres_i[-1]-thres_i[0]))
-            diff_i=np.diff(thres_i)
-            indexes=[j for j,diff_j in enumerate(diff_i)
-                         if(np.abs(diff_j)>delta_i)]
-            new_thres_i=[thres_i[j] for j in indexes]
-            new_thres[feat_i]=np.array(new_thres_i)
-        self.thres_dict= new_thres
+#    def group(self,eps=0.05):
+#        new_thres={}
+#        for feat_i,thres_i in self.thres_dict.items():
+#            delta_i= np.abs(eps*(thres_i[-1]-thres_i[0]))
+#            diff_i=np.diff(thres_i)
+#            indexes=[j for j,diff_j in enumerate(diff_i)
+#                         if(np.abs(diff_j)>delta_i)]
+#            new_thres_i=[thres_i[j] for j in indexes]
+#            new_thres[feat_i]=np.array(new_thres_i)
+#        self.thres_dict= new_thres
+
+def make_disc_feat(feats,thresholds):
+    thres_dict=defaultdict(lambda:[])
+    for i,feat_i in enumerate(feats):
+        if(feat_i):
+            thres_i=thresholds[i]
+            thres_dict[feat_i].append(thres_i)
+    new_dict={}
+    for feat_i,thres_i in thres_dict.items():
+        thres_i.sort()
+        thres_i=np.array(thres_i)
+        new_dict[feat_i]=np.array(thres_i)
+    return DiscFeats(new_dict)
 
 def make_thres_feats(tree):
     raw_tree=tree.tree_.__getstate__()['nodes']
@@ -115,21 +128,20 @@ def make_thres_feats(tree):
         new_dict[feat_i]=thres_i
     return ThresholdFeats(new_dict)
 
-def thre_stats(X,y):
-    y=[int(y_i) for y_i in y]
-    n_cats=int(np.amax(y)+1)
-    cat_sizes=Counter(y)
-    for feat_i in X.T:
-        n_thres=np.unique(feat_i).shape[0]
-        hist_i=np.zeros((n_thres,n_cats))
-        for j,cat_j in enumerate(y):
-            value_j=feat_i[j]
-            hist_i[value_j][cat_j]+=1
-        for cat_i,size_i in cat_sizes.items():
-            hist_i[:,cat_i]/=size_i
-#            print(hist_i[:,cat_i])
-        hist_i=np.round(hist_i,2)
-        print(hist_i.T)
+#def thre_stats(X,y):
+#    y=[int(y_i) for y_i in y]
+#    n_cats=int(np.amax(y)+1)
+#    cat_sizes=Counter(y)
+#    for feat_i in X.T:
+#        n_thres=np.unique(feat_i).shape[0]
+#        hist_i=np.zeros((n_thres,n_cats))
+#        for j,cat_j in enumerate(y):
+#            value_j=feat_i[j]
+#            hist_i[value_j][cat_j]+=1
+#        for cat_i,size_i in cat_sizes.items():
+#            hist_i[:,cat_i]/=size_i
+#        hist_i=np.round(hist_i,2)
+#        print(hist_i.T)
 
 def inform_nodes(clf,y):
     cls_dist=get_disc_dist(y)
@@ -163,13 +175,7 @@ def get_disc_dist(y):
                         for key_i in keys],
                         dtype=float)
     cls_dist/=np.sum(cls_dist)
-    return cls_dist    
-
-#def KL(x,y):
-#    return np.sum(np.where(x != 0, x * np.log(x / y), 0))
-
-#def entropy(x):
-#    return -np.sum(np.where(x != 0, x * np.log2(x), 0))
+    return cls_dist
 
 def path_stat(clf,data):
     prob=[]

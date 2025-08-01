@@ -1,6 +1,71 @@
 import numpy as np
 from scipy.stats import entropy 
-import tree_feats
+import base,tree_feats
+
+class TreeFeatFactory(object):
+    def __init__(self,arg_dict):
+        self.arg_dict=arg_dict
+
+    def __call__(self):
+        return TreeFeatClf(**self.arg_dict)
+
+class TreeFeatClf(object):
+    def __init__(self,
+                 tree_factory,
+                 extr_factory,
+                 clf_type,
+                 concat=False):
+        if(type(tree_factory)==str):
+            tree_factory=tree_feats.get_tree(tree_factory)
+        if(type(extr_factory)==str):
+            extr_factory=get_extractor(extr_factory)
+        self.tree_factory=tree_factory
+        self.extr_factory=extr_factory
+        self.clf_type=clf_type
+        self.concat=concat
+        self.extractor=None
+        self.clf=None
+
+    def fit(self,X,y):
+        self.extractor=self.extr_factory(X,y,
+                                         self.tree_factory)
+        self.clf=base.get_clf(self.clf_type)
+        X=self.extractor(X=X,
+                         concat=self.concat)
+        print(X.shape)
+        self.clf.fit(X,y)
+
+    def predict(self,X):
+        X=self.extractor(X=X,
+                         concat=self.concat)
+        return self.clf.predict(X)
+
+def get_extractor(extr_feats):
+    if(extr_feats=="info"):
+        return InfoFactory()
+    if(extr_feats=="disc"):
+        return DiscreteFactory()
+
+class InfoFactory(object):
+    def __call__(self,X,y,tree_factory):
+        tree=tree_factory()
+        tree.fit(X,y)
+        tree_dict=make_tree_dict(tree)
+        s_feats=inf_features(tree_dict,n_feats=10)
+        thres=tree_dict.get_attr("threshold",s_feats)
+        feats=tree_dict.get_attr("feat",s_feats)
+        return tree_feats.TreeFeatures(features=feats,
+                                   thresholds=thres)
+
+class DiscreteFactory(object):
+    def __call__(self,X,y,tree_factory):
+        tree=tree_factory()
+        tree.fit(X,y)
+        tree_dict=make_tree_dict(tree)
+        s_feats=inf_features(tree_dict,n_feats=20)        
+        thres=tree_dict.get_attr("threshold",s_feats)
+        feats=tree_dict.get_attr("feat",s_feats)
+        return tree_feats.make_disc_feat(feats,thres)
 
 class TreeDict(dict):
     def __len__(self):
@@ -19,7 +84,7 @@ class TreeDict(dict):
         return [self[key][i] for i in nodes]
 
     def mutual_info(self):
-        dist=tree_dict["value"][0]
+        dist=self["value"][0]
         n_samples=len(self)
         offset=np.ones(dist.shape)
         h_y=entropy(dist)
@@ -37,7 +102,6 @@ class TreeDict(dict):
     def get_path(self,i):
         path=[i]
         while(i>=0):
-            print(type(i))
             i=self["parent"][i]
             path.append(i)
         return path
@@ -61,12 +125,17 @@ def make_tree_dict(clf):
             tree_dict["parent"][right_i]=i
     return tree_dict
 
-
-def inf_features(tree_dict):
+def inf_features(tree_dict,n_feats=5):
     mutual_info=tree_dict.mutual_info()
     index=np.argsort(mutual_info)
-    print(tree_dict.get_node(index[0]))
-    print(tree_dict.get_path(index[0]))
+    s_feats=[]
+    for i in index[:n_feats]:
+        s_feats+=tree_dict.get_path(i)
+    s_feats=set(s_feats)
+    s_feats.remove(-1)
+    s_feats=list(set(s_feats))
+    return s_feats
+ 
 
 if __name__ == '__main__':
     import base,dataset
