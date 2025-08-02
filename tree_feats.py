@@ -24,6 +24,75 @@ class RandomTree(object):
     def __str__(self):
         return "RandomTree"
 
+class TreeDict(dict):
+    def __len__(self):
+        return len(self["feat"])
+
+    def get_node(self,i):
+        keys=list(self.keys())
+        keys.sort()
+        print(keys)
+        if(type(i)!=list):
+            return [self[key_j][i] for key_j in keys]
+        return [[self[key_j][k] for key_j in keys]
+                         for k in i]
+    
+    def get_attr(self,key,nodes):
+        return [self[key][i] for i in nodes]
+
+    def mutual_info(self):
+        dist=self["value"][0]
+        n_samples=len(self)
+        offset=np.ones(dist.shape)
+        h_y=entropy(dist)
+        mi=[]
+        for i,value_i in enumerate(self["value"]):
+            samples_i=self["samples"][i]
+            value_i=self["value"][i]
+            p_y= samples_i/ n_samples
+            h_yx=p_y*entropy(value_i)#,nan_policy='omit')
+            h_yx+=(1-p_y)*entropy(offset-value_i)
+            i_xy=h_y-h_yx
+            mi.append(i_xy)
+        return mi
+
+    def get_path(self,i):
+        path=[i]
+        while(i>=0):
+            i=self["parent"][i]
+            path.append(i)
+        return path
+
+def make_tree_dict(clf):
+    tree_dict=TreeDict()
+    tree_dict["threshold"]=clf.tree_.threshold
+    tree_dict["feat"]=clf.tree_.feature
+    tree_dict["left"]=clf.tree_.children_left
+    tree_dict["right"]=clf.tree_.children_right
+    tree_dict["value"]=[ value_i.flatten() 
+                            for value_i in clf.tree_.value]
+    tree_dict["samples"]=clf.tree_.weighted_n_node_samples
+    n_nodes=len(tree_dict["feat"])
+    tree_dict["parent"]= -np.ones((n_nodes,),dtype=int)
+    for i in range(n_nodes):
+        left_i=tree_dict["left"][i]
+        right_i=tree_dict["right"][i]
+        if(left_i>=0):
+            tree_dict["parent"][left_i]=i
+            tree_dict["parent"][right_i]=i
+    return tree_dict
+
+def inf_features(tree_dict,n_feats=5):
+    mutual_info=tree_dict.mutual_info()
+    index=np.argsort(mutual_info)
+    s_feats=[]
+    for i in index[:n_feats]:
+        s_feats+=tree_dict.get_path(i)
+    s_feats=set(s_feats)
+    s_feats.remove(-1)
+    s_feats=list(set(s_feats))
+    return s_feats
+
 class TabFeatures(object):
     def __call__(self,X,concat=True):
         new_feats=[self.compute_feats(x_i) for x_i in X]
@@ -51,16 +120,6 @@ class TreeFeatures(TabFeatures):
             new_feats.append(int(value_i<thres_i) )
         return np.array(new_feats)
 
-#def make_tree_feats(tree):
-#    raw_tree=tree.tree_.__getstate__()['nodes']
-#    feats,thres=[],[]
-#    for node_i in raw_tree:
-#        feat_i=node_i[2]
-#        if(feat_i>=0):
-#            feats.append(feat_i)
-#            thres.append(node_i[3])
-#    return TreeFeatures(feats,thres)
-
 class DiscFeats(TabFeatures):
     def __init__(self,thres_dict):
         self.thres_dict=thres_dict
@@ -79,27 +138,6 @@ class DiscFeats(TabFeatures):
                     value_i=len(thres_i)
                 new_feats.append(value_i)
         return new_feats
-
-#    def propor(self):
-#        keys=list(self.thres_dict.keys())
-#        keys.sort()
-#        for key_i in keys:
-#            thres_i=self.thres_dict[key_i]
-#            thres_i-=thres_i[0]
-#            thres_i/=thres_i[-1]
-#            thres_i=np.round(thres_i,4)
-#            print(thres_i)
-
-#    def group(self,eps=0.05):
-#        new_thres={}
-#        for feat_i,thres_i in self.thres_dict.items():
-#            delta_i= np.abs(eps*(thres_i[-1]-thres_i[0]))
-#            diff_i=np.diff(thres_i)
-#            indexes=[j for j,diff_j in enumerate(diff_i)
-#                         if(np.abs(diff_j)>delta_i)]
-#            new_thres_i=[thres_i[j] for j in indexes]
-#            new_thres[feat_i]=np.array(new_thres_i)
-#        self.thres_dict= new_thres
 
 def make_disc_feat(feats,thresholds):
     thres_dict=defaultdict(lambda:[])
@@ -127,55 +165,25 @@ def make_thres_feats(tree):
         thres_i=np.array(thres_i)
         new_dict[feat_i]=thres_i
     return ThresholdFeats(new_dict)
-
-#def thre_stats(X,y):
-#    y=[int(y_i) for y_i in y]
-#    n_cats=int(np.amax(y)+1)
-#    cat_sizes=Counter(y)
-#    for feat_i in X.T:
-#        n_thres=np.unique(feat_i).shape[0]
-#        hist_i=np.zeros((n_thres,n_cats))
-#        for j,cat_j in enumerate(y):
-#            value_j=feat_i[j]
-#            hist_i[value_j][cat_j]+=1
-#        for cat_i,size_i in cat_sizes.items():
-#            hist_i[:,cat_i]/=size_i
-#        hist_i=np.round(hist_i,2)
-#        print(hist_i.T)
-
-def inform_nodes(clf,y):
-    cls_dist=get_disc_dist(y)
-    n_samples=len(y)
-    offset=np.ones(cls_dist.shape)
-    h_cls=np.sum(entropy(cls_dist,nan_policy='omit'))
-    div=[]#,desc=[],[]
-    for i,value_i in enumerate(clf.tree_.value):
-        samples_i=clf.tree_.weighted_n_node_samples[i]
-        p_y= samples_i/ n_samples
-        h_yx=p_y*entropy(value_i[0],nan_policy='omit')
-        h_yx+=(1-p_y)*entropy(offset-value_i[0])
-        i_xy=h_cls-h_yx
-        div.append(i_xy)
-    return np.argsort(div)
    
-def show_nodes(clf,indexes):
-    base=clf.tree_.value[0]
-    for i in indexes:
-        value_i=clf.tree_.value[i]
-        samples_i=clf.tree_.weighted_n_node_samples[i]
-        print(samples_i)
-        print(value_i)
-        print(value_i-base)    
+#def show_nodes(clf,indexes):
+#    base=clf.tree_.value[0]
+#    for i in indexes:
+#        value_i=clf.tree_.value[i]
+#        samples_i=clf.tree_.weighted_n_node_samples[i]
+#        print(samples_i)
+#        print(value_i)
+#        print(value_i-base)    
 
-def get_disc_dist(y):
-    cat_sizes=Counter(y)
-    keys=list(cat_sizes.keys())
-    keys.sort()
-    cls_dist=np.array([cat_sizes[key_i] 
-                        for key_i in keys],
-                        dtype=float)
-    cls_dist/=np.sum(cls_dist)
-    return cls_dist
+#def get_disc_dist(y):
+#    cat_sizes=Counter(y)
+#    keys=list(cat_sizes.keys())
+#    keys.sort()
+#    cls_dist=np.array([cat_sizes[key_i] 
+#                        for key_i in keys],
+#                        dtype=float)
+#    cls_dist/=np.sum(cls_dist)
+#    return cls_dist
 
 def path_stat(clf,data):
     prob=[]
