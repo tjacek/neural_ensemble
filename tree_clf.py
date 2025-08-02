@@ -44,6 +44,8 @@ def get_extractor(extr_feats):
         return InfoFactory()
     if(extr_feats=="disc"):
         return DiscreteFactory()
+    if(extr_feats=="ind"):
+        return InfoFactory()
     if(extr_feats=="cs"):
         return CSFactory()
 
@@ -67,6 +69,16 @@ class DiscreteFactory(object):
         thres=tree_dict.get_attr("threshold",s_feats)
         feats=tree_dict.get_attr("feat",s_feats)
         return tree_feats.make_disc_feat(feats,thres)
+
+class IndFactory(object):
+    def __call__(self,X,y,tree_factory):
+        tree=tree_factory()
+        tree.fit(X,y)
+        tree_dict=tree_feats.make_tree_dict(tree)
+        mutual_info=tree_dict.mutual_info()
+        index=np.argsort(mutual_info)
+        s_nodes=index[:20]
+        return tree_feats,IndFeatures(s_nodes,tree)
 
 class CSFactory(object):
     def __call__(self,X,y,tree_factory):

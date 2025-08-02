@@ -152,50 +152,30 @@ def make_disc_feat(feats,thresholds):
         new_dict[feat_i]=np.array(thres_i)
     return DiscFeats(new_dict)
 
-def make_thres_feats(tree):
-    raw_tree=tree.tree_.__getstate__()['nodes']
-    thres_dict=defaultdict(lambda:[])
-    for node_i in raw_tree:
-        feat_i=node_i[2]
-        if(feat_i>=0):
-            thres_dict[feat_i].append(node_i[3])
-    new_dict={}
-    for feat_i,thres_i in thres_dict.items():
-        thres_i.sort()
-        thres_i=np.array(thres_i)
-        new_dict[feat_i]=thres_i
-    return ThresholdFeats(new_dict)
-   
-#def show_nodes(clf,indexes):
-#    base=clf.tree_.value[0]
-#    for i in indexes:
-#        value_i=clf.tree_.value[i]
-#        samples_i=clf.tree_.weighted_n_node_samples[i]
-#        print(samples_i)
-#        print(value_i)
-#        print(value_i-base)    
+class IndFeatures(TabFeatures):
+    def __init__(self,nodes,tree):
+        self.nodes=nodes
+        self.tree=tree
 
-#def get_disc_dist(y):
-#    cat_sizes=Counter(y)
-#    keys=list(cat_sizes.keys())
-#    keys.sort()
-#    cls_dist=np.array([cat_sizes[key_i] 
-#                        for key_i in keys],
-#                        dtype=float)
-#    cls_dist/=np.sum(cls_dist)
-#    return cls_dist
+    def __call__(self,X,concat):
+        ind_vars=self.tree.decision_path(X)
+        new_X=[ind_vars[:,i].toarray() 
+                    for i in self.nodes]
+        new_X=np.concatenate(new_X,axis=1)       
+        if(concat):
+            new_X=np.concatenate([X,new_X],axis=1)
+        return new_X
 
-def path_stat(clf,data):
-    prob=[]
-    for i in range(data.n_cats()):
-        data_i=data.selection(data.y==i)
-        path_i=clf.decision_path(data_i.X)
-        prob_i= path_i.sum(axis=0)/len(data_i)
-        prob.append(prob_i)
-    prob=np.array(prob)
-    for p in prob.T:
-        print(p)
-#    raise Exception(prob_i)
+#def path_stat(clf,data):
+#    prob=[]
+#    for i in range(data.n_cats()):
+#        data_i=data.selection(data.y==i)
+#        path_i=clf.decision_path(data_i.X)
+#        prob_i= path_i.sum(axis=0)/len(data_i)
+#        prob.append(prob_i)
+#    prob=np.array(prob)
+#    for p in prob.T:
+#        print(p)
 
 if __name__ == '__main__':
     import base,dataset
