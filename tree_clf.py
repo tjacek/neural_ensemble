@@ -9,6 +9,13 @@ class TreeFeatFactory(object):
     def __call__(self):
         return TreeFeatClf(**self.arg_dict)
 
+    def __str__(self):
+        names=list(self.arg_dict.keys())
+        names.sort()
+        desc=[str(self.arg_dict[name_i]) 
+                for name_i in names]
+        return ",".join(desc)
+
 class TreeFeatClf(object):
     def __init__(self,
                  tree_factory,
@@ -40,6 +47,43 @@ class TreeFeatClf(object):
                          concat=self.concat)
         return self.clf.predict(X)
 
+class TreeEns(object):
+    def __init__(self,
+                 tree_factory,
+                 extr_factory,
+                 clf_type,
+                 concat=False):
+        self.tree_factory=tree_factory
+        self.extr_factory=extr_factory
+        self.clf_type=clf_type
+        self.concat=concat
+        self.all_extract=[]
+        self.all_clfs=[]
+
+    def fit(self,X,y):
+        data=dataset.Dataset(X,y)
+        n_cats=int(max(y)+1)
+        for i in range(n_cats):
+            data_i=data.binarize(i)
+            extr_i=self.extr_factory(X=data_i.X,
+                                     y=data_i.y,
+                                     tree_factory=self.tree_factory)           
+            self.all_extract.append(extr_i)
+            X_i=extr_i(X=X,
+                         concat=self.concat)
+            clf_i=base.get_clf(self.clf_type)
+            clf_i.fit(X_i,y)
+            self.all_clfs.append(clf_i)
+
+    def predict(self,X):
+        all_pred=[]
+        for i,extr_i in enumerate(self.all_extract):
+            X_i==extr_i(X=X,concat=self.concat)
+            y_i=self.all_clfs[i].predict(X_i)
+            all_pred.append(y_i)
+        all_pred=np.array(all_pred)
+        raise Exception()          
+
 def get_extractor(extr_feats):
     if(type(extr_feats)==tuple):
         extr_type,n_feats=extr_feats
@@ -54,7 +98,7 @@ def get_extr_type(extr_feats):
     if(extr_feats=="disc"):
         return DiscreteFactory
     if(extr_feats=="ind"):
-        return InfoFactory
+        return IndFactory
     if(extr_feats=="cs"):
         return CSFactory
 
@@ -98,7 +142,7 @@ class IndFactory(object):
         mutual_info=tree_dict.mutual_info()
         index=np.argsort(mutual_info)
         s_nodes=index[:self.n_feats]
-        return tree_feats,IndFeatures(s_nodes,tree)
+        return tree_feats.IndFeatures(s_nodes,tree)
 
 class CSFactory(object):
     def __init__(self,n_feats=10):
@@ -119,13 +163,7 @@ class CSFactory(object):
             feats=tree_dict.get_attr("feat",s_feats)
             feats_i=tree_feats.make_disc_feat(feats,thres)
             cs_feats.append(feats_i)
-        def helper(X,concat=True):
-            new_X=[cs_i(X) for cs_i in cs_feats]
-            new_X=np.concatenate(new_X,axis=1)
-            if(concat):
-                return np.concatenate([X,new_X],axis=1)
-            return new_X
-        return helper
+        return tree_feats.ConcatFeatures(cs_feats) 
 
 if __name__ == '__main__':
     import base,dataset
@@ -133,8 +171,5 @@ if __name__ == '__main__':
     data.y= data.y.astype(int)
     clf=tree_feats.get_tree("random")()
     clf.fit(data.X,data.y)
-#    raise Exception(clf.tree_.__getstate__()['nodes'])
     tree_dict=make_tree_dict(clf)
     inf_features(tree_dict)
-#    print(tree_dict.get_node(index[:10])[0])
-#    print(tree_dict.get_attr("feat",index[:10]))
