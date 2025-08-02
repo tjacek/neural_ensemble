@@ -32,6 +32,19 @@ def get_clf(clf_factory):
     desc=str(clf_factory)
     return desc,clf_factory
 
+def clfs_desc(extr_types:list,
+              feat_sizes:list,
+              clf_type="SVM",
+              tree="random",):
+    clfs=["SVM",tree_feats.RandomTree()]
+    for extr_i in extr_types:
+        for feat_i in feat_sizes:
+            clf_i={ "tree_factory":tree,
+                    "extr_factory":(extr_i,feat_i),
+                    "clf_type":clf_type}
+            clfs.append(clf_i)
+    return prepare_clfs(clfs)
+
 def prepare_clfs(clfs):
     new_clfs=[]
     for clf_i in clfs:
@@ -48,7 +61,7 @@ def prepare_clfs(clfs):
 clfs=[ tree_feats.GradientTree(),
        tree_feats.RandomTree(),
        { "tree_factory":"random",
-         "extr_factory":"ind",
+         "extr_factory":("ind",50),
          "clf_type":"SVM"},
        { "tree_factory":"random",
          "extr_factory":"cs",
@@ -58,6 +71,8 @@ clfs=[ tree_feats.GradientTree(),
          "clf_type":"SVM"},
        "LR",
        "SVM"]
-clfs=prepare_clfs(clfs)
+#clfs=prepare_clfs(clfs)
+clfs=clfs_desc(extr_types=["ind","info","cs"],
+              feat_sizes=[10,20,50])
 compare_exp(in_path="bad_exp/data/wine-quality-red",
 	        clfs=clfs)

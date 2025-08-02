@@ -17,7 +17,8 @@ class TreeFeatClf(object):
                  concat=False):
         if(type(tree_factory)==str):
             tree_factory=tree_feats.get_tree(tree_factory)
-        if(type(extr_factory)==str):
+        if(type(extr_factory)==str or 
+            type(extr_factory)==tuple):
             extr_factory=get_extractor(extr_factory)
         self.tree_factory=tree_factory
         self.extr_factory=extr_factory
@@ -40,47 +41,69 @@ class TreeFeatClf(object):
         return self.clf.predict(X)
 
 def get_extractor(extr_feats):
+    if(type(extr_feats)==tuple):
+        extr_type,n_feats=extr_feats
+        factory=get_extr_type(extr_type)
+        return factory(n_feats)
+    extr_type=get_extr_type(extr_feats)
+    return extr_type()
+
+def get_extr_type(extr_feats):
     if(extr_feats=="info"):
-        return InfoFactory()
+        return InfoFactory
     if(extr_feats=="disc"):
-        return DiscreteFactory()
+        return DiscreteFactory
     if(extr_feats=="ind"):
-        return InfoFactory()
+        return InfoFactory
     if(extr_feats=="cs"):
-        return CSFactory()
+        return CSFactory
 
 class InfoFactory(object):
+    def __init__(self,n_feats=10):
+        self.n_feats=n_feats
+
     def __call__(self,X,y,tree_factory):
         tree=tree_factory()
         tree.fit(X,y)
         tree_dict=tree_feats.make_tree_dict(tree)
-        s_feats=tree_feats.inf_features(tree_dict,n_feats=10)
+        s_feats=tree_feats.inf_features(tree_dict,
+                                        n_feats=self.n_feats)
         thres=tree_dict.get_attr("threshold",s_feats)
         feats=tree_dict.get_attr("feat",s_feats)
         return tree_feats.TreeFeatures(features=feats,
                                    thresholds=thres)
 
 class DiscreteFactory(object):
+    def __init__(self,n_feats=20):
+        self.n_feats=n_feats
+
     def __call__(self,X,y,tree_factory):
         tree=tree_factory()
         tree.fit(X,y)
         tree_dict=tree_feats.make_tree_dict(tree)
-        s_feats=tree_feats.inf_features(tree_dict,n_feats=20)        
+        s_feats=tree_feats.inf_features(tree_dict,
+                                        n_feats=self.n_feats)        
         thres=tree_dict.get_attr("threshold",s_feats)
         feats=tree_dict.get_attr("feat",s_feats)
         return tree_feats.make_disc_feat(feats,thres)
 
 class IndFactory(object):
+    def __init__(self,n_feats=20):
+        self.n_feats=n_feats
+
     def __call__(self,X,y,tree_factory):
         tree=tree_factory()
         tree.fit(X,y)
         tree_dict=tree_feats.make_tree_dict(tree)
         mutual_info=tree_dict.mutual_info()
         index=np.argsort(mutual_info)
-        s_nodes=index[:20]
+        s_nodes=index[:self.n_feats]
         return tree_feats,IndFeatures(s_nodes,tree)
 
 class CSFactory(object):
+    def __init__(self,n_feats=10):
+        self.n_feats=n_feats
+
     def __call__(self,X,y,tree_factory):
         data=dataset.Dataset(X,y)
         n_cats=int(max(y)+1)
@@ -90,7 +113,8 @@ class CSFactory(object):
             tree_i=tree_factory()
             tree_i.fit(data_i.X,data_i.y)
             tree_dict=tree_feats.make_tree_dict(tree_i)
-            s_feats=tree_feats.inf_features(tree_dict,n_feats=10)        
+            s_feats=tree_feats.inf_features(tree_dict,
+                                            n_feats=self.n_feats)        
             thres=tree_dict.get_attr("threshold",s_feats)
             feats=tree_dict.get_attr("feat",s_feats)
             feats_i=tree_feats.make_disc_feat(feats,thres)
@@ -102,9 +126,6 @@ class CSFactory(object):
                 return np.concatenate([X,new_X],axis=1)
             return new_X
         return helper
-
-
- 
 
 if __name__ == '__main__':
     import base,dataset
