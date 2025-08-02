@@ -32,47 +32,73 @@ def get_clf(clf_factory):
     desc=str(clf_factory)
     return desc,clf_factory
 
-def clfs_desc(extr_types:list,
-              feat_sizes:list,
-              clf_type="SVM",
-              tree="random",):
-    clfs=["SVM",tree_feats.RandomTree()]
-    for extr_i in extr_types:
-        for feat_i in feat_sizes:
-            clf_i={ "tree_factory":tree,
-                    "extr_factory":(extr_i,feat_i),
-                    "clf_type":clf_type}
-            clfs.append(clf_i)
-    return prepare_clfs(clfs)
+#def clfs_desc(extr_types:list,
+#              feat_sizes:list,
+#              clf_type="SVM",
+#              tree="random",):
+#    clfs=["SVM",tree_feats.RandomTree()]
+#    for extr_i in extr_types:
+#        for feat_i in feat_sizes:
+#            clf_i={ "tree_factory":tree,
+#                    "extr_factory":(extr_i,feat_i),
+#                    "clf_type":clf_type}
+#            clfs.append(clf_i)
+#    return prepare_clfs(clfs)
 
-def prepare_clfs(clfs):
+def prepare_clfs(clf_descs,proto):
+#    taboo=set(["type"]+list(proto.keys()))
     new_clfs=[]
-    for clf_i in clfs:
-        if(type(clf_i)==dict):
-            conc_clf_i=clf_i.copy()
-            conc_clf_i["concat"]=True
-            new_clfs.append(conc_clf_i) 
-            clf_i["concat"]=False
-            new_clfs.append(clf_i)
+    for desc_i in clfs_desc:
+        if(type(desc_i)==dict):
+            new_clfs+=from_desc(desc_i,proto)
+#            conc_clf_i=clf_i.copy()
+#            conc_clf_i["concat"]=True
+#            new_clfs.append(conc_clf_i) 
+#            clf_i["concat"]=False
+#            new_clfs.append(clf_i)
         else:
-            new_clfs.append(clf_i)
+            new_clfs.append(desc_i)
     return new_clfs
 
-clfs=[ tree_feats.GradientTree(),
-       tree_feats.RandomTree(),
-       { "tree_factory":"random",
-         "extr_factory":("ind",50),
-         "clf_type":"SVM"},
-       { "tree_factory":"random",
-         "extr_factory":"cs",
-         "clf_type":"SVM"},
-       { "tree_factory":"random",
-         "extr_factory":"info",
-         "clf_type":"SVM"},
-       "LR",
-       "SVM"]
-#clfs=prepare_clfs(clfs)
-clfs=clfs_desc(extr_types=["ind","info","cs"],
-              feat_sizes=[10,20,50])
+def from_desc(desc,proto):
+    variants=[proto.copy()]
+    keys=[ key_j
+            for key_j in desc
+                if(not key_j=="type")]
+    for key_i in keys:
+        new_variants=[]
+        for arg_j in desc[key_i]:
+            for var_k in variants:
+                var_ijk=var_k.copy()
+                var_ijk[key_i]=arg_j
+                new_variants.append(var_ijk) 
+        variants=new_variants
+    return variants
+      
+prototype={ "tree_factory":"random",
+            "clf_type":"SVM"}
+
+clfs_desc=[tree_feats.RandomTree(),
+           { "type":"clf",
+             "extr_factory":["cs","info"],
+#             "n_feats":[20,30],
+             "concat":[True,False]},
+            "SVM"]
+
+clfs=prepare_clfs(clfs_desc,prototype)
+print(clfs)
+#clfs=[ tree_feats.GradientTree(),
+#       tree_feats.RandomTree(),
+#       { "tree_factory":"random",
+#         "extr_factory":("cs",20),
+#         "clf_type":"SVM",
+#         "ens":True},
+#       { "tree_factory":"random",
+#         "extr_factory":("info",30),
+#         "clf_type":"SVM"},
+#       "LR",
+#       "SVM"]
+#clfs=clfs_desc(extr_types=["info","disc"],
+#              feat_sizes=[20,30,40,50])
 compare_exp(in_path="bad_exp/data/wine-quality-red",
 	        clfs=clfs)
