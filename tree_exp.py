@@ -15,7 +15,6 @@ def compare_exp(in_path,clfs):
             balance_i.append(result_j.get_metric("balance"))
         print(f"{desc_i}:{np.mean(acc_i):.4f},{np.mean(balance_i):.4f}")
 
-
 def get_clf(clf_factory):
     if(type(clf_factory)==str):
         desc=clf_factory
@@ -55,15 +54,17 @@ def from_desc(desc,proto):
             extr=var_i["extr_factory"]
             var_i["extr_factory"]=(extr,n_feats)
             del var_i["n_feats"]
+    variants=[tree_clf.TreeFeatFactory(var_i,desc["type"]) 
+                 for var_i in variants]
     return variants
       
 prototype={ "tree_factory":"random",
             "clf_type":"SVM"}
 
 clfs_desc=[tree_feats.RandomTree(),
-           { "type":"clf",
-             "extr_factory":["cs","info"],
-             "n_feats":[20,30],
+           { "type":"ens",
+             "extr_factory":["info","ind"],
+             "n_feats":[20,30,50],
              "concat":[True,False]},
             "SVM"]
 
