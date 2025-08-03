@@ -59,13 +59,14 @@ def from_desc(desc,proto):
     return variants
       
 prototype={ "tree_factory":"random",
-            "clf_type":"LR",
-            "concat":False}
+            "clf_type":"SVM",
+            "concat":True}
 
 clfs_desc=[tree_feats.RandomTree(),
            { "type":"ens",
              "extr_factory":["info","ind"],
-             "n_feats":[20,30,50]},
+             "n_feats":[20,30,50],
+             "n_iters":[None,5,10]},
            { "type":"clf",
              "extr_factory":["info","ind"],
              "n_feats":[20,30,50]},

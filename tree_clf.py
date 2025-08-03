@@ -59,7 +59,8 @@ class TreeEns(object):
                  tree_factory,
                  extr_factory,
                  clf_type,
-                 concat=False):
+                 concat=False,
+                 n_iters=None):
         if(type(tree_factory)==str):
             tree_factory=tree_feats.get_tree(tree_factory)
         if(type(extr_factory)==str or 
@@ -71,21 +72,32 @@ class TreeEns(object):
         self.concat=concat
         self.all_extract=[]
         self.all_clfs=[]
-
+        self.n_iters=n_iters
+    
+    def is_binary(self):
+        return self.n_iters is None
+    
     def fit(self,X,y):
-        data=dataset.Dataset(X,y)
-        n_cats=int(max(y)+1)
-        for i in range(n_cats):
-            data_i=data#.binarize(i)
-            extr_i=self.extr_factory(X=data_i.X,
+        data=dataset.Dataset(X,y)        
+        if(self.is_binary()):
+            n_cats=int(max(y)+1)
+            for i in range(n_cats):
+                data_i=data.binarize(i)
+                self.add_clf(X,y,data_i)
+        else:
+            for i in range(self.n_iters):
+                self.add_clf(X,y,data)
+
+    def add_clf(self,X,y,data_i):
+        extr_i=self.extr_factory(X=data_i.X,
                                      y=data_i.y,
                                      tree_factory=self.tree_factory)           
-            self.all_extract.append(extr_i)
-            X_i=extr_i(X=X,
-                         concat=self.concat)
-            clf_i=base.get_clf(self.clf_type)
-            clf_i.fit(X_i,y)
-            self.all_clfs.append(clf_i)
+        self.all_extract.append(extr_i)
+        X_i=extr_i(X=X,
+                   concat=self.concat)
+        clf_i=base.get_clf(self.clf_type)
+        clf_i.fit(X_i,y)
+        self.all_clfs.append(clf_i)
 
     def predict(self,X):
         votes=[]
