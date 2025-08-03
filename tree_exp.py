@@ -59,14 +59,17 @@ def from_desc(desc,proto):
     return variants
       
 prototype={ "tree_factory":"random",
-            "clf_type":"SVM"}
+            "clf_type":"LR",
+            "concat":False}
 
 clfs_desc=[tree_feats.RandomTree(),
            { "type":"ens",
              "extr_factory":["info","ind"],
-             "n_feats":[20,30,50],
-             "concat":[True,False]},
-            "SVM"]
+             "n_feats":[20,30,50]},
+           { "type":"clf",
+             "extr_factory":["info","ind"],
+             "n_feats":[20,30,50]},
+            "SVM","LR"]
 
 clfs=prepare_clfs(clfs_desc,prototype)
 compare_exp(in_path="bad_exp/data/wine-quality-red",

@@ -3,17 +3,24 @@ from scipy.stats import entropy
 import base,dataset,tree_feats
 
 class TreeFeatFactory(object):
-    def __init__(self,arg_dict):
+    def __init__(self,arg_dict,clf_type="clf"):
+        if(clf_type=="clf"):
+            clf_cls=TreeFeatClf
+        else:
+            clf_cls=TreeEns
         self.arg_dict=arg_dict
+        self.clf_type=clf_type
+        self.clf_cls=clf_cls
 
     def __call__(self):
-        return TreeFeatClf(**self.arg_dict)
+        return self.clf_cls(**self.arg_dict)
 
     def __str__(self):
         names=list(self.arg_dict.keys())
         names.sort()
         desc=[str(self.arg_dict[name_i]) 
                 for name_i in names]
+        desc=[self.clf_type]+desc
         return ",".join(desc)
 
 class TreeFeatClf(object):
@@ -53,6 +60,11 @@ class TreeEns(object):
                  extr_factory,
                  clf_type,
                  concat=False):
+        if(type(tree_factory)==str):
+            tree_factory=tree_feats.get_tree(tree_factory)
+        if(type(extr_factory)==str or 
+            type(extr_factory)==tuple):
+            extr_factory=get_extractor(extr_factory)
         self.tree_factory=tree_factory
         self.extr_factory=extr_factory
         self.clf_type=clf_type
@@ -64,7 +76,7 @@ class TreeEns(object):
         data=dataset.Dataset(X,y)
         n_cats=int(max(y)+1)
         for i in range(n_cats):
-            data_i=data.binarize(i)
+            data_i=data#.binarize(i)
             extr_i=self.extr_factory(X=data_i.X,
                                      y=data_i.y,
                                      tree_factory=self.tree_factory)           
@@ -76,13 +88,17 @@ class TreeEns(object):
             self.all_clfs.append(clf_i)
 
     def predict(self,X):
-        all_pred=[]
+        votes=[]
         for i,extr_i in enumerate(self.all_extract):
-            X_i==extr_i(X=X,concat=self.concat)
+            X_i=extr_i(X=X,concat=self.concat)
             y_i=self.all_clfs[i].predict(X_i)
-            all_pred.append(y_i)
-        all_pred=np.array(all_pred)
-        raise Exception()          
+            votes.append(y_i)
+        votes=np.array(votes,dtype=int)
+        y_pred=[]
+        for vote_i in votes.T:
+            counts=np.bincount(vote_i)
+            y_pred.append(np.argmax(counts))
+        return y_pred
 
 def get_extractor(extr_feats):
     if(type(extr_feats)==tuple):
