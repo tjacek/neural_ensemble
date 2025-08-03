@@ -10,19 +10,21 @@ def summary(exp_path):
             if(not "splits" in path_i):
                 dir_j=base.get_dir_path(path_i,clf_type=None)
                 result_j=dir_j.read_results()
-                acc_j=result_j.get_acc()
-                output.append((dir_j.clf_type,np.mean(acc_j)))
+                print(type(result_j))
+                acc_j=np.mean(result_j.get_acc())
+                balance_j=np.mean(result_j.get_metric("balance"))
+                output.append((dir_j.clf_type,acc_j,balance_j))
         return output
     output=helper(exp_path)
     def df_helper(tuple_i):
         name_i,other=tuple_i
         lines=[]
-        for clf_j,acc_j in other:
-            lines.append([name_i,clf_j,acc_j])
+        for tuple_j in other:
+            lines.append([name_i]+list(tuple_j))
         return lines
     df=dataset.make_df(helper=df_helper,
                     iterable=output.items(),
-                    cols=["data","clf","acc"],
+                    cols=["data","clf","acc","balance"],
                     multi=True)
     df.print()
 
