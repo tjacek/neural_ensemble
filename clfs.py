@@ -139,9 +139,11 @@ class TreeFeatures(object):
     
     def fit(self,X,y):
         self.extractor=self.extr_factory(X,y,self.clf_factory)
+        return self.extractor
 
     def __call__(self,X):
         return self.extractor(X,self.concat)
+ 
 
 class TreeMLP(NeuralClfAdapter):
     def __init__(self, params,
@@ -160,7 +162,7 @@ class TreeMLP(NeuralClfAdapter):
         new_X=self.tree_features(X)
         if(self.model is None):
             params_i=self.params.copy()
-            dims=params_i["dims"]
+#            dims=params_i["dims"]
             params_i["dims"]=(new_X.shape[1],)
             self.model=MLP(params=params_i,
                            hyper_params=self.hyper_params)
@@ -175,3 +177,69 @@ class TreeMLP(NeuralClfAdapter):
 #        np.save(f"{out_path}/tree.npy",self.tree.tree_repr)
 #        np.save(f"{out_path}/nodes.npy",self.tree.selected_nodes)
 #        self.model.save(f"{out_path}/nn.keras") 
+
+class CSTreeEnsFactory(NeuralClfFactory):
+    def __init__(self,
+                 hyper_params,
+                 tree_params=None):
+        if(tree_params is None):
+            tree_params={"clf_factory":"random",
+                        "extr_factory":("info",30),
+                        "concat":True}
+        self.hyper_params=hyper_params
+        self.tree_params=tree_params
+
+    def __call__(self):
+        return CSTreeEns(params=self.params,
+                         hyper_params=self.hyper_params,
+                         tree_features=TreeFeatures(**self.tree_params))
+    
+    def get_info(self):
+        return {"clf_type":"CSTREE-MLP","callback":"basic",
+                "hyper":self.hyper_params,
+                "extr_dict":self.extr_dict}
+
+class CSTreeEns(NeuralClfAdapter):
+    def __init__(self, params,
+                       hyper_params,
+                       tree_features,
+                       model=None,
+                       verbose=0):
+        self.params=params
+        self.hyper_params=hyper_params
+        self.model = model
+        self.tree_features=tree_features
+        self.all_extract=[]
+        self.all_clfs=[]
+        self.verbose=verbose
+
+    def fit(self,X,y):
+        data=dataset.Dataset(X,y)
+        n_cats=int(max(y)+1)
+        for i in range(n_cats):
+            data_i=data.binarize(i)
+            extr_i=self.tree_features.fit(X=data_i.X,
+                                          y=data_i.y)
+            new_X=extr_i(data.X)
+            self.all_extract.append(extr_i)
+            params_i=self.params.copy()
+            params_i["dims"]=(new_X.shape[1],)
+            clf_i=MLP(params=params_i,
+                     hyper_params=self.hyper_params)
+            clf_i.fit(X=new_X,
+                      y=data.y)
+            self.all_clfs.append(clf_i)
+
+    def predict(self,X):
+        votes=[]
+        for i,extr_i in enumerate(self.all_extract):
+            X_i=extr_i(X=X,
+                      concat=self.tree_features.concat)
+            y_i=self.all_clfs[i].predict(X_i)
+            votes.append(y_i)
+        votes=np.array(votes,dtype=int)
+        y_pred=[]
+        for vote_i in votes.T:
+            counts=np.bincount(vote_i)
+            y_pred.append(np.argmax(counts))
+        return y_pred
