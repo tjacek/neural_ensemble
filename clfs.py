@@ -1,5 +1,6 @@
 import numpy as np
 import tensorflow as tf
+import tree_feats,tree_clf
 import base,dataset,deep,utils
 
 def get_clfs(clf_type):
@@ -42,6 +43,15 @@ class NeuralClfAdapter(base.AbstractClfAdapter):
         self.hyper_params=hyper_params
         self.model = model
         self.verbose=verbose
+
+    def predict(self,X):
+        y=self.model.predict(X,
+                             verbose=self.verbose)
+        return np.argmax(y,axis=1)
+
+    def predict_proba(self,X):
+        return self.model.predict(X,
+                             verbose=self.verbose)
     
     def eval(self,data,split_i):
         test_data_i=data.selection(split_i.test_index)
@@ -77,15 +87,6 @@ class MLP(NeuralClfAdapter):
                               callbacks=basic_callback(),
                               verbose=self.verbose)
 
-    def predict(self,X):
-        y=self.model.predict(X,
-                             verbose=self.verbose)
-        return np.argmax(y,axis=1)
-
-    def predict_proba(self,X):
-        return self.model.predict(X,
-                             verbose=self.verbose)
-
     def save(self,out_path):
         self.model.save(out_path) 
 
@@ -93,92 +94,85 @@ class MLP(NeuralClfAdapter):
         return "MLP"
 
 class TreeMLPFactory(NeuralClfFactory):
+    def __init__(self,
+                 hyper_params,
+                 tree_type="random",
+                 feat_type="info",
+                 n_feats=30,
+                 concat=True):
+        self.hyper_params=hyper_params
+        self.extr_dict={"clf_factory":tree_type,
+                        "extr_factory":(feat_type,n_feats),
+                        "concat":"concat"}
+
     def __call__(self):
         return TreeMLP(params=self.params,
-                       hyper_params=self.hyper_params)
-    
-    def read(self,model_path):
-        model_i=tf.keras.models.load_model(f"{model_path}/nn")
-        tree_repr=np.load(f"{model_path}/tree.npy")
-        nodes=np.load(f"{model_path}/nodes.npy")
-        tree=TreeFeatures(tree_repr,nodes)
-        clf_i= TreeMLP(params=self.params,
                        hyper_params=self.hyper_params,
-                       model=(model_i,tree))
-        return clf_i
+                       tree_features=TreeFeatures(**self.extr_dict))
+    
+#    def read(self,model_path):
+#        model_i=tf.keras.models.load_model(f"{model_path}/nn")
+#        tree_repr=np.load(f"{model_path}/tree.npy")
+#        nodes=np.load(f"{model_path}/nodes.npy")
+#        tree=TreeFeatures(tree_repr,nodes)
+#        clf_i= TreeMLP(params=self.params,
+#                       hyper_params=self.hyper_params,
+#                       model=(model_i,tree))
+#        return clf_i
     
     def get_info(self):
-        return {"clf_type":"TREE-MLP","callback":"basic","hyper":self.hyper_params}
+        return {"clf_type":"TREE-MLP","callback":"basic",
+                "hyper":self.hyper_params,
+                "extr_dict":self.extr_dict}
+
+class TreeFeatures(object):
+    def __init__(self,clf_factory,
+                      extr_factory,
+                      concat):
+        if(type(clf_factory)==str):
+            clf_factory=tree_feats.get_tree(clf_factory)
+        if(type(extr_factory)==tuple):
+            extr_factory=tree_clf.get_extractor(extr_factory)
+        self.clf_factory=clf_factory
+        self.extr_factory=extr_factory
+        self.concat=concat
+        self.extractor=None
+    
+    def fit(self,X,y):
+        self.extractor=self.extr_factory(X,y,self.clf_factory)
+
+    def __call__(self,X):
+        return self.extractor(X,self.concat)
 
 class TreeMLP(NeuralClfAdapter):
     def __init__(self, params,
                        hyper_params,
+                       tree_features,
                        model=None,
                        verbose=0):
-
-        if(model is None):
-            nn_model,tree=None,None
-        else:
-            nn_model,tree=model
         self.params=params
         self.hyper_params=hyper_params
-        self.model = nn_model
-        self.tree=tree
+        self.tree_features=tree_features
+        self.model = model
         self.verbose=verbose
 
     def fit(self,X,y):
-        tree=base.get_clf("TREE")
-        tree.fit(X,y)
-        self.tree=make_tree_features(tree)
-#        raise Exception(self.tree.tree_repr.dtype)
-        new_X=self.tree(X)
+        self.tree_features.fit(X,y)
+        new_X=self.tree_features(X)
         if(self.model is None):
             params_i=self.params.copy()
             dims=params_i["dims"]
-            params_i["dims"]=(dims[0]+self.tree.n_feats(),)
+            params_i["dims"]=(new_X.shape[1],)
             self.model=MLP(params=params_i,
                            hyper_params=self.hyper_params)
-        return self.model.fit(new_X,y)
+        self.model.fit(new_X,y)
     
     def predict(self,X):
-        new_X=self.tree(X,concat=True)
+        new_X=self.tree_features(X)
         return self.model.predict(new_X)
     
-    def save(self,out_path):
-        utils.make_dir(out_path)
-        np.save(f"{out_path}/tree.npy",self.tree.tree_repr)
-        np.save(f"{out_path}/nodes.npy",self.tree.selected_nodes)
-        self.model.save(f"{out_path}/nn.keras") 
-
-class TreeFeatures(object):
-    def  __init__(self,tree_repr,
-                       selected_nodes):
-        self.tree_repr=tree_repr
-        self.selected_nodes=selected_nodes
-
-    def n_feats(self):
-        return len(self.selected_nodes)
-
-    def __call__(self,X,concat=True):
-        new_feats=[self.compute_feats(x_i) for x_i in X]
-        new_feats=np.array(new_feats)
-        if(concat):
-            return np.concatenate([X,new_feats],axis=1)
-        return new_feats
-
-    def compute_feats(self,x_i):
-        new_feats=[]
-        for i in self.selected_nodes:
-            node_i=self.tree_repr[i]
-            feat_index,thres_i=node_i[2],node_i[3]
-            old_feat_i=x_i[feat_index]
-            new_feats.append(int(old_feat_i<thres_i) )
-        return np.array(new_feats)
-
-def make_tree_features(tree,threshold=4):
-    node_depths=tree.tree_.compute_node_depths()
-    selected_nodes= [ i for i,depth_i in enumerate(node_depths[1:])
-                     if(depth_i<threshold)]
-    selected_nodes.sort()
-    tree_repr=tree.tree_.__getstate__()['nodes']
-    return TreeFeatures(tree_repr,selected_nodes)
+#    def save(self,out_path):
+#        utils.make_dir(out_path)
+#        np.save(f"{out_path}/tree.npy",self.tree.tree_repr)
+#        np.save(f"{out_path}/nodes.npy",self.tree.selected_nodes)
+#        self.model.save(f"{out_path}/nn.keras") 

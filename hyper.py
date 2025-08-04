@@ -1,5 +1,6 @@
 import numpy as np
-from sklearn.decomposition import PCA
+#from sklearn.decomposition import PCA
+from tqdm import tqdm
 import base,clfs,utils#dataset,tree_feats
 utils.silence_warnings()
 
@@ -8,10 +9,10 @@ def hyper_comp(in_path,hyper):
                                n_splits=10,
                                n_repeats=1)
     for hyper_i in hyper:
-        nn_factory_i=clfs.MLPFactory(hyper_i)
+        nn_factory_i=clfs.TreeMLPFactory(hyper_i)
         nn_factory_i.init(data_split.data)
         acc_i,balance_i=[],[]
-        for clf_j,result_j in data_split.eval(nn_factory_i):
+        for clf_j,result_j in tqdm(data_split.eval(nn_factory_i)):
             acc_i.append(result_j.get_acc())
             balance_i.append(result_j.get_metric("balance"))
         print(hyper_i)
