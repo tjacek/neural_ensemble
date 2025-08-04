@@ -144,7 +144,18 @@ class TreeFeatures(object):
     def __call__(self,X):
         return self.extractor(X,self.concat)
  
-
+    def get_extr(self,data,n_iters):
+        if(n_iters== "binary"):
+            n_cats=int(max(y)+1)
+            for i in range(n_cats):
+                data_i=data.binarize(i)
+                yield self.fit(X=data_i.X,
+                               y=data_i.y)
+        else:
+            for _ in range(n_iters):
+                yield self.fit(X=data.X,
+                               y=data.y)
+                
 class TreeMLP(NeuralClfAdapter):
     def __init__(self, params,
                        hyper_params,
@@ -162,7 +173,6 @@ class TreeMLP(NeuralClfAdapter):
         new_X=self.tree_features(X)
         if(self.model is None):
             params_i=self.params.copy()
-#            dims=params_i["dims"]
             params_i["dims"]=(new_X.shape[1],)
             self.model=MLP(params=params_i,
                            hyper_params=self.hyper_params)
@@ -195,7 +205,7 @@ class CSTreeEnsFactory(NeuralClfFactory):
                          tree_features=TreeFeatures(**self.tree_params))
     
     def get_info(self):
-        return {"clf_type":"CSTREE-MLP","callback":"basic",
+        return {"clf_type":"CSTreeEns","callback":"basic",
                 "hyper":self.hyper_params,
                 "extr_dict":self.extr_dict}
 
