@@ -96,19 +96,18 @@ class MLP(NeuralClfAdapter):
 class TreeMLPFactory(NeuralClfFactory):
     def __init__(self,
                  hyper_params,
-                 tree_type="random",
-                 feat_type="info",
-                 n_feats=30,
-                 concat=True):
+                 tree_params=None):
+        if(tree_params is None):
+            tree_params={"clf_factory":"random",
+                        "extr_factory":("info",30),
+                        "concat":True}
         self.hyper_params=hyper_params
-        self.extr_dict={"clf_factory":tree_type,
-                        "extr_factory":(feat_type,n_feats),
-                        "concat":"concat"}
+        self.tree_params=tree_params
 
     def __call__(self):
         return TreeMLP(params=self.params,
                        hyper_params=self.hyper_params,
-                       tree_features=TreeFeatures(**self.extr_dict))
+                       tree_features=TreeFeatures(**self.tree_params))
     
 #    def read(self,model_path):
 #        model_i=tf.keras.models.load_model(f"{model_path}/nn")
