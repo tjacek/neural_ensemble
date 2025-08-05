@@ -135,15 +135,11 @@ class TreeFeatures(object):
         self.clf_factory=clf_factory
         self.extr_factory=extr_factory
         self.concat=concat
-        self.extractor=None
     
-    def fit(self,X,y):
-        self.extractor=self.extr_factory(X,y,self.clf_factory)
-        return self.extractor
+    def gen(self,X,y):
+        extr=self.extr_factory(X,y,self.clf_factory)
+        return ExctractorCurry(extr,self.concat)
 
-    def __call__(self,X):
-        return self.extractor(X,self.concat)
- 
     def get_extr(self,data,n_iters):
         if(n_iters== "binary"):
             n_cats=int(max(y)+1)
@@ -155,7 +151,15 @@ class TreeFeatures(object):
             for _ in range(n_iters):
                 yield self.fit(X=data.X,
                                y=data.y)
-                
+
+class ExctractorCurry(object):
+    def __init__(self,extractor,concat):
+        self.extractor=extractor
+        self.concat=concat
+
+    def __call__(self,X):
+        return self.extractor(X,self.concat)
+
 class TreeMLP(NeuralClfAdapter):
     def __init__(self, params,
                        hyper_params,
@@ -165,12 +169,13 @@ class TreeMLP(NeuralClfAdapter):
         self.params=params
         self.hyper_params=hyper_params
         self.tree_features=tree_features
+        self.extractor=None
         self.model = model
         self.verbose=verbose
 
     def fit(self,X,y):
-        self.tree_features.fit(X,y)
-        new_X=self.tree_features(X)
+        self.extractor=self.tree_features.gen(X,y)
+        new_X=self.extractor(X)
         if(self.model is None):
             params_i=self.params.copy()
             params_i["dims"]=(new_X.shape[1],)
@@ -179,7 +184,7 @@ class TreeMLP(NeuralClfAdapter):
         self.model.fit(new_X,y)
     
     def predict(self,X):
-        new_X=self.tree_features(X)
+        new_X=self.extractor(X)
         return self.model.predict(new_X)
     
 #    def save(self,out_path):

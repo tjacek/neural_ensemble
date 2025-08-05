@@ -30,7 +30,7 @@ def tree_comp(in_path):
         eval_tree(data_split,hyper,tree_i)
 
 def eval_tree(data_split,hyper_i,tree_i):
-    nn_factory_i=clfs.CSTreeEnsFactory(hyper_i,tree_i)
+    nn_factory_i=clfs.TreeMLPFactory(hyper_i,tree_i)
     nn_factory_i.init(data_split.data)
     acc_i,balance_i=[],[]
     for clf_j,result_j in tqdm(data_split.eval(nn_factory_i)):
