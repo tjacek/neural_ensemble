@@ -138,23 +138,9 @@ class TreeFeatures(object):
         self.concat=concat
         self.ens_type=ens_type
     
-    def gen(self,X,y):
+    def __call__(self,X,y):
         extr=self.extr_factory(X,y,self.clf_factory)
         return ExctractorCurry(extr,self.concat)
-
-    def get_extr(self,X,y):
-        if(type(self.ens_type)==int):
-            for _ in range(n_iters):
-                yield self.gen(X=X,
-                               y=y)
-        else:
-            data=dataset.Dataset(X,y)
-            n_cats=int(max(y)+1)
-            for i in range(n_cats):
-                data_i=data.binarize(i)
-                yield self.gen(X=data_i.X,
-                               y=data_i.y)
-
 
 class ExctractorCurry(object):
     def __init__(self,extractor,concat):
@@ -202,16 +188,26 @@ class CSTreeEnsFactory(NeuralClfFactory):
                  hyper_params,
                  tree_params=None):
         if(tree_params is None):
-            tree_params={"clf_factory":"random",
+            extr_params={"clf_factory":"random",
                         "extr_factory":("info",30),
-                        "concat":True}
+                        "concat":True,"ens_type":"binary"}
+            ens_params={"ens_type":"binary"}
+        else:
+            keys=["clf_factory","extr_factory","concat"]
+            extr_params,ens_params=utils.split_dict(tree_params,
+                                                    keys)
         self.hyper_params=hyper_params
-        self.tree_params=tree_params
+        self.extr_params=extr_params
+        self.ens_params=ens_params
 
     def __call__(self):
+        tree_features=TreeFeatures(**self.extr_params)
+        if(self.ens_params["ens_type"]=="binary"):
+            extr_gen=binary_gen
         return CSTreeEns(params=self.params,
                          hyper_params=self.hyper_params,
-                         tree_features=TreeFeatures(**self.tree_params))
+                         tree_features=tree_features,
+                         extr_gen=extr_gen)
     
     def get_info(self):
         return {"clf_type":"CSTreeEns","callback":"basic",
@@ -222,12 +218,14 @@ class CSTreeEns(NeuralClfAdapter):
     def __init__(self, params,
                        hyper_params,
                        tree_features,
+                       extr_gen,
                        model=None,
                        verbose=0):
         self.params=params
         self.hyper_params=hyper_params
-        self.model = model
         self.tree_features=tree_features
+        self.extr_gen=extr_gen
+        self.model = model
         self.all_extract=[]
         self.all_clfs=[]
         self.verbose=verbose
@@ -238,7 +236,8 @@ class CSTreeEns(NeuralClfAdapter):
 #        for data_i in range(n_cats):
 #            extr_i=self.tree_features.fit(X=data_i.X,
 #                                          y=data_i.y)
-        for extr_i in self.tree_features.get_extr(X,y):
+#        extr_iter=self.extr_gen(X,y,self.tree_features)
+        for extr_i in self.extr_gen(X,y,self.tree_features):
             new_X=extr_i(X)
             self.all_extract.append(extr_i)
             params_i=self.params.copy()
@@ -262,3 +261,18 @@ class CSTreeEns(NeuralClfAdapter):
             counts=np.bincount(vote_i)
             y_pred.append(np.argmax(counts))
         return y_pred
+
+#    def get_extr(self,X,y):
+#        if(type(self.ens_type)==int):
+#            for _ in range(n_iters):
+#                yield self.gen(X=X,
+#                               y=y)
+#        else:
+
+def binary_gen(X,y,tree_features):
+    data=dataset.Dataset(X,y)
+    n_cats=int(max(y)+1)
+    for i in range(n_cats):
+        data_i=data.binarize(i)
+        yield tree_features(X=data_i.X,
+                            y=data_i.y)
