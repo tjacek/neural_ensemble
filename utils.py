@@ -113,3 +113,13 @@ class ParallelDirFun(object):
                 p_i.start()
                 p_i.join()
         return decor_fun
+
+def split_dict(full_dict,split_set):
+    pos_dict,neg_dict={},{}
+    split_set=set(split_set)
+    for key_i,value_i in full_dict.items():
+        if(key_i in split_set):
+            pos_dict[key_i]=value_i
+        else:
+            neg_dict[key_i]=value_i
+    return pos_dict,neg_dict
