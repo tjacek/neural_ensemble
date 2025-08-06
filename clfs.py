@@ -202,13 +202,17 @@ class CSTreeEnsFactory(NeuralClfFactory):
 
     def __call__(self):
         tree_features=TreeFeatures(**self.extr_params)
-        if(self.ens_params["ens_type"]=="binary"):
-            extr_gen=binary_gen
         return CSTreeEns(params=self.params,
                          hyper_params=self.hyper_params,
                          tree_features=tree_features,
-                         extr_gen=extr_gen)
-    
+                         extr_gen=self.get_extr_gen())
+
+    def get_extr_gen(self):
+        if(self.ens_params["ens_type"]=="binary"):
+            return binary_gen
+        else:
+            return full_gen
+
     def get_info(self):
         return {"clf_type":"CSTreeEns","callback":"basic",
                 "hyper":self.hyper_params,
@@ -262,12 +266,11 @@ class CSTreeEns(NeuralClfAdapter):
             y_pred.append(np.argmax(counts))
         return y_pred
 
-#    def get_extr(self,X,y):
-#        if(type(self.ens_type)==int):
-#            for _ in range(n_iters):
-#                yield self.gen(X=X,
-#                               y=y)
-#        else:
+
+def full_gen(self,X,y,tree_features):
+    n_iters=int(max(y)+1)
+    for _ in range(n_iters):
+        yield tree_features(X=X,y=y)
 
 def binary_gen(X,y,tree_features):
     data=dataset.Dataset(X,y)
