@@ -205,13 +205,19 @@ class CSTreeEnsFactory(NeuralClfFactory):
         return CSTreeEns(params=self.params,
                          hyper_params=self.hyper_params,
                          tree_features=tree_features,
-                         extr_gen=self.get_extr_gen())
+                         extr_gen=self.get_extr_gen(),
+                         weight_gen=self.get_weight_gen())
 
     def get_extr_gen(self):
         if(self.ens_params["ens_type"]=="binary"):
             return binary_gen
         else:
             return full_gen
+
+    def get_weight_gen(self):
+        if(self.ens_params["weights"]=="specific"):
+            return cs_weights
+        return basic_weights
 
     def get_info(self):
         return {"clf_type":"CSTreeEns","callback":"basic",
@@ -223,30 +229,27 @@ class CSTreeEns(NeuralClfAdapter):
                        hyper_params,
                        tree_features,
                        extr_gen,
+                       weight_gen,
                        model=None,
                        verbose=0):
         self.params=params
         self.hyper_params=hyper_params
         self.tree_features=tree_features
         self.extr_gen=extr_gen
+        self.weight_gen=weight_gen
         self.model = model
         self.all_extract=[]
         self.all_clfs=[]
         self.verbose=verbose
 
     def fit(self,X,y):
-#        data=dataset.Dataset(X,y)
-#        n_cats=int(max(y)+1)
-#        for data_i in range(n_cats):
-#            extr_i=self.tree_features.fit(X=data_i.X,
-#                                          y=data_i.y)
-#        extr_iter=self.extr_gen(X,y,self.tree_features)
-        for extr_i in self.extr_gen(X,y,self.tree_features):
+        gen=self.extr_gen(X,y,self.tree_features)
+        for i,extr_i in enumerate(gen):
             new_X=extr_i(X)
             self.all_extract.append(extr_i)
             params_i=self.params.copy()
             params_i["dims"]=(new_X.shape[1],)
-            clf_i=MLP(params=params_i,
+            clf_i=MLP(params=self.weight_gen(i,params_i),
                       hyper_params=self.hyper_params)
             clf_i.fit(X=new_X,
                       y=y)
@@ -279,3 +282,10 @@ def binary_gen(X,y,tree_features):
         data_i=data.binarize(i)
         yield tree_features(X=data_i.X,
                             y=data_i.y)
+
+def basic_weights(i,params):
+    return params
+
+def cs_weights(i,params):
+    params["class_weights"][i]*=2
+    return params

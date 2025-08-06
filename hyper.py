@@ -11,7 +11,9 @@ def hyper_comp(in_path,hyper):
                                n_repeats=1)
     tree_i={ "clf_factory":"random",
              "extr_factory":("info",30),
-             "concat":True}
+             "concat":True,
+             "ens_type":"binary",
+             "weights":"specific"}
     for hyper_i in hyper:
         eval_tree(data_split,hyper_i,tree_i)
 
@@ -20,7 +22,9 @@ def tree_comp(in_path):
                                n_splits=10,
                                n_repeats=1)
     prototype={"clf_factory":"random",
-                "concat":True}
+                "concat":True,
+                "ens_type":"full",
+                "weights":"specific"}
     extr=["info","ind"]
     n_feats=[20,30,50]
     hyper={'layers':2, 'units_0':1,'units_1':1,'batch':False}
@@ -30,7 +34,7 @@ def tree_comp(in_path):
         eval_tree(data_split,hyper,tree_i)
 
 def eval_tree(data_split,hyper_i,tree_i):
-    nn_factory_i=clfs.TreeMLPFactory(hyper_i,tree_i)
+    nn_factory_i=clfs.CSTreeEnsFactory(hyper_i,tree_i)
     nn_factory_i.init(data_split.data)
     acc_i,balance_i=[],[]
     for clf_j,result_j in tqdm(data_split.eval(nn_factory_i)):
@@ -42,8 +46,8 @@ def eval_tree(data_split,hyper_i,tree_i):
 
 
 if __name__ == '__main__':
-    hyper=[{'layers':2, 'units_0':2,'units_1':1,'batch':False},
-           {'layers':2, 'units_0':1,'units_1':1,'batch':False}]#,
+    hyper=[{'layers':2, 'units_0':2,'units_1':1,'batch':False}]#,
+#           {'layers':2, 'units_0':1,'units_1':1,'batch':False}]#,
 #           {'layers':2, 'units_0':2,'units_1':1,'batch':True},
 #           {'layers':2, 'units_0':1,'units_1':1,'batch':True},]
     in_path="bad_exp/data/wine-quality-red"
