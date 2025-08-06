@@ -127,7 +127,8 @@ class TreeMLPFactory(NeuralClfFactory):
 class TreeFeatures(object):
     def __init__(self,clf_factory,
                       extr_factory,
-                      concat):
+                      concat,
+                      ens_type=None):
         if(type(clf_factory)==str):
             clf_factory=tree_feats.get_tree(clf_factory)
         if(type(extr_factory)==tuple):
@@ -135,22 +136,25 @@ class TreeFeatures(object):
         self.clf_factory=clf_factory
         self.extr_factory=extr_factory
         self.concat=concat
+        self.ens_type=ens_type
     
     def gen(self,X,y):
         extr=self.extr_factory(X,y,self.clf_factory)
         return ExctractorCurry(extr,self.concat)
 
-    def get_extr(self,data,n_iters):
-        if(n_iters== "binary"):
+    def get_extr(self,X,y):
+        if(type(self.ens_type)==int):
+            for _ in range(n_iters):
+                yield self.gen(X=X,
+                               y=y)
+        else:
+            data=dataset.Dataset(X,y)
             n_cats=int(max(y)+1)
             for i in range(n_cats):
                 data_i=data.binarize(i)
-                yield self.fit(X=data_i.X,
+                yield self.gen(X=data_i.X,
                                y=data_i.y)
-        else:
-            for _ in range(n_iters):
-                yield self.fit(X=data.X,
-                               y=data.y)
+
 
 class ExctractorCurry(object):
     def __init__(self,extractor,concat):
@@ -229,27 +233,27 @@ class CSTreeEns(NeuralClfAdapter):
         self.verbose=verbose
 
     def fit(self,X,y):
-        data=dataset.Dataset(X,y)
-        n_cats=int(max(y)+1)
-        for i in range(n_cats):
-            data_i=data.binarize(i)
-            extr_i=self.tree_features.fit(X=data_i.X,
-                                          y=data_i.y)
-            new_X=extr_i(data.X)
+#        data=dataset.Dataset(X,y)
+#        n_cats=int(max(y)+1)
+#        for data_i in range(n_cats):
+#            extr_i=self.tree_features.fit(X=data_i.X,
+#                                          y=data_i.y)
+        for extr_i in self.tree_features.get_extr(X,y):
+            new_X=extr_i(X)
             self.all_extract.append(extr_i)
             params_i=self.params.copy()
             params_i["dims"]=(new_X.shape[1],)
             clf_i=MLP(params=params_i,
-                     hyper_params=self.hyper_params)
+                      hyper_params=self.hyper_params)
             clf_i.fit(X=new_X,
-                      y=data.y)
+                      y=y)
             self.all_clfs.append(clf_i)
 
     def predict(self,X):
         votes=[]
         for i,extr_i in enumerate(self.all_extract):
-            X_i=extr_i(X=X,
-                      concat=self.tree_features.concat)
+            X_i=extr_i(X=X)#,
+#                      concat=self.tree_features.concat)
             y_i=self.all_clfs[i].predict(X_i)
             votes.append(y_i)
         votes=np.array(votes,dtype=int)
