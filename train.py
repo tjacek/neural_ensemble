@@ -125,7 +125,6 @@ def pred_only(data_path:str,
         data=dataset.read_csv(in_path)
         info_path=f"{exp_path}/{clf_type}/info.js"
         clf_factory=clfs.read_factory(info_path)
-        raise Exception(clf_factory)
         clf_factory.init(data)
         dir_proxy=base.get_dir_path(out_path=exp_path,
                                 clf_type=clf_type)
@@ -157,11 +156,11 @@ if __name__ == '__main__':
 #          clf_type=args.clf_type,
 #          retrain=args.retrain)
     interval=base.Interval(args.start,args.step)
-#    train_only(data_path=args.data,
-#               out_path=args.out_path,
-#               clf_type=args.clf_type,
-#               interval=interval,
-#               retrain=args.retrain)
+    train_only(data_path=args.data,
+               out_path=args.out_path,
+               clf_type=args.clf_type,
+               interval=interval,
+               retrain=args.retrain)
     pred_only(data_path=args.data,
               out_path=args.out_path,
               clf_type=args.clf_type)

@@ -156,14 +156,15 @@ class TreeMLPFactory(NeuralClfFactory):
                        extractor_factory=extractor_factory)
     
     def read(self,in_path):
+        in_path=in_path.split(".")[0]
         model_i=tf.keras.models.load_model(f"{in_path}/nn.keras")
         feats=np.load(f"{in_path}/tree/feats.npy")
-        thres=np.load(f"{in_path}/tree/feats.npy")
-        tree_feats=tree_feats.TreeFeatures(feats,
+        thres=np.load(f"{in_path}/tree/thresholds.npy")
+        extractor=tree_feats.TreeFeatures(feats,
                                            thres)
         tree_mlp=self()
         tree_mlp.model=model_i
-        tree_mlp.extractor=FeatureExtactor(tree_feats)
+        tree_mlp.extractor=FeatureExtactor(extractor)
         return tree_mlp
 #        model_i=tf.keras.models.load_model(f"{model_path}/nn")
 #        tree_repr=np.load(f"{model_path}/tree.npy")
@@ -205,8 +206,11 @@ class TreeMLP(NeuralClfAdapter):
 
     def predict(self,X):
         new_X=self.extractor(X)
-        return self.model.predict(new_X)
-    
+#        raise Exception(y_pred.shape)
+        y=self.model.predict(new_X,
+                             verbose=self.verbose)
+        return np.argmax(y,axis=1)
+
     def save(self,out_path):
         out_path=out_path.split(".")[0]
         utils.make_dir(out_path)
