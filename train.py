@@ -145,7 +145,7 @@ if __name__ == '__main__':
     parser.add_argument("--start", type=int, default=0)
     parser.add_argument("--step", type=int, default=20)
     parser.add_argument('--retrain', action='store_true')
-    parser.add_argument("--clf_type", type=str, default="MLP")
+    parser.add_argument("--clf_type", type=str, default="TREE-MLP")
     args = parser.parse_args()
     print(args)
 #    train_only(data_path=args.data,
@@ -155,10 +155,10 @@ if __name__ == '__main__':
 #          clf_type=args.clf_type,
 #          retrain=args.retrain)
     interval=base.Interval(args.start,args.step)
-#    train_only(data_path=args.data,
-#               out_path=args.out_path,
-#               clf_type=args.clf_type,
-#               interval=interval,
-#               retrain=args.retrain)
+    train_only(data_path=args.data,
+               out_path=args.out_path,
+               clf_type=args.clf_type,
+               interval=interval,
+               retrain=args.retrain)
     pred_only(data_path=args.data,
               out_path=args.out_path)

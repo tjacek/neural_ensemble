@@ -17,8 +17,37 @@ def basic_callback():
                                             patience=15)
 
 def default_hyperparams():
-    return {'layers':2, 'units_0':2,
+    return {'layers':1, 'units_0':1,
             'units_1':1,'batch':False}
+
+class FeatureExtactorFactory(object):
+    def __init__(self,tree_factory,
+                      extr_factory,
+                      concat,
+                      ens_type=None):
+        if(type(tree_factory)==str):
+            tree_factory=tree_feats.get_tree(tree_factory)
+        if(type(extr_factory)==tuple):
+            extr_factory=tree_clf.get_extractor(extr_factory)
+        self.tree_factory=tree_factory
+        self.extr_factory=extr_factory
+        self.concat=concat
+        self.ens_type=ens_type
+    
+    def __call__(self,X,y):
+        extr=self.extr_factory(X,y,self.tree_factory)
+        return FeatureExtactor(extr,self.concat)
+
+class FeatureExtactor(object):
+    def __init__(self,extractor,concat):
+        self.extractor=extractor
+        self.concat=concat
+
+    def __call__(self,X):
+        return self.extractor(X,self.concat)
+
+    def save(self,in_path):
+        raise Exception(self.extractor)
 
 class NeuralClfFactory(base.AbstractClfFactory):
     def __init__(self,hyper_params=None):
@@ -95,19 +124,22 @@ class MLP(NeuralClfAdapter):
 
 class TreeMLPFactory(NeuralClfFactory):
     def __init__(self,
-                 hyper_params,
-                 tree_params=None):
-        if(tree_params is None):
-            tree_params={"clf_factory":"random",
-                        "extr_factory":("info",30),
-                        "concat":True}
+                 hyper_params=None,
+                 feature_params=None):
+        if(hyper_params is None):
+            hyper_params=default_hyperparams()
+        if(feature_params is None):
+            feature_params={"tree_factory":"random",
+                            "extr_factory":("info",30),
+                            "concat":True}
         self.hyper_params=hyper_params
-        self.tree_params=tree_params
+        self.feature_params=feature_params
 
     def __call__(self):
+        extractor_factory=FeatureExtactorFactory(**self.feature_params)
         return TreeMLP(params=self.params,
                        hyper_params=self.hyper_params,
-                       tree_features=TreeFeatures(**self.tree_params))
+                       extractor_factory=extractor_factory)
     
 #    def read(self,model_path):
 #        model_i=tf.keras.models.load_model(f"{model_path}/nn")
@@ -122,63 +154,38 @@ class TreeMLPFactory(NeuralClfFactory):
     def get_info(self):
         return {"clf_type":"TREE-MLP","callback":"basic",
                 "hyper":self.hyper_params,
-                "extr_dict":self.extr_dict}
-
-class TreeFeatures(object):
-    def __init__(self,clf_factory,
-                      extr_factory,
-                      concat,
-                      ens_type=None):
-        if(type(clf_factory)==str):
-            clf_factory=tree_feats.get_tree(clf_factory)
-        if(type(extr_factory)==tuple):
-            extr_factory=tree_clf.get_extractor(extr_factory)
-        self.clf_factory=clf_factory
-        self.extr_factory=extr_factory
-        self.concat=concat
-        self.ens_type=ens_type
-    
-    def __call__(self,X,y):
-        extr=self.extr_factory(X,y,self.clf_factory)
-        return ExctractorCurry(extr,self.concat)
-
-class ExctractorCurry(object):
-    def __init__(self,extractor,concat):
-        self.extractor=extractor
-        self.concat=concat
-
-    def __call__(self,X):
-        return self.extractor(X,self.concat)
+                "feature_params":self.feature_params}
 
 class TreeMLP(NeuralClfAdapter):
     def __init__(self, params,
                        hyper_params,
-                       tree_features,
+                       extractor_factory,
                        model=None,
                        verbose=0):
         self.params=params
         self.hyper_params=hyper_params
-        self.tree_features=tree_features
+        self.extractor_factory=extractor_factory
         self.extractor=None
         self.model = model
         self.verbose=verbose
 
     def fit(self,X,y):
-        self.extractor=self.tree_features.gen(X,y)
+        self.extractor=self.extractor_factory(X,y)
         new_X=self.extractor(X)
         if(self.model is None):
             params_i=self.params.copy()
             params_i["dims"]=(new_X.shape[1],)
             self.model=MLP(params=params_i,
                            hyper_params=self.hyper_params)
-        self.model.fit(new_X,y)
-    
+        return self.model.fit(new_X,y)
+
+
     def predict(self,X):
         new_X=self.extractor(X)
         return self.model.predict(new_X)
     
-#    def save(self,out_path):
-#        utils.make_dir(out_path)
+    def save(self,out_path):
+        utils.make_dir(out_path)
 #        np.save(f"{out_path}/tree.npy",self.tree.tree_repr)
 #        np.save(f"{out_path}/nodes.npy",self.tree.selected_nodes)
 #        self.model.save(f"{out_path}/nn.keras") 
