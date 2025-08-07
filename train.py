@@ -103,9 +103,9 @@ def train_only(data_path:str,
         clf_factory=clfs.get_clfs(clf_type)
         clf_factory.init(data)
         dir_proxy.make_dir(["history","models"])
-#        key = None if(retrain) else "models"
+        key = None if(retrain) else "models"
         path_dict=dir_proxy.path_dict(indexes=interval,
-                                      key=None)
+                                      key=key)
         for i,split_path_i in tqdm(enumerate(path_dict['splits'])):
             clf_i=clf_factory()
             split_i=base.read_split(split_path_i)
@@ -115,6 +115,27 @@ def train_only(data_path:str,
                 json.dump(history_i, f)
             clf_i.save(path_dict["models"][i])
         dir_proxy.save_info(clf_factory)
+    helper(data_path,out_path)            
+
+def pred_only(data_path:str,
+              out_path:str,
+               clf_type="MLP"):
+    @utils.DirFun("in_path","exp_path")
+    def helper(in_path,exp_path):
+        data=dataset.read_csv(in_path)
+        clf_factory=clfs.get_clfs(clf_type)
+        clf_factory.init(data)
+        dir_proxy=base.get_dir_path(out_path=exp_path,
+                                clf_type=clf_type)
+        dir_proxy.make_dir(["results"])
+        path_dict=dir_proxy.path_dict(indexes=interval,
+                                      key="results")
+        for i,model_path_i in tqdm(enumerate(path_dict['models'])):
+            model_i=clf_factory.read(model_path_i)
+            split_path_i=path_dict["splits"][i]
+            split_i=base.read_split(split_path_i)
+            result_i=split_i.pred(data,model_i)
+            result_i.save(path_dict["results"][i])
     helper(data_path,out_path)            
 
 if __name__ == '__main__':
@@ -134,8 +155,10 @@ if __name__ == '__main__':
 #          clf_type=args.clf_type,
 #          retrain=args.retrain)
     interval=base.Interval(args.start,args.step)
-    train_only(data_path=args.data,
-               out_path=args.out_path,
-               clf_type=args.clf_type,
-               interval=interval,
-               retrain=args.retrain)
+#    train_only(data_path=args.data,
+#               out_path=args.out_path,
+#               clf_type=args.clf_type,
+#               interval=interval,
+#               retrain=args.retrain)
+    pred_only(data_path=args.data,
+              out_path=args.out_path)
