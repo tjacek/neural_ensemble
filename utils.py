@@ -3,6 +3,7 @@ import logging,time
 import argparse,json
 import multiprocessing
 from functools import wraps
+import traceback
 
 def silence_warnings():
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -70,7 +71,7 @@ class DirFun(object):
                 try:
                     result_dict[id_i]=fun(*arg_i.args,**arg_i.kwargs)
                 except Exception as e:
-                    print(e)
+                    print(traceback.format_exc())
             return result_dict
         return decor_fun
     
