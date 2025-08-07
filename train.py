@@ -8,7 +8,7 @@ import base,clfs,dataset,utils
 
 def train(data_path:str,
               out_path:str,
-              clf_type="class_ens",
+              clf_type="MLP",
               start=0,
               step=10,
               retrain=False):
@@ -49,7 +49,7 @@ def clf_train(data_path:str,
 
 def nn_train(data_path:str,
                out_path:str,
-               clf_type="class_ens",
+               clf_type="MLP",
                interval=None,
                retrain=False):
     @utils.DirFun("in_path","exp_path")
@@ -89,6 +89,34 @@ def history_to_dict(history):
         hist_dict[key_i]=history[key_i][-1]
     return hist_dict
 
+
+def train_only(data_path:str,
+               out_path:str,
+               clf_type="MLP",
+               interval=None,
+               retrain=False):
+    @utils.DirFun("in_path","exp_path")
+    def helper(in_path,exp_path):
+        data=dataset.read_csv(in_path)
+        dir_proxy=base.get_dir_path(out_path=exp_path,
+                                    clf_type=clf_type)
+        clf_factory=clfs.get_clfs(clf_type)
+        clf_factory.init(data)
+        dir_proxy.make_dir(["history","models"])
+#        key = None if(retrain) else "models"
+        path_dict=dir_proxy.path_dict(indexes=interval,
+                                      key=None)
+        for i,split_path_i in tqdm(enumerate(path_dict['splits'])):
+            clf_i=clf_factory()
+            split_i=base.read_split(split_path_i)
+            clf_i,history_i=split_i.fit_clf(data,clf_i)
+            history_i= history_to_dict(history_i)
+            with open(f"{path_dict['history'][i]}", 'w') as f:
+                json.dump(history_i, f)
+            clf_i.save(path_dict["models"][i])
+        dir_proxy.save_info(clf_factory)
+    helper(data_path,out_path)            
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", type=str, default="bad_exp/data")
@@ -96,12 +124,18 @@ if __name__ == '__main__':
     parser.add_argument("--start", type=int, default=0)
     parser.add_argument("--step", type=int, default=20)
     parser.add_argument('--retrain', action='store_true')
-    parser.add_argument("--clf_type", type=str, default="TREE-MLP")
+    parser.add_argument("--clf_type", type=str, default="MLP")
     args = parser.parse_args()
     print(args)
-    train(data_path=args.data,
-          out_path=args.out_path,
-          start=args.start,
-          step=args.step,
-          clf_type=args.clf_type,
-          retrain=args.retrain)
+#    train_only(data_path=args.data,
+#          out_path=args.out_path,
+#          start=args.start,
+#          step=args.step,
+#          clf_type=args.clf_type,
+#          retrain=args.retrain)
+    interval=base.Interval(args.start,args.step)
+    train_only(data_path=args.data,
+               out_path=args.out_path,
+               clf_type=args.clf_type,
+               interval=interval,
+               retrain=args.retrain)
