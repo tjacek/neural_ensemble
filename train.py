@@ -119,17 +119,19 @@ def train_only(data_path:str,
 
 def pred_only(data_path:str,
               out_path:str,
-               clf_type="MLP"):
+              clf_type="MLP"):
     @utils.DirFun("in_path","exp_path")
     def helper(in_path,exp_path):
         data=dataset.read_csv(in_path)
-        clf_factory=clfs.get_clfs(clf_type)
+        info_path=f"{exp_path}/{clf_type}/info.js"
+        clf_factory=clfs.read_factory(info_path)
+        raise Exception(clf_factory)
         clf_factory.init(data)
         dir_proxy=base.get_dir_path(out_path=exp_path,
                                 clf_type=clf_type)
         dir_proxy.make_dir(["results"])
         path_dict=dir_proxy.path_dict(indexes=interval,
-                                      key="results")
+                                      key=None)
         for i,model_path_i in tqdm(enumerate(path_dict['models'])):
             model_i=clf_factory.read(model_path_i)
             split_path_i=path_dict["splits"][i]
@@ -143,7 +145,7 @@ if __name__ == '__main__':
     parser.add_argument("--data", type=str, default="bad_exp/data")
     parser.add_argument("--out_path", type=str, default="bad_exp/exp")
     parser.add_argument("--start", type=int, default=0)
-    parser.add_argument("--step", type=int, default=20)
+    parser.add_argument("--step", type=int, default=10)
     parser.add_argument('--retrain', action='store_true')
     parser.add_argument("--clf_type", type=str, default="TREE-MLP")
     args = parser.parse_args()
@@ -155,10 +157,11 @@ if __name__ == '__main__':
 #          clf_type=args.clf_type,
 #          retrain=args.retrain)
     interval=base.Interval(args.start,args.step)
-    train_only(data_path=args.data,
-               out_path=args.out_path,
-               clf_type=args.clf_type,
-               interval=interval,
-               retrain=args.retrain)
+#    train_only(data_path=args.data,
+#               out_path=args.out_path,
+#               clf_type=args.clf_type,
+#               interval=interval,
+#               retrain=args.retrain)
     pred_only(data_path=args.data,
-              out_path=args.out_path)
+              out_path=args.out_path,
+              clf_type=args.clf_type)

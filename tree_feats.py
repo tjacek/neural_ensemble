@@ -2,6 +2,7 @@ import numpy as np
 from collections import Counter,defaultdict
 from scipy.stats import entropy 
 from sklearn import tree
+import utils
 
 def get_tree(tree_type):
     if(tree_type=="random"):
@@ -120,6 +121,11 @@ class TreeFeatures(TabFeatures):
             new_feats.append(int(value_i<thres_i) )
         return np.array(new_feats)
 
+    def save(self,out_path):
+        utils.make_dir(out_path)
+        np.save(f"{out_path}/feats.npy",self.features)
+        np.save(f"{out_path}/thresholds.npy",self.thresholds)
+
 class DiscFeats(TabFeatures):
     def __init__(self,thres_dict):
         self.thres_dict=thres_dict
@@ -166,16 +172,16 @@ class IndFeatures(TabFeatures):
             new_X=np.concatenate([X,new_X],axis=1)
         return new_X
 
-#def path_stat(clf,data):
-#    prob=[]
-#    for i in range(data.n_cats()):
-#        data_i=data.selection(data.y==i)
-#        path_i=clf.decision_path(data_i.X)
-#        prob_i= path_i.sum(axis=0)/len(data_i)
-#        prob.append(prob_i)
-#    prob=np.array(prob)
-#    for p in prob.T:
-#        print(p)
+class ConcatFeatures(TabFeatures):
+    def __init__(self,indiv_extr):
+        self.indiv_extr=indiv_extr
+
+    def __call__(self,X,concat=True):
+        new_X=[indv_i(X) for indv_i in self.indiv_extr]
+        new_X=np.concatenate(new_X,axis=1)
+        if(concat):
+            return np.concatenate([X,new_X],axis=1)
+        return new_X
 
 if __name__ == '__main__':
     import base,dataset

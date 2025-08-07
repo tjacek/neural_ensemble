@@ -20,6 +20,20 @@ def default_hyperparams():
     return {'layers':1, 'units_0':1,
             'units_1':1,'batch':False}
 
+def get_nn_type(nn_type):
+    if(nn_type=="MLP"):
+        return MLPFactory
+    if(nn_type=="TREE-MLP"):
+        return TreeMLPFactory
+    raise Exception(f"Unknown clf type:{nn_type}")    
+
+def read_factory(in_path):
+    info_dict=utils.read_json(in_path)
+    factory_type=get_nn_type(info_dict['clf_type'])
+    factory=factory_type(hyper_params=info_dict["hyper"],
+                 feature_params=info_dict["feature_params"])
+    return factory
+
 class FeatureExtactorFactory(object):
     def __init__(self,tree_factory,
                       extr_factory,
@@ -39,7 +53,7 @@ class FeatureExtactorFactory(object):
         return FeatureExtactor(extr,self.concat)
 
 class FeatureExtactor(object):
-    def __init__(self,extractor,concat):
+    def __init__(self,extractor,concat=True):
         self.extractor=extractor
         self.concat=concat
 
@@ -141,7 +155,16 @@ class TreeMLPFactory(NeuralClfFactory):
                        hyper_params=self.hyper_params,
                        extractor_factory=extractor_factory)
     
-#    def read(self,model_path):
+    def read(self,in_path):
+        model_i=tf.keras.models.load_model(f"{in_path}/nn.keras")
+        feats=np.load(f"{in_path}/tree/feats.npy")
+        thres=np.load(f"{in_path}/tree/feats.npy")
+        tree_feats=tree_feats.TreeFeatures(feats,
+                                           thres)
+        tree_mlp=self()
+        tree_mlp.model=model_i
+        tree_mlp.extractor=FeatureExtactor(tree_feats)
+        return tree_mlp
 #        model_i=tf.keras.models.load_model(f"{model_path}/nn")
 #        tree_repr=np.load(f"{model_path}/tree.npy")
 #        nodes=np.load(f"{model_path}/nodes.npy")
@@ -185,7 +208,11 @@ class TreeMLP(NeuralClfAdapter):
         return self.model.predict(new_X)
     
     def save(self,out_path):
+        out_path=out_path.split(".")[0]
         utils.make_dir(out_path)
+        self.extractor.extractor.save(f"{out_path}/tree")
+        self.model.save(f"{out_path}/nn.keras")
+#        raise Exception(self.extractor.extractor)
 #        np.save(f"{out_path}/tree.npy",self.tree.tree_repr)
 #        np.save(f"{out_path}/nodes.npy",self.tree.selected_nodes)
 #        self.model.save(f"{out_path}/nn.keras") 
