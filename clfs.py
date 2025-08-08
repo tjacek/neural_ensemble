@@ -28,20 +28,27 @@ def get_nn_type(nn_type):
         return MLPFactory
     if(nn_type=="TREE-MLP"):
         return TreeMLPFactory
+    if(nn_type=="TREE-ENS"):
+        return CSTreeEnsFactory
     raise Exception(f"Unknown clf type:{nn_type}")    
 
 def read_factory(in_path):
     info_dict=utils.read_json(in_path)
-    factory_type=get_nn_type(info_dict['clf_type'])
-    factory=factory_type(hyper_params=info_dict["hyper"],
-                 feature_params=info_dict["feature_params"])
+    nn_type=info_dict['clf_type']
+    factory_type=get_nn_type(nn_type)
+    if(nn_type=="TREE-MLP"):
+        factory=factory_type(hyper_params=info_dict["hyper"],
+                             feature_params=info_dict["feature_params"])
+    if(nn_type=="TREE-ENS"):
+        factory=factory_type(hyper_params=info_dict["hyper"],
+                             feature_params=info_dict["feature_params"],
+                             ens_params=info_dict["ens_params"])
     return factory
 
 class FeatureExtactorFactory(object):
     def __init__(self,tree_factory,
                       extr_factory,
-                      concat,
-                      ens_type=None):
+                      concat):
         if(type(tree_factory)==str):
             tree_factory=tree_feats.get_tree(tree_factory)
         if(type(extr_factory)==tuple):
@@ -49,7 +56,6 @@ class FeatureExtactorFactory(object):
         self.tree_factory=tree_factory
         self.extr_factory=extr_factory
         self.concat=concat
-        self.ens_type=ens_type
     
     def __call__(self,X,y):
         extr=self.extr_factory(X,y,self.tree_factory)
@@ -162,10 +168,7 @@ class TreeMLPFactory(NeuralClfFactory):
     def read(self,in_path):
         in_path=in_path.split(".")[0]
         model_i=tf.keras.models.load_model(f"{in_path}/nn.keras")
-        feats=np.load(f"{in_path}/tree/feats.npy")
-        thres=np.load(f"{in_path}/tree/thresholds.npy")
-        extractor=tree_feats.TreeFeatures(feats,
-                                           thres)
+        extractor=tree_feats.read_feats(f"{in_path}/tree")
         tree_mlp=self()
         tree_mlp.model=model_i
         tree_mlp.extractor=FeatureExtactor(extractor)
@@ -202,7 +205,6 @@ class TreeMLP(NeuralClfAdapter):
 
     def predict(self,X):
         new_X=self.extractor(X)
-#        raise Exception(y_pred.shape)
         y=self.model.predict(new_X,
                              verbose=self.verbose)
         return np.argmax(y,axis=1)
@@ -216,24 +218,21 @@ class TreeMLP(NeuralClfAdapter):
 class CSTreeEnsFactory(NeuralClfFactory):
     def __init__(self,
                  hyper_params,
-                 tree_params=None):
-        if(tree_params is None):
-            extr_params={ "tree_factory":"random",
-                          "extr_factory":("info",30),
-                          "concat":True,
-                          "ens_type":"binary"}
+                 feature_params=None,
+                 ens_params=None):
+        if(feature_params is None):
+            feature_params={ "tree_factory":"random",
+                             "extr_factory":("info",30),
+                             "concat":True}
+        if(ens_params is None):
             ens_params={ "ens_type":"binary",
                          "weights":"basic"}
-        else:
-            keys=["clf_factory","extr_factory","concat"]
-            extr_params,ens_params=utils.split_dict(tree_params,
-                                                    keys)
         self.hyper_params=hyper_params
-        self.extr_params=extr_params
+        self.feature_params=feature_params
         self.ens_params=ens_params
 
     def __call__(self):
-        extractor_factory=FeatureExtactorFactory(**self.extr_params)
+        extractor_factory=FeatureExtactorFactory(**self.feature_params)
         return CSTreeEns(params=self.params,
                          hyper_params=self.hyper_params,
                          extractor_factory=extractor_factory,
@@ -250,11 +249,24 @@ class CSTreeEnsFactory(NeuralClfFactory):
         if(self.ens_params["weights"]=="specific"):
             return cs_weights
         return basic_weights
+    
+    def read(self,in_path):
+        tree_ens=self()
+        in_path=in_path.split(".")[0]
+        for path_i in utils.top_files(in_path):
+            model_i=tf.keras.models.load_model(f"{path_i}/nn.keras")
+            tree_ens.all_clfs.append(model_i)
+            extractor_i=tree_feats.read_feats(f"{path_i}/tree")
+            extractor_i=FeatureExtactor(extractor_i,
+                                   concat=self.feature_params["concat"])
+            tree_ens.all_extract.append(extractor_i)
+        return tree_ens
 
     def get_info(self):
         return {"clf_type":"TREE-ENS","callback":"basic",
                 "hyper":self.hyper_params,
-                "extr_dict":self.extr_dict}
+                "feature_params":self.feature_params,
+                "ens_params":self.ens_params}
 
 class CSTreeEns(NeuralClfAdapter):
     def __init__(self, params,
@@ -294,13 +306,18 @@ class CSTreeEns(NeuralClfAdapter):
         votes=[]
         for i,extr_i in enumerate(self.all_extract):
             X_i=extr_i(X=X)#,
-            y_i=self.all_clfs[i].predict(X_i)
+#            raise Exception(self.all_clfs[i].predict(X_i))
+            y_i=self.all_clfs[i].predict(X_i,
+                                        verbose=self.verbose)
             votes.append(y_i)
-        votes=np.array(votes,dtype=int)
-        y_pred=[]
-        for vote_i in votes.T:
-            counts=np.bincount(vote_i)
-            y_pred.append(np.argmax(counts))
+        votes=np.array(votes)#,dtype=int)
+        votes=np.sum(votes,axis=0)
+        y_pred=np.argmax(votes,axis=1)
+#        raise Exception(votes)
+#        y_pred=[]
+#        for vote_i in votes.T:
+#            counts=np.bincount(vote_i)
+#            y_pred.append(np.argmax(counts))
         return y_pred
 
     def save(self,out_path):
