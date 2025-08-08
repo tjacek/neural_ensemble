@@ -1,14 +1,14 @@
-data_path='../uci/new/'
-out_path='../multiple'
-hyper_path="${out_path}/hyper"
-model_path="${out_path}/model"
-n_split=3
-n_iter=3
+data="bad_exp/data"
+out="bad_exp/exp"
+step=10
 
-mkdir ${out_path}
+clfs=("TREE-MLP" "TREE-ENS" "BINARY-TREE-ENS")
 
-#python3 hyper.py --data "${data_path}" --hyper "${hyper_path}" --n_split "${n_split}" --n_iter "${n_iter}" --multi
-
-#python3 train.py --data "${data_path}" --hyper "${hyper_path}" --model "${model_path}" --n_split "${n_split}" --n_iter "${n_iter}" --multi
-
-python3 eval.py --data "${data_path}" --model "${model_path}" --n_split "${n_split}" --n_iter "${n_iter}" --multi
+for clf_i in "${clfs[@]}"
+do
+    for j in {0..3}
+    do
+        start=$((step * j))
+        python3 train.py --data ${data} --out_path ${out} --start ${start} --clf_type ${clf_i} --step ${step}
+    done
+done
