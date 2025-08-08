@@ -6,10 +6,13 @@ import base,dataset,deep,utils
 def get_clfs(clf_type):
     if(clf_type in base.OTHER_CLFS):
         return base.ClasicalClfFactory(clf_type)
+    hyper_params=default_hyperparams()
     if(clf_type=="MLP"):
         return MLPFactory()
     if(clf_type=="TREE-MLP"):
         return TreeMLPFactory()
+    if(clf_type=="TREE-ENS"):
+        return CSTreeEnsFactory(hyper_params=hyper_params)
     raise Exception(f"Unknown clf type:{clf_type}")
 
 def basic_callback():
@@ -60,8 +63,8 @@ class FeatureExtactor(object):
     def __call__(self,X):
         return self.extractor(X,self.concat)
 
-    def save(self,in_path):
-        raise Exception(self.extractor)
+    def save(self,out_path):
+        self.extractor.save(out_path)
 
 class NeuralClfFactory(base.AbstractClfFactory):
     def __init__(self,hyper_params=None):
@@ -115,7 +118,8 @@ class MLPFactory(NeuralClfFactory):
         return clf_i
 
     def get_info(self):
-        return {"clf_type":"MLP","callback":"basic","hyper":self.hyper_params}
+        return {"clf_type":"MLP","callback":"basic",
+                "hyper":self.hyper_params}
 
 class MLP(NeuralClfAdapter):
 
@@ -166,14 +170,6 @@ class TreeMLPFactory(NeuralClfFactory):
         tree_mlp.model=model_i
         tree_mlp.extractor=FeatureExtactor(extractor)
         return tree_mlp
-#        model_i=tf.keras.models.load_model(f"{model_path}/nn")
-#        tree_repr=np.load(f"{model_path}/tree.npy")
-#        nodes=np.load(f"{model_path}/nodes.npy")
-#        tree=TreeFeatures(tree_repr,nodes)
-#        clf_i= TreeMLP(params=self.params,
-#                       hyper_params=self.hyper_params,
-#                       model=(model_i,tree))
-#        return clf_i
     
     def get_info(self):
         return {"clf_type":"TREE-MLP","callback":"basic",
@@ -216,20 +212,18 @@ class TreeMLP(NeuralClfAdapter):
         utils.make_dir(out_path)
         self.extractor.extractor.save(f"{out_path}/tree")
         self.model.save(f"{out_path}/nn.keras")
-#        raise Exception(self.extractor.extractor)
-#        np.save(f"{out_path}/tree.npy",self.tree.tree_repr)
-#        np.save(f"{out_path}/nodes.npy",self.tree.selected_nodes)
-#        self.model.save(f"{out_path}/nn.keras") 
 
 class CSTreeEnsFactory(NeuralClfFactory):
     def __init__(self,
                  hyper_params,
                  tree_params=None):
         if(tree_params is None):
-            extr_params={"clf_factory":"random",
-                        "extr_factory":("info",30),
-                        "concat":True,"ens_type":"binary"}
-            ens_params={"ens_type":"binary"}
+            extr_params={ "tree_factory":"random",
+                          "extr_factory":("info",30),
+                          "concat":True,
+                          "ens_type":"binary"}
+            ens_params={ "ens_type":"binary",
+                         "weights":"basic"}
         else:
             keys=["clf_factory","extr_factory","concat"]
             extr_params,ens_params=utils.split_dict(tree_params,
@@ -239,10 +233,10 @@ class CSTreeEnsFactory(NeuralClfFactory):
         self.ens_params=ens_params
 
     def __call__(self):
-        tree_features=TreeFeatures(**self.extr_params)
+        extractor_factory=FeatureExtactorFactory(**self.extr_params)
         return CSTreeEns(params=self.params,
                          hyper_params=self.hyper_params,
-                         tree_features=tree_features,
+                         extractor_factory=extractor_factory,
                          extr_gen=self.get_extr_gen(),
                          weight_gen=self.get_weight_gen())
 
@@ -258,21 +252,21 @@ class CSTreeEnsFactory(NeuralClfFactory):
         return basic_weights
 
     def get_info(self):
-        return {"clf_type":"CSTreeEns","callback":"basic",
+        return {"clf_type":"TREE-ENS","callback":"basic",
                 "hyper":self.hyper_params,
                 "extr_dict":self.extr_dict}
 
 class CSTreeEns(NeuralClfAdapter):
     def __init__(self, params,
                        hyper_params,
-                       tree_features,
+                       extractor_factory,
                        extr_gen,
                        weight_gen,
                        model=None,
                        verbose=0):
         self.params=params
         self.hyper_params=hyper_params
-        self.tree_features=tree_features
+        self.extractor_factory=extractor_factory
         self.extr_gen=extr_gen
         self.weight_gen=weight_gen
         self.model = model
@@ -281,7 +275,8 @@ class CSTreeEns(NeuralClfAdapter):
         self.verbose=verbose
 
     def fit(self,X,y):
-        gen=self.extr_gen(X,y,self.tree_features)
+        gen=self.extr_gen(X,y,self.extractor_factory)
+        history=[]
         for i,extr_i in enumerate(gen):
             new_X=extr_i(X)
             self.all_extract.append(extr_i)
@@ -289,15 +284,16 @@ class CSTreeEns(NeuralClfAdapter):
             params_i["dims"]=(new_X.shape[1],)
             clf_i=MLP(params=self.weight_gen(i,params_i),
                       hyper_params=self.hyper_params)
-            clf_i.fit(X=new_X,
-                      y=y)
+            history_i=clf_i.fit(X=new_X,
+                                y=y)
+            history.append(history_i)
             self.all_clfs.append(clf_i)
+        return history
 
     def predict(self,X):
         votes=[]
         for i,extr_i in enumerate(self.all_extract):
             X_i=extr_i(X=X)#,
-#                      concat=self.tree_features.concat)
             y_i=self.all_clfs[i].predict(X_i)
             votes.append(y_i)
         votes=np.array(votes,dtype=int)
@@ -307,6 +303,15 @@ class CSTreeEns(NeuralClfAdapter):
             y_pred.append(np.argmax(counts))
         return y_pred
 
+    def save(self,out_path):
+        out_path=out_path.split(".")[0]
+        utils.make_dir(out_path)
+        for i,clf_i in enumerate(self.all_clfs):
+            out_i=f"{out_path}/{i}"
+            utils.make_dir(out_i)
+            extr_i=self.all_extract[i]
+            extr_i.save(f"{out_i}/tree")
+            clf_i.save(f"{out_i}/nn.keras")
 
 def full_gen(self,X,y,tree_features):
     n_iters=int(max(y)+1)

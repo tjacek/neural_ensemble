@@ -8,7 +8,7 @@ from sklearn import svm
 import os.path
 import dataset,utils
 
-NEURAL_CLFS=set(["MLP","TREE-MLP"])
+NEURAL_CLFS=set(["MLP","TREE-MLP","TREE-ENS"])
 OTHER_CLFS=set(["RF","GRAD","LR","SVM","TREE"])
 
 class DataSplits(object):
@@ -233,6 +233,9 @@ class ClasicalClfAdapter(AbstractClfAdapter):
     
     def fit(self,X,y):
         return self.clf.fit(X,y)
+
+    def predict(self,X):
+        return self.clf.predict(X)
 
     def eval(self,data,split_i):
         return split_i.pred(data,self.clf)
