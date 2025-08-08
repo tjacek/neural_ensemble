@@ -95,6 +95,8 @@ def train_only(data_path:str,
                clf_type="MLP",
                interval=None,
                retrain=False):
+    if(not clf_type in base.NEURAL_CLFS):
+        raise Exception(f"Unknown type {clf_type}")
     @utils.DirFun("in_path","exp_path")
     def helper(in_path,exp_path):
         data=dataset.read_csv(in_path)
@@ -146,7 +148,7 @@ if __name__ == '__main__':
     parser.add_argument("--start", type=int, default=0)
     parser.add_argument("--step", type=int, default=10)
     parser.add_argument('--retrain', action='store_true')
-    parser.add_argument("--clf_type", type=str, default="TREE-ENS")
+    parser.add_argument("--clf_type", type=str, default="BINARY-CS-TREE-ENS")
     args = parser.parse_args()
     print(args)
 #    train_only(data_path=args.data,
@@ -156,11 +158,11 @@ if __name__ == '__main__':
 #          clf_type=args.clf_type,
 #          retrain=args.retrain)
     interval=base.Interval(args.start,args.step)
-#    train_only(data_path=args.data,
-#               out_path=args.out_path,
-#               clf_type=args.clf_type,
-#               interval=interval,
-#               retrain=args.retrain)
+    train_only(data_path=args.data,
+               out_path=args.out_path,
+               clf_type=args.clf_type,
+               interval=interval,
+               retrain=args.retrain)
     pred_only(data_path=args.data,
               out_path=args.out_path,
               clf_type=args.clf_type)

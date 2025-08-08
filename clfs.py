@@ -9,10 +9,34 @@ def get_clfs(clf_type):
     hyper_params=default_hyperparams()
     if(clf_type=="MLP"):
         return MLPFactory()
+#    factory_type=get_nn_type(clf_type)
     if(clf_type=="TREE-MLP"):
         return TreeMLPFactory()
+    feature_params={ "tree_factory":"random",
+                     "extr_factory":("info",30),
+                     "concat":True}
     if(clf_type=="TREE-ENS"):
-        return CSTreeEnsFactory(hyper_params=hyper_params)
+        return CSTreeEnsFactory(hyper_params=hyper_params,
+                                feature_params=feature_params,
+                                ens_params={ "ens_type":"basic",
+                                              "weights":"basic"})
+    if(clf_type=="BINARY-TREE-ENS"):
+        return CSTreeEnsFactory(hyper_params=hyper_params,
+                                feature_params=feature_params,
+                                ens_params={ "ens_type":"binary",
+                                             "weights":"basic"})
+    
+    if(clf_type=="CS-TREE-ENS"):
+        return CSTreeEnsFactory(hyper_params=hyper_params,
+                                feature_params=feature_params,
+                                ens_params={ "ens_type":"basic",
+                                              "weights":"CS"})
+    if(clf_type=="BINARY-CS-TREE-ENS"):
+        return CSTreeEnsFactory(hyper_params=hyper_params,
+                                feature_params=feature_params,
+                                ens_params={ "ens_type":"binary",
+                                             "weights":"CS"})
+
     raise Exception(f"Unknown clf type:{clf_type}")
 
 def basic_callback():
@@ -330,7 +354,7 @@ class CSTreeEns(NeuralClfAdapter):
             extr_i.save(f"{out_i}/tree")
             clf_i.save(f"{out_i}/nn.keras")
 
-def full_gen(self,X,y,tree_features):
+def full_gen(X,y,tree_features):
     n_iters=int(max(y)+1)
     for _ in range(n_iters):
         yield tree_features(X=X,y=y)
