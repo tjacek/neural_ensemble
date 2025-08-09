@@ -229,12 +229,9 @@ class TreeMLP(NeuralClfAdapter):
 
     def predict(self,X):
         new_X=self.extractor(X)
-        y=self.model.predict(new_X,
-                             verbose=self.verbose)
-        return np.argmax(y,axis=1)
+        return self.model.predict(new_X)#,
 
     def save(self,out_path):
-        out_path=out_path.split(".")[0]
         utils.make_dir(out_path)
         self.extractor.extractor.save(f"{out_path}/tree")
         self.model.save(f"{out_path}/nn.keras")
@@ -276,7 +273,7 @@ class CSTreeEnsFactory(NeuralClfFactory):
     
     def read(self,in_path):
         tree_ens=self()
-        in_path=in_path.split(".")[0]
+#        in_path=in_path.split(".")[0]
         for path_i in utils.top_files(in_path):
             model_i=tf.keras.models.load_model(f"{path_i}/nn.keras")
             tree_ens.all_clfs.append(model_i)
@@ -330,9 +327,9 @@ class CSTreeEns(NeuralClfAdapter):
         votes=[]
         for i,extr_i in enumerate(self.all_extract):
             X_i=extr_i(X=X)#,
-#            raise Exception(self.all_clfs[i].predict(X_i))
-            y_i=self.all_clfs[i].predict(X_i,
-                                        verbose=self.verbose)
+            y_i=self.all_clfs[i].predict_proba(X_i)#,
+#                                        verbose=self.verbose)
+#            raise Exception(y_i.shape)
             votes.append(y_i)
         votes=np.array(votes)#,dtype=int)
         votes=np.sum(votes,axis=0)
@@ -345,7 +342,7 @@ class CSTreeEns(NeuralClfAdapter):
         return y_pred
 
     def save(self,out_path):
-        out_path=out_path.split(".")[0]
+#        out_path=out_path.split(".")[0]
         utils.make_dir(out_path)
         for i,clf_i in enumerate(self.all_clfs):
             out_i=f"{out_path}/{i}"

@@ -123,7 +123,10 @@ class DirProxy(object):
         for i,path_i in enumerate(paths):
             if(not os.path.exists(path_i)):
                 s_paths.append(path_i)
-                s_indexes.append(i)
+                name_i=path_i.split("/")[-1]
+                s_i=int(utils.extract_number(name_i)[0])
+                s_indexes.append(s_i)
+#        raise Exception(s_paths,s_indexes)
         return s_paths,s_indexes
 
     def path_dict(self,indexes,
@@ -153,7 +156,10 @@ def get_dir_path(out_path,clf_type=None):
     keys,ext_keys=["results"],["npz"]
     if(clf_type in NEURAL_CLFS):
         keys+=["models","history"]
+#        if(clf_type=="MLP")
         ext_keys+=["keras","txt"]
+#        else:
+#            ext_keys+=["","txt"]
     clf_dict={key_i:f"{clf_path}/{key_i}" 
                 for key_i in keys}
     clf_dict["splits"]=split_path
