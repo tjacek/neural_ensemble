@@ -1,14 +1,7 @@
-data_path='../uci/old/cleveland'
-out_path='../single'
-hyper_path="${out_path}/hyper"
-model_path="${out_path}/model"
-n_split=3
-n_iter=3
+data="bad_exp/data"
+out="bad_exp/exp"
+step=10
+start=5
+clf="TREE-MLP"
 
-mkdir ${out_path}
-
-python3 hyper.py --data "${data_path}" --hyper "${hyper_path}" --n_split "${n_split}" --n_iter "${n_iter}"
-
-python3 train.py --data "${data_path}" --hyper "${hyper_path}" --model "${model_path}" --n_split "${n_split}" --n_iter "${n_iter}"
-
-python3 eval.py --data "${data_path}" --model "${model_path}" --n_split "${n_split}" --n_iter "${n_iter}"
+python3 train.py --data ${data} --out_path ${out} --start ${start} --clf_type ${clf} --step ${step}
