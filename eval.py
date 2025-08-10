@@ -12,7 +12,9 @@ def summary(exp_path):
                 result_j=dir_j.read_results()
                 acc_j=np.mean(result_j.get_acc())
                 balance_j=np.mean(result_j.get_metric("balance"))
-                output.append((dir_j.clf_type,acc_j,balance_j))
+                lines_j=len(result_j)
+                tuple_i=(dir_j.clf_type,acc_j,balance_j,lines_j)
+                output.append(tuple_i)
         return output
     output=helper(exp_path)
     def df_helper(tuple_i):
@@ -23,9 +25,9 @@ def summary(exp_path):
         return lines
     df=dataset.make_df(helper=df_helper,
                     iterable=output.items(),
-                    cols=["data","clf","acc","balance"],
+                    cols=["data","clf","acc","balance","n_splits"],
                     multi=True)
-    print(df.by_data(sort='balance'))
+    print(df.by_data(sort='acc'))
 #    df.print()
 
 if __name__ == '__main__':

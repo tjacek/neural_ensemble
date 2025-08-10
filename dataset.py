@@ -133,6 +133,9 @@ class ResultGroup(object):
     def __init__(self,results):
         self.results=results
 
+    def __len__(self):
+        return len(self.results)
+
     def get_metric(self,metric_type):
         return [result_j.get_metric(metric_type) 
                     for result_j in self.results]
