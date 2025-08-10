@@ -2,14 +2,14 @@ import utils
 utils.silence_warnings()
 import numpy as np
 import argparse
-import base
+import base 
 
 def make_splits(data_path,
                 out_path,
                 n_splits=10,
                 n_repeats=10):
     utils.make_dir(out_path)
-    @utils.DirFun({"in_path":0,"out_path":1})
+    @utils.DirFun(dir_args={"in_path":0,"out_path":1})
     def helper(in_path,out_path):
         utils.make_dir(out_path)
         data_split=base.get_splits(data_path=in_path,
@@ -23,7 +23,7 @@ def make_splits(data_path,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--main", type=str, default="bad_exp")
+    parser.add_argument("--main", type=str, default="uci_exp")
     parser.add_argument("--data", type=str, default="data")
     parser.add_argument("--exp", type=str, default="exp")
     parser.add_argument("--n_splits", type=int, default=10)
