@@ -25,7 +25,8 @@ def summary(exp_path):
                     iterable=output.items(),
                     cols=["data","clf","acc","balance"],
                     multi=True)
-    df.print()
+    print(df.by_data(sort='balance'))
+#    df.print()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

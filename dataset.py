@@ -188,6 +188,21 @@ class DFView(object):
     def print(self,dec=4):
         with pd.option_context('display.max_rows', None, 'display.max_columns', None):  
             print(self.df)
+ 
+    def by_data(self,sort="acc"):
+        names=self.df['data'].unique()
+        for name_i in names:
+            df_i=self.df[self.df['data']==name_i]
+            df_i=df_i.sort_values(by=sort,ascending=False)
+            print(df_i)
+
+#    def group(self,sort="acc"):
+#        grouped=self.df.groupby(by='data')
+#        def helper(df_i):
+#            return df_i.sort_values(by=sort)
+#            print(df.round(4))
+#            return df['dataset'].tolist()
+#        self.df= grouped.apply(helper)
 
 def make_df(helper,
             iterable,
