@@ -10,7 +10,6 @@ def summary(exp_path):
             if(not "splits" in path_i):
                 dir_j=base.get_dir_path(path_i,clf_type=None)
                 result_j=dir_j.read_results()
-                print(type(result_j))
                 acc_j=np.mean(result_j.get_acc())
                 balance_j=np.mean(result_j.get_metric("balance"))
                 output.append((dir_j.clf_type,acc_j,balance_j))
@@ -30,6 +29,6 @@ def summary(exp_path):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--exp_path", type=str, default="bad_exp/exp")
+    parser.add_argument("--exp_path", type=str, default="uci_exp/exp")
     args = parser.parse_args()
     summary(exp_path=args.exp_path)

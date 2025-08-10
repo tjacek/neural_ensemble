@@ -31,12 +31,15 @@ def clf_train(data_path:str,
 #    interval=base.Interval(start,step)
     @utils.ParallelDirFun()#("in_path","exp_path")
     def helper(in_path,exp_path):
+#        utils.make_dir(exp_path)
+#        raise Exception(in_path,exp_path)
         data=dataset.read_csv(in_path)
         dir_proxy=base.get_dir_path(out_path=exp_path,
                                     clf_type=clf_type)
         clf_factory=clfs.get_clfs(clf_type)
         path_dict=dir_proxy.path_dict(indexes=interval,
                                       key="results")
+        print(path_dict['results'])
         dir_proxy.make_dir("results")
         for i,split_path_i in tqdm(enumerate(path_dict['splits'])):
             clf_i=clf_factory()
@@ -156,7 +159,7 @@ if __name__ == '__main__':
     parser.add_argument('--retrain', action='store_true')
     parser.add_argument("--clf_type", type=str, default="BINARY-CS-TREE-ENS")
     args = parser.parse_args()
-    print(args.clf_type)
+    print(args)
     valid_clf(args.clf_type)
     train(data_path=args.data,
           out_path=args.out_path,

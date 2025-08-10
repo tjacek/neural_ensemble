@@ -10,7 +10,7 @@ import dataset,utils
 
 NEURAL_CLFS=set(["MLP","TREE-MLP","TREE-ENS","BINARY-TREE-ENS",
                  "CS-TREE-ENS","BINARY-CS-TREE-ENS"])
-OTHER_CLFS=set(["RF","GRAD","LR","SVM","TREE"])
+OTHER_CLFS=set(["RF","GRAD","LR","SVM","TREE","RF-TREE"])
 
 class DataSplits(object):
     def __init__(self,data,splits):
@@ -186,6 +186,8 @@ def get_clf(clf_type):
         return GradientBoostingClassifier()
     if(clf_type=="TREE"):
         return tree.DecisionTreeClassifier(class_weight="balanced")
+    if(clf_type=="RF-TREE"):
+        return tree.DecisionTreeClassifier(max_features='sqrt')
     raise Exception(f"Unknow clf type:{clf_type}")
 
 def get_splits(data_path,

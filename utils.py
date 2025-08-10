@@ -3,6 +3,7 @@ import logging,time
 import argparse,json
 import multiprocessing
 from functools import wraps
+import re
 import traceback
 
 def silence_warnings():
@@ -35,6 +36,9 @@ def read_json(in_path):
 def save_json(value,out_path):
     with open(out_path, 'w') as f:
         json.dump(value, f)
+
+def extract_number(raw):
+    return re.findall(r'\d+',raw)
 
 class DirFun(object):
     def __init__(self,
