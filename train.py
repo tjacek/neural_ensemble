@@ -141,6 +141,12 @@ def pred_only(data_path:str,
             result_i.save(path_dict["results"][i])
     helper(data_path,out_path)            
 
+def valid_clf(clf_type):
+    is_neural= (clf_type in base.NEURAL_CLFS)
+    is_other= (clf_type in base.OTHER_CLFS)
+    if(not (is_neural or is_other)):
+        raise Exception(f"Unknown clf {clf_type}")
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", type=str, default="bad_exp/data")
@@ -150,19 +156,20 @@ if __name__ == '__main__':
     parser.add_argument('--retrain', action='store_true')
     parser.add_argument("--clf_type", type=str, default="BINARY-CS-TREE-ENS")
     args = parser.parse_args()
-    print(args)
+    print(args.clf_type)
+    valid_clf(args.clf_type)
+    train(data_path=args.data,
+          out_path=args.out_path,
+          start=args.start,
+          step=args.step,
+          clf_type=args.clf_type,
+          retrain=False)
+#    interval=base.Interval(args.start,args.step)
 #    train_only(data_path=args.data,
-#          out_path=args.out_path,
-#          start=args.start,
-#          step=args.step,
-#          clf_type=args.clf_type,
-#          retrain=args.retrain)
-    interval=base.Interval(args.start,args.step)
-    train_only(data_path=args.data,
-               out_path=args.out_path,
-               clf_type=args.clf_type,
-               interval=interval,
-               retrain=args.retrain)
-    pred_only(data_path=args.data,
-              out_path=args.out_path,
-              clf_type=args.clf_type)
+#               out_path=args.out_path,
+#               clf_type=args.clf_type,
+#               interval=interval,
+#               retrain=args.retrain)
+#    pred_only(data_path=args.data,
+#              out_path=args.out_path,
+#              clf_type=args.clf_type)
