@@ -1,8 +1,16 @@
 import dataset,utils
 
-def metric_dict(in_path,metrics="acc"):
-#    if(metrics is None):
-#        metrics=["acc","balance"]
+def pvalue_matrix(in_path,clf_type="RF",metric="acc"):
+    result_dict=get_result_dict(in_path)
+    metric_dict=compute_metric(result_dict,metric)
+    all_clfs=list(metric_dict.values())[0].keys()
+    other_clfs=[clf_i for clf_i in all_clfs
+                    if(clf_i!=clf_type) ]
+    for data_i in metric_dict:
+    	for clf_j in other_clfs:
+            print(data_i,clf_j)
+
+def get_result_dict(in_path):
     @utils.DirFun(out_arg=None)
     def helper(in_path):
         output={}
@@ -13,10 +21,12 @@ def metric_dict(in_path,metrics="acc"):
                 result_i=dataset.read_result_group(result_path_i)
                 output[name_i]=result_i
         return output
-    output_dict=helper(in_path)
-    print(output_dict)
+    return helper(in_path)
 
-
+def compute_metric(result_dict,metric):
+    return { data_i:{name_j:result_j.get_metric(metric) 
+                       for name_j,result_j in dict_i.items()}
+              for data_i,dict_i in result_dict.items()}
 
 in_path="uci_exp/exp"
-metric_dict(in_path,metrics="acc")
+pvalue_matrix(in_path,metric="acc")
