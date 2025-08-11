@@ -1,3 +1,5 @@
+import numpy as np
+from scipy import stats
 import dataset,utils
 
 def pvalue_matrix(in_path,clf_type="RF",metric="acc"):
@@ -6,9 +8,20 @@ def pvalue_matrix(in_path,clf_type="RF",metric="acc"):
     all_clfs=list(metric_dict.values())[0].keys()
     other_clfs=[clf_i for clf_i in all_clfs
                     if(clf_i!=clf_type) ]
+    sig_matrix=[]
     for data_i in metric_dict:
-    	for clf_j in other_clfs:
-            print(data_i,clf_j)
+        metric_i=metric_dict[data_i][clf_type]
+        sig_i=[]
+        for clf_j in other_clfs:
+            metric_j=metric_dict[data_i][clf_j]
+            diff_i=np.mean(metric_i)-np.mean(metric_j)
+#            print(data_i,clf_j,diff_i)
+            pvalue=stats.ttest_ind(metric_i,metric_j,
+                               equal_var=False)[1]
+            sign_ij= int(pvalue<0.05) * np.sign(diff_i)
+            sig_i.append(sign_ij)
+        sig_matrix.append(sig_i)
+    print(sig_matrix)
 
 def get_result_dict(in_path):
     @utils.DirFun(out_arg=None)
