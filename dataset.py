@@ -255,7 +255,6 @@ def data_desc(in_path,first_set=None):
             offset=None,
             multi=False)
     df.print()
-#    print(df.to_csv())
 
 def read_arff(in_path:str,first=False):
     if(first):
@@ -316,6 +315,15 @@ def arff_to_csv(in_path,out_path,first_set=None):
         data_i=read_arff(path_i,first=(id_i in first_set))
         data_i.save_csv(f"{out_path}/{id_i}")
 
+def csv_desc(in_path):
+    for path_i in utils.top_files(in_path):
+        data_i=read_csv(path_i)
+        print(f"{path_i}-{data_i.n_cats()}")
+
+
 if __name__ == '__main__':
-    arff_to_csv("AutoML","csv",
-              ["madeline","philippine","sylvine"])
+#    arff_to_csv("AutoML","csv",
+#              ["madeline","philippine","sylvine"])
+#    data_desc("AutoML",
+#        first_set=["madeline","philippine","sylvine"])
+    csv_desc("binary_exp/data")
