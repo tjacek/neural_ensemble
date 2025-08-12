@@ -89,15 +89,22 @@ def pvalue_pairs(in_path,x_clf="RF",y_clf="MLP",metric="acc"):
     x_dict=result_dict.get_clf(clf_type=x_clf,metric=metric)
     y_dict=result_dict.get_clf(clf_type=y_clf,metric=metric)
     def helper(data_i):
-    	x_value=x_dict[data_i]
-    	y_value=y_dict[data_i]
-    	return np.mean(x_value),np.mean(y_value)
+        line=[data_i]
+        x_value=np.mean(x_dict[data_i])
+        y_value=np.mean(y_dict[data_i])
+        diff_i=x_value-y_value
+        line+=[x_value,y_value,diff_i]
+        pvalue=stats.ttest_ind(x_dict[data_i],y_dict[data_i],
+                               equal_var=False)[1]
+        line.append(pvalue)
+        return line
     df=dataset.make_df(helper,
             iterable=result_dict.data(),
-            cols=[x_clf,y_clf])
+            cols=["data",x_clf,y_clf,"diff","pvalue"])
+    df.df["sign"]=df.df["pvalue"].apply(lambda p: p<0.05)
     df.print()
 #    print(x_dict)
 
 in_path="uci_exp/exp"
 #pvalue_matrix(in_path,metric="balance")
-pvalue_pairs(in_path,x_clf="RF",y_clf="MLP",metric="acc")
+pvalue_pairs(in_path,x_clf="MLP",y_clf="TREE-ENS",metric="balance")
