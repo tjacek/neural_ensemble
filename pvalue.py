@@ -3,22 +3,43 @@ from scipy import stats
 import seaborn as sn
 import matplotlib.pyplot as plt
 import dataset,utils
+utils.silence_warnings()
+
+class ResultDict(dict):
+    def clfs(self):
+        all_clfs=list(self.values())[0].keys()
+        all_clfs=list(all_clfs)
+        all_clfs.sort()
+        return all_clfs
+
+    def data(self):
+    	all_data=list(self.keys())
+    	all_data.sort()
+    	return all_data
+
+    def get_clf(self,clf_type,metric="acc"):
+    	return { data_i:dict_i[clf_type].get_metric(metric)
+    	            for data_i,dict_i in self.items()}
+
+    def compute_metric(self,metric):
+        return { data_i:{name_j:result_j.get_metric(metric) 
+                       for name_j,result_j in dict_i.items()}
+              for data_i,dict_i in self.items()}
 
 def pvalue_matrix(in_path,clf_type="RF",metric="acc"):
     result_dict=get_result_dict(in_path)
-    metric_dict=compute_metric(result_dict,metric)
-    all_clfs=list(metric_dict.values())[0].keys()
+    metric_dict=result_dict.compute_metric(metric)
+    all_clfs=result_dict.clfs()
     other_clfs=[clf_i for clf_i in all_clfs
                     if(clf_i!=clf_type) ]
-    data=list(metric_dict.keys())
+#    data=list(metric_dict.keys())
     sig_matrix=[]
-    for data_i in data:
+    for data_i in result_dict.data():
         metric_i=metric_dict[data_i][clf_type]
         sig_i=[]
         for clf_j in other_clfs:
             metric_j=metric_dict[data_i][clf_j]
             diff_i=np.mean(metric_i)-np.mean(metric_j)
-#            print(data_i,clf_j,diff_i)
             pvalue=stats.ttest_ind(metric_i,metric_j,
                                equal_var=False)[1]
             sign_ij= int(pvalue<0.05) * np.sign(diff_i)
@@ -28,7 +49,7 @@ def pvalue_matrix(in_path,clf_type="RF",metric="acc"):
     print(sig_matrix.shape)
     heatmap(matrix=sig_matrix,
             x_labels=other_clfs,
-            y_labels=data)
+            y_labels=result_dict.data())
     print(sig_matrix)
 
 def get_result_dict(in_path):
@@ -42,12 +63,8 @@ def get_result_dict(in_path):
                 result_i=dataset.read_result_group(result_path_i)
                 output[name_i]=result_i
         return output
-    return helper(in_path)
+    return ResultDict(helper(in_path))
 
-def compute_metric(result_dict,metric):
-    return { data_i:{name_j:result_j.get_metric(metric) 
-                       for name_j,result_j in dict_i.items()}
-              for data_i,dict_i in result_dict.items()}
 
 def heatmap(matrix,
             x_labels,
@@ -67,5 +84,20 @@ def heatmap(matrix,
     plt.show()
 #    return ax.get_figure()
 
+def pvalue_pairs(in_path,x_clf="RF",y_clf="MLP",metric="acc"):
+    result_dict=get_result_dict(in_path)
+    x_dict=result_dict.get_clf(clf_type=x_clf,metric=metric)
+    y_dict=result_dict.get_clf(clf_type=y_clf,metric=metric)
+    def helper(data_i):
+    	x_value=x_dict[data_i]
+    	y_value=y_dict[data_i]
+    	return np.mean(x_value),np.mean(y_value)
+    df=dataset.make_df(helper,
+            iterable=result_dict.data(),
+            cols=[x_clf,y_clf])
+    df.print()
+#    print(x_dict)
+
 in_path="uci_exp/exp"
-pvalue_matrix(in_path,metric="acc")
+#pvalue_matrix(in_path,metric="balance")
+pvalue_pairs(in_path,x_clf="RF",y_clf="MLP",metric="acc")
