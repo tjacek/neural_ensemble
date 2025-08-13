@@ -2,6 +2,7 @@ import numpy as np
 from scipy import stats
 import seaborn as sn
 import matplotlib.pyplot as plt
+import argparse
 import dataset,utils
 utils.silence_warnings()
 
@@ -46,10 +47,11 @@ def pvalue_matrix(in_path,clf_type="RF",metric="acc"):
             sig_i.append(sign_ij)
         sig_matrix.append(sig_i)
     sig_matrix=np.array(sig_matrix)
-    print(sig_matrix.shape)
+    title=f"Statistical significance ({clf_type}/{metric})"
     heatmap(matrix=sig_matrix,
             x_labels=other_clfs,
-            y_labels=result_dict.data())
+            y_labels=result_dict.data(),
+            title=title)
     print(sig_matrix)
 
 def get_result_dict(in_path):
@@ -101,10 +103,24 @@ def pvalue_pairs(in_path,x_clf="RF",y_clf="MLP",metric="acc"):
     df=dataset.make_df(helper,
             iterable=result_dict.data(),
             cols=["data",x_clf,y_clf,"diff","pvalue"])
-    df.df["sign"]=df.df["pvalue"].apply(lambda p: p<0.05)
+    df.df["sign"]=df.df.apply(lambda x: x.pvalue<0.05, axis=1)
+    df.df["change"]=df.df.apply(lambda x: int(x.sign)*np.sign(x["diff"]), axis=1) 
     df.print()
-#    print(x_dict)
 
-in_path="uci_exp/exp"
-#pvalue_matrix(in_path,metric="balance")
-pvalue_pairs(in_path,x_clf="MLP",y_clf="TREE-ENS",metric="balance")
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--data", type=str, default="uci_exp/exp")
+    parser.add_argument("--metric", type=str, default="acc")
+    parser.add_argument("--pair", type=str, default=None)
+    parser.add_argument("--clf", type=str, default="RF")
+    args = parser.parse_args()
+    if(args.pair):
+    	x_clf,y_clf=args.pair.split(",")
+    	pvalue_pairs(in_path=args.data,
+    		         x_clf=x_clf,
+    		         y_clf=y_clf,
+    		         metric=args.metric)
+    else:
+    	pvalue_matrix(in_path=args.data,
+    		          clf_type=args.clf,
+    		          metric=args.metric)
