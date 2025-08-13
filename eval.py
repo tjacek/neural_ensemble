@@ -1,5 +1,6 @@
 import numpy as np
 import argparse
+import matplotlib.pyplot as plt
 import base,dataset,utils
 import pvalue
 utils.silence_warnings()
@@ -23,8 +24,28 @@ def summary(exp_path):
                       multi=True)     
     print(df.by_data(sort='acc'))
 
+def plot_box(exp_path):
+    result_dict=pvalue.get_result_dict(exp_path)
+    fig, ax = plt.subplots()
+    data=result_dict.data()
+    clf_types=result_dict.clfs()
+    step=len(clf_types)
+    for i,clf_i in enumerate(clf_types):
+        dict_i=result_dict.get_clf(clf_i,metric="acc")
+        values_i=[dict_i[data_j] for data_j in data[:5]]
+#            print(data_j)
+        positions_i=[j*step+i for j,_ in enumerate(data[:5])]
+
+        box_i=ax.boxplot(values_i,
+                         positions=positions_i,
+                         patch_artist=True)
+        plt.setp(box_i['medians'], color="black")
+        plt.setp(box_i['boxes'], color='lime')
+    plt.show()
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--exp_path", type=str, default="binary_exp/exp")
+    parser.add_argument("--exp_path", type=str, default="uci_exp/exp")
     args = parser.parse_args()
-    summary(exp_path=args.exp_path)
+#    summary(exp_path=args.exp_path)
+    plot_box(exp_path=args.exp_path)
