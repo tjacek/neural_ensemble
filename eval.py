@@ -5,6 +5,20 @@ import base,dataset,utils
 import pvalue
 utils.silence_warnings()
 
+class SimpleColorMap(object):
+    def __init__(self,colors=None):
+        if(colors is None):
+            colors=['lime','red','blue','tomato',
+                    'orange','skyblue','peachpuff', ]
+        self.colors=colors
+
+    def __call__(self,i):
+        return self.colors[i % len(self.colors)]
+    
+    def get_handlers(self):
+        return [plt.Rectangle((0,0),1,1, color=color_i) 
+                    for color_i in self.colors]
+    
 def summary(exp_path):
     result_dict=pvalue.get_result_dict(exp_path)
     def df_helper(clf_type):
@@ -25,6 +39,7 @@ def summary(exp_path):
     print(df.by_data(sort='acc'))
 
 def plot_box(exp_path):
+    color_map=SimpleColorMap()
     result_dict=pvalue.get_result_dict(exp_path)
     fig, ax = plt.subplots()
     data=result_dict.data()
@@ -33,14 +48,24 @@ def plot_box(exp_path):
     for i,clf_i in enumerate(clf_types):
         dict_i=result_dict.get_clf(clf_i,metric="acc")
         values_i=[dict_i[data_j] for data_j in data[:5]]
-#            print(data_j)
         positions_i=[j*step+i for j,_ in enumerate(data[:5])]
 
         box_i=ax.boxplot(values_i,
                          positions=positions_i,
                          patch_artist=True)
         plt.setp(box_i['medians'], color="black")
-        plt.setp(box_i['boxes'], color='lime')
+        plt.setp(box_i['boxes'], color=color_map(i))
+    legend_handles = color_map.get_handlers()
+    ax.legend(legend_handles,clf_types)
+    plt.ylabel("Accuracy")
+    offset=int(step/2)
+    xticks=[ (i*step) 
+             for i,_ in enumerate(data[:5])]
+    plt.xticks(xticks, minor=True)
+    xticks=[offset+i for i in xticks]
+    plt.xticks(xticks, data[:5],rotation='vertical')
+    plt.grid(which='minor')
+    plt.tight_layout()
     plt.show()
 
 if __name__ == '__main__':
