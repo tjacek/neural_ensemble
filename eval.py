@@ -1,37 +1,30 @@
 import numpy as np
 import argparse
 import base,dataset,utils
+import pvalue
+utils.silence_warnings()
 
 def summary(exp_path):
-    @utils.DirFun("exp_path",None)
-    def helper(exp_path):
-        output=[]
-        for path_i in utils.top_files(exp_path):
-            if(not "splits" in path_i):
-                dir_j=base.get_dir_path(path_i,clf_type=None)
-                result_j=dir_j.read_results()
-                acc_j=np.mean(result_j.get_acc())
-                balance_j=np.mean(result_j.get_metric("balance"))
-                lines_j=len(result_j)
-                tuple_i=(dir_j.clf_type,acc_j,balance_j,lines_j)
-                output.append(tuple_i)
-        return output
-    output=helper(exp_path)
-    def df_helper(tuple_i):
-        name_i,other=tuple_i
+    result_dict=pvalue.get_result_dict(exp_path)
+    def df_helper(clf_type):
+        acc_dict=result_dict.get_clf(clf_type,metric="acc")
+        balance_dict=result_dict.get_clf(clf_type,metric="balance")
         lines=[]
-        for tuple_j in other:
-            lines.append([name_i]+list(tuple_j))
+        for data_i in acc_dict:
+            line_i=[data_i,clf_type]
+            line_i.append(np.mean(acc_dict[data_i]))
+            line_i.append(np.mean(balance_dict[data_i]))
+            line_i.append(len(acc_dict[data_i]))
+            lines.append(line_i)
         return lines
     df=dataset.make_df(helper=df_helper,
-                    iterable=output.items(),
-                    cols=["data","clf","acc","balance","n_splits"],
-                    multi=True)
+                      iterable=result_dict.clfs(),
+                      cols=["data","clf","acc","balance","n_splits"],
+                      multi=True)     
     print(df.by_data(sort='acc'))
-#    df.print()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--exp_path", type=str, default="uci_exp/exp")
+    parser.add_argument("--exp_path", type=str, default="binary_exp/exp")
     args = parser.parse_args()
     summary(exp_path=args.exp_path)
