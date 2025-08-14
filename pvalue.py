@@ -74,7 +74,7 @@ def pvalue_pairs(in_path,x_clf="RF",y_clf="MLP",metric="acc"):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type=str, default="binary_exp/exp")
+    parser.add_argument("--data", type=str, default="uci_exp/exp")
     parser.add_argument("--metric", type=str, default="acc")
     parser.add_argument("--pair", type=str, default=None)
     parser.add_argument("--clf", type=str, default="RF")

@@ -15,11 +15,13 @@ class SimpleColorMap(object):
         return [plt.Rectangle((0,0),1,1, color=color_i) 
                     for color_i in self.colors]
 
-def plot_box(result_dict,data):
+def plot_box(result_dict,data,clf_types=None):
+    data.sort()
     color_map=SimpleColorMap()
     fig, ax = plt.subplots()
-#    data=result_dict.data()
-    clf_types=result_dict.clfs()
+    if(clf_types is None):
+        clf_types=result_dict.clfs()
+    clf_types=["RF","GRAD","MLP","TREE-MLP","TREE-ENS"]
     step=len(clf_types)
     for i,clf_i in enumerate(clf_types):
         dict_i=result_dict.get_clf(clf_i,metric="acc")
@@ -46,9 +48,9 @@ def plot_box(result_dict,data):
 
 def make_plots(conf_path):
     conf=utils.read_json(conf_path)
-    result_dict=eval.get_result_dict(conf["exp_path"])
-    data=conf["data"]
-    for data_i in data:
-        plot_box(result_dict,data_i)
+    for exp_i,dict_i in conf.items():
+        result_i=eval.get_result_dict(dict_i["exp_path"])
+        for data_j in dict_i["data"]:
+            plot_box(result_i,data_j,dict_i["clf_types"])
 
 make_plots("plot.json")
