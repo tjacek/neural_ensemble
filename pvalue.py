@@ -3,32 +3,11 @@ from scipy import stats
 import seaborn as sn
 import matplotlib.pyplot as plt
 import argparse
-import dataset,utils
+import dataset,eval,utils
 utils.silence_warnings()
 
-class ResultDict(dict):
-    def clfs(self):
-        all_clfs=list(self.values())[0].keys()
-        all_clfs=list(all_clfs)
-        all_clfs.sort()
-        return all_clfs
-
-    def data(self):
-    	all_data=list(self.keys())
-    	all_data.sort()
-    	return all_data
-
-    def get_clf(self,clf_type,metric="acc"):
-    	return { data_i:dict_i[clf_type].get_metric(metric)
-    	            for data_i,dict_i in self.items()}
-
-    def compute_metric(self,metric):
-        return { data_i:{name_j:result_j.get_metric(metric) 
-                       for name_j,result_j in dict_i.items()}
-              for data_i,dict_i in self.items()}
-
 def pvalue_matrix(in_path,clf_type="RF",metric="acc"):
-    result_dict=get_result_dict(in_path)
+    result_dict=eval.get_result_dict(in_path)
     metric_dict=result_dict.compute_metric(metric)
     all_clfs=result_dict.clfs()
     other_clfs=[clf_i for clf_i in all_clfs
@@ -54,20 +33,6 @@ def pvalue_matrix(in_path,clf_type="RF",metric="acc"):
             title=title)
     print(sig_matrix)
 
-def get_result_dict(in_path):
-    @utils.DirFun(out_arg=None)
-    def helper(in_path):
-        output={}
-        for path_i in utils.top_files(in_path):
-            name_i=path_i.split("/")[-1]
-            if(name_i!="splits"):
-                result_path_i=f"{path_i}/results"
-                result_i=dataset.read_result_group(result_path_i)
-                output[name_i]=result_i
-        return output
-    return ResultDict(helper(in_path))
-
-
 def heatmap(matrix,
             x_labels,
             y_labels,
@@ -87,7 +52,7 @@ def heatmap(matrix,
 #    return ax.get_figure()
 
 def pvalue_pairs(in_path,x_clf="RF",y_clf="MLP",metric="acc"):
-    result_dict=get_result_dict(in_path)
+    result_dict=eval.get_result_dict(in_path)
     x_dict=result_dict.get_clf(clf_type=x_clf,metric=metric)
     y_dict=result_dict.get_clf(clf_type=y_clf,metric=metric)
     def helper(data_i):
@@ -109,7 +74,7 @@ def pvalue_pairs(in_path,x_clf="RF",y_clf="MLP",metric="acc"):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type=str, default="uci_exp/exp")
+    parser.add_argument("--data", type=str, default="binary_exp/exp")
     parser.add_argument("--metric", type=str, default="acc")
     parser.add_argument("--pair", type=str, default=None)
     parser.add_argument("--clf", type=str, default="RF")

@@ -1,26 +1,44 @@
 import numpy as np
 import argparse
-import matplotlib.pyplot as plt
 import base,dataset,utils
-import pvalue
 utils.silence_warnings()
 
-class SimpleColorMap(object):
-    def __init__(self,colors=None):
-        if(colors is None):
-            colors=['lime','red','blue','tomato',
-                    'orange','skyblue','peachpuff', ]
-        self.colors=colors
+class ResultDict(dict):
+    def clfs(self):
+        all_clfs=list(self.values())[0].keys()
+        all_clfs=list(all_clfs)
+        all_clfs.sort()
+        return all_clfs
 
-    def __call__(self,i):
-        return self.colors[i % len(self.colors)]
-    
-    def get_handlers(self):
-        return [plt.Rectangle((0,0),1,1, color=color_i) 
-                    for color_i in self.colors]
-    
+    def data(self):
+        all_data=list(self.keys())
+        all_data.sort()
+        return all_data
+
+    def get_clf(self,clf_type,metric="acc"):
+        return { data_i:dict_i[clf_type].get_metric(metric)
+                    for data_i,dict_i in self.items()}
+
+    def compute_metric(self,metric):
+        return { data_i:{name_j:result_j.get_metric(metric) 
+                       for name_j,result_j in dict_i.items()}
+              for data_i,dict_i in self.items()}
+
+def get_result_dict(in_path):
+    @utils.DirFun(out_arg=None)
+    def helper(in_path):
+        output={}
+        for path_i in utils.top_files(in_path):
+            name_i=path_i.split("/")[-1]
+            if(name_i!="splits"):
+                result_path_i=f"{path_i}/results"
+                result_i=dataset.read_result_group(result_path_i)
+                output[name_i]=result_i
+        return output
+    return ResultDict(helper(in_path))
+
 def summary(exp_path):
-    result_dict=pvalue.get_result_dict(exp_path)
+    result_dict=get_result_dict(exp_path)
     def df_helper(clf_type):
         acc_dict=result_dict.get_clf(clf_type,metric="acc")
         balance_dict=result_dict.get_clf(clf_type,metric="balance")
@@ -38,39 +56,9 @@ def summary(exp_path):
                       multi=True)     
     print(df.by_data(sort='acc'))
 
-def plot_box(exp_path):
-    color_map=SimpleColorMap()
-    result_dict=pvalue.get_result_dict(exp_path)
-    fig, ax = plt.subplots()
-    data=result_dict.data()
-    clf_types=result_dict.clfs()
-    step=len(clf_types)
-    for i,clf_i in enumerate(clf_types):
-        dict_i=result_dict.get_clf(clf_i,metric="acc")
-        values_i=[dict_i[data_j] for data_j in data[:5]]
-        positions_i=[j*step+i for j,_ in enumerate(data[:5])]
-
-        box_i=ax.boxplot(values_i,
-                         positions=positions_i,
-                         patch_artist=True)
-        plt.setp(box_i['medians'], color="black")
-        plt.setp(box_i['boxes'], color=color_map(i))
-    legend_handles = color_map.get_handlers()
-    ax.legend(legend_handles,clf_types)
-    plt.ylabel("Accuracy")
-    offset=int(step/2)
-    xticks=[ (i*step) 
-             for i,_ in enumerate(data[:5])]
-    plt.xticks(xticks, minor=True)
-    xticks=[offset+i for i in xticks]
-    plt.xticks(xticks, data[:5],rotation='vertical')
-    plt.grid(which='minor')
-    plt.tight_layout()
-    plt.show()
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--exp_path", type=str, default="uci_exp/exp")
     args = parser.parse_args()
-#    summary(exp_path=args.exp_path)
-    plot_box(exp_path=args.exp_path)
+    summary(exp_path=args.exp_path)
+#    plot_box(exp_path=args.exp_path)
