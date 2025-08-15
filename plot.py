@@ -1,4 +1,6 @@
 import matplotlib.pyplot as plt
+import numpy as np
+from sklearn.neighbors import KernelDensity
 import eval,utils
 
 class SimpleColorMap(object):
@@ -14,6 +16,25 @@ class SimpleColorMap(object):
     def get_handlers(self):
         return [plt.Rectangle((0,0),1,1, color=color_i) 
                     for color_i in self.colors]
+
+
+def plot_density(value):
+    x,dens=compute_density(value)
+    fig, ax = plt.subplots()
+    ax.plot(x,dens)
+    plt.show()
+
+def compute_density(value,x=None,n_steps=100):
+    value=value.reshape(-1, 1)
+    kde = KernelDensity(kernel='gaussian', bandwidth=0.01).fit(value)
+    if(x is None):
+        a_max,a_min=np.max(value),np.min(value)
+        delta= (a_max-a_min)/n_steps
+        x=np.arange(n_steps)*delta
+        x+=a_min
+    log_dens= kde.score_samples(x.reshape(-1, 1))
+    dens=np.exp(log_dens)
+    return x,dens
 
 def plot_box(result_dict,data,clf_types=None):
     data.sort()
@@ -53,4 +74,5 @@ def make_plots(conf_path):
         for data_j in dict_i["data"]:
             plot_box(result_i,data_j,dict_i["clf_types"])
 
-make_plots("plot.json")
+if __name__ == '__main__':
+    make_plots("plot.json")

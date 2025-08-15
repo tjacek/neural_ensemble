@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 from tqdm import tqdm
-import base,clfs,dataset,utils
+import base,clfs,dataset,plot,utils
 
 def get_clf(in_path,clf_type="RF"):
     data_i=dataset.read_csv(in_path)
@@ -49,7 +49,7 @@ def tree_depths(clf):
                 for tree_i in get_indiv_trees(clf)]
     print(depths)
 
-def tree_acc(in_path,clf_type="RF"):
+def tree_acc(in_path,clf_type="RF",show=True):
     data=dataset.read_csv(in_path)
     split=base.random_split(data)
     clf=base.get_clf(clf_type=clf_type)
@@ -59,10 +59,12 @@ def tree_acc(in_path,clf_type="RF"):
     for tree_j in tqdm(indv_trees):
         result_j,_=split.eval(data,tree_j)
         result_j.y_pred= result_j.y_pred.astype(int)
-#        raise Exception(result_j.y_true ,result_j.y_pred)
         acc.append(result_j.get_acc())
+        print(tree_j)
     acc=np.array(acc)
-    print(acc)
+    if(show):
+        plot.plot_density(acc)
+#    print(acc)
 #    print((acc-np.mean(acc))/np.std(acc))
 
 def stats(in_path):
@@ -80,6 +82,6 @@ def hoover_index(x):
     return 0.5*np.sum(diff)/np.sum(x)
 
 clf=tree_acc("bad_exp/data/wine-quality-red",
-	        clf_type="GRAD")
+	        clf_type="RF")
 #tree_histogram(clf)
 #stats("uci")
