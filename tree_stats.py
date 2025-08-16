@@ -49,7 +49,9 @@ def tree_depths(clf):
                 for tree_i in get_indiv_trees(clf)]
     print(depths)
 
-def tree_acc(in_path,clf_type="RF",show=True):
+def tree_acc(in_path,
+             clf_type="RF",
+             metric_type="acc"):
     data=dataset.read_csv(in_path)
     split=base.random_split(data)
     clf=base.get_clf(clf_type=clf_type)
@@ -59,13 +61,20 @@ def tree_acc(in_path,clf_type="RF",show=True):
     for tree_j in tqdm(indv_trees):
         result_j,_=split.eval(data,tree_j)
         result_j.y_pred= result_j.y_pred.astype(int)
-        acc.append(result_j.get_acc())
-        print(tree_j)
-    acc=np.array(acc)
-    if(show):
-        plot.plot_density(acc)
-#    print(acc)
-#    print((acc-np.mean(acc))/np.std(acc))
+        acc.append(result_j.get_metric(metric_type))
+#        print(tree_j)
+    return np.array(acc)
+
+def show_acc(in_path,metric_type="acc"):
+    for path_i in utils.top_files(in_path):
+        acc_i=tree_acc(path_i,
+                       clf_type="RF",
+                       metric_type=metric_type)
+        x,dens= plot.compute_density(acc_i)
+        plot.simple_plot(x=x,
+                         y=dens,
+                         title=path_i.split("/")[-1],
+                         xlabel=metric_type)
 
 def stats(in_path):
     @utils.DirFun(out_arg=None)
@@ -81,7 +90,4 @@ def hoover_index(x):
     diff=np.abs(x-np.mean(x))
     return 0.5*np.sum(diff)/np.sum(x)
 
-clf=tree_acc("bad_exp/data/wine-quality-red",
-	        clf_type="RF")
-#tree_histogram(clf)
-#stats("uci")
+clf=show_acc("uci_exp/data",metric_type="balance")

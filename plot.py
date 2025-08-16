@@ -18,10 +18,12 @@ class SimpleColorMap(object):
                     for color_i in self.colors]
 
 
-def plot_density(value):
-    x,dens=compute_density(value)
+def simple_plot(x,y,title="",xlabel="x"):
+#    x,dens=compute_density(value)
     fig, ax = plt.subplots()
-    ax.plot(x,dens)
+    ax.plot(x,y)
+    ax.set_title(title,fontsize=10)
+    plt.xlabel(xlabel)
     plt.show()
 
 def compute_density(value,x=None,n_steps=100):
