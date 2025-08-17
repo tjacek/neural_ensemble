@@ -72,10 +72,11 @@ def global_plot(exp_path,
     y_dict=result_dict.get_mean_metric(y_clf,metric=metric_type)
     print(x_dict)
     print(y_dict)
-    plot.text_plot( x_dict,
+    plot.dict_plot( x_dict,
                     y_dict,
                     x_clf,
-                    y_clf)
+                    y_clf,
+                    text=False)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -87,6 +88,6 @@ if __name__ == '__main__':
         global_plot( exp_path=args.exp_path,
                      x_clf=x_clf,
                      y_clf=y_clf,
-                     metric_type="acc")
+                     metric_type="balance")
     else:
         summary(exp_path=args.exp_path)

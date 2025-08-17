@@ -76,16 +76,23 @@ def make_plots(conf_path):
         for data_j in dict_i["data"]:
             plot_box(result_i,data_j,dict_i["clf_types"])
 
-def text_plot(x_dict,
+def dict_plot(x_dict,
               y_dict,
               xlabel,
-              ylabel):
+              ylabel,
+              text=True):
     fig=plt.figure()
-    for data_i in x_dict:
-         plt.text(x_dict[data_i], 
-                  y_dict[data_i], 
-                  data_i,
-                  fontdict={'weight': 'bold', 'size': 9})
+    if(text):
+        for data_i in x_dict:
+            plt.text(x_dict[data_i], 
+                     y_dict[data_i], 
+                     data_i,
+                     fontdict={'weight': 'bold', 'size': 9})
+    else:
+        data=x_dict.keys()
+        x=[x_dict[data_i] for data_i in data]
+        y=[y_dict[data_i] for data_i in data] 
+        plt.scatter(x, y)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.xlim(0.9*min(x_dict.values()),
@@ -93,6 +100,7 @@ def text_plot(x_dict,
     plt.ylim(0.9*min(y_dict.values()),
              1.1*max(y_dict.values()))
     plt.axline((0, 0), (1, 1))
+    plt.grid()
     plt.show()
 
 if __name__ == '__main__':
