@@ -14,11 +14,17 @@ class ResultDict(dict):
         all_data=list(self.keys())
         all_data.sort()
         return all_data
-
-    def get_clf(self,clf_type,metric="acc"):
-        return { data_i:dict_i[clf_type].get_metric(metric)
+    
+    def __call__(self,clf_type,fun):
+        return { data_i:fun(dict_i[clf_type])
                     for data_i,dict_i in self.items()}
 
+    def get_clf(self,clf_type,metric="acc"):
+        return self(clf_type,lambda r:r.get_metric(metric))
+    
+    def get_mean_metric(self,clf_type,metric="acc"):
+        return self(clf_type,lambda r:np.mean(r.get_metric(metric)))
+    
     def compute_metric(self,metric):
         return { data_i:{name_j:result_j.get_metric(metric) 
                        for name_j,result_j in dict_i.items()}
@@ -56,9 +62,31 @@ def summary(exp_path):
                       multi=True)     
     print(df.by_data(sort='acc'))
 
+def global_plot(exp_path,
+                x_clf,
+                y_clf,
+                metric_type="acc"):
+    import plot
+    result_dict=get_result_dict(exp_path)
+    x_dict=result_dict.get_mean_metric(x_clf,metric=metric_type)
+    y_dict=result_dict.get_mean_metric(y_clf,metric=metric_type)
+    print(x_dict)
+    print(y_dict)
+    plot.text_plot( x_dict,
+                    y_dict,
+                    x_clf,
+                    y_clf)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--exp_path", type=str, default="uci_exp/exp")
+    parser.add_argument("--pair", type=str, default=None)
     args = parser.parse_args()
-    summary(exp_path=args.exp_path)
-#    plot_box(exp_path=args.exp_path)
+    if(args.pair):
+        x_clf,y_clf=args.pair.split(",")
+        global_plot( exp_path=args.exp_path,
+                     x_clf=x_clf,
+                     y_clf=y_clf,
+                     metric_type="acc")
+    else:
+        summary(exp_path=args.exp_path)
