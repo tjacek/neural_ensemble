@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.neighbors import KernelDensity
-import eval,utils
+import pred,utils
 
 class SimpleColorMap(object):
     def __init__(self,colors=None):

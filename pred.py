@@ -43,6 +43,15 @@ def get_result_dict(in_path):
         return output
     return ResultDict(helper(in_path))
 
+def unify_results(paths):
+    indv_dicts=[get_result_dict(path_i) 
+                   for path_i in paths]
+    raw_dict={}
+    for indv_i in indv_dicts:
+        raw_dict= raw_dict | indv_i
+#    print(raw_dict.keys())
+    return ResultDict(raw_dict)
+
 def summary(exp_path):
     result_dict=get_result_dict(exp_path)
     def df_helper(clf_type):
@@ -68,8 +77,7 @@ def global_plot(exp_path,
                 metric_type="acc"):
     import plot
     result_dict=get_result_dict(exp_path)
-    x_dict=result_dict.get_mean_metric(x_clf,metric=metric_type)
-    y_dict=result_dict.get_mean_metric(y_clf,metric=metric_type)
+    
     print(x_dict)
     print(y_dict)
     plot.dict_plot( x_dict,
@@ -81,13 +89,12 @@ def global_plot(exp_path,
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--exp_path", type=str, default="uci_exp/exp")
-    parser.add_argument("--pair", type=str, default=None)
     args = parser.parse_args()
-    if(args.pair):
-        x_clf,y_clf=args.pair.split(",")
-        global_plot( exp_path=args.exp_path,
-                     x_clf=x_clf,
-                     y_clf=y_clf,
-                     metric_type="balance")
-    else:
-        summary(exp_path=args.exp_path)
+#    if(args.pair):
+#        x_clf,y_clf=args.pair.split(",")
+#        global_plot( exp_path=args.exp_path,
+#                     x_clf=x_clf,
+#                     y_clf=y_clf,
+#                     metric_type="balance")
+#    else:
+    summary(exp_path=args.exp_path)
