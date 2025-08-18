@@ -3,11 +3,11 @@ from scipy import stats
 import seaborn as sn
 import matplotlib.pyplot as plt
 import argparse
-import dataset,eval,utils
+import dataset,pred,utils
 utils.silence_warnings()
 
 def pvalue_matrix(in_path,clf_type="RF",metric="acc"):
-    result_dict=eval.get_result_dict(in_path)
+    result_dict=pred.get_result_dict(in_path)
     metric_dict=result_dict.compute_metric(metric)
     all_clfs=result_dict.clfs()
     other_clfs=[clf_i for clf_i in all_clfs
@@ -52,7 +52,7 @@ def heatmap(matrix,
 #    return ax.get_figure()
 
 def pvalue_pairs(in_path,x_clf="RF",y_clf="MLP",metric="acc"):
-    result_dict=eval.get_result_dict(in_path)
+    result_dict=pred.get_result_dict(in_path)
     x_dict=result_dict.get_clf(clf_type=x_clf,metric=metric)
     y_dict=result_dict.get_clf(clf_type=y_clf,metric=metric)
     def helper(data_i):

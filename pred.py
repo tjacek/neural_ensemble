@@ -71,30 +71,8 @@ def summary(exp_path):
                       multi=True)     
     print(df.by_data(sort='acc'))
 
-def global_plot(exp_path,
-                x_clf,
-                y_clf,
-                metric_type="acc"):
-    import plot
-    result_dict=get_result_dict(exp_path)
-    
-    print(x_dict)
-    print(y_dict)
-    plot.dict_plot( x_dict,
-                    y_dict,
-                    x_clf,
-                    y_clf,
-                    text=False)
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--exp_path", type=str, default="uci_exp/exp")
     args = parser.parse_args()
-#    if(args.pair):
-#        x_clf,y_clf=args.pair.split(",")
-#        global_plot( exp_path=args.exp_path,
-#                     x_clf=x_clf,
-#                     y_clf=y_clf,
-#                     metric_type="balance")
-#    else:
     summary(exp_path=args.exp_path)

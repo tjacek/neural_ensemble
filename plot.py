@@ -82,7 +82,13 @@ def dict_plot(x_dict,
               ylabel,
               text=True):
     fig=plt.figure()
-    if(text):
+    if(type(text)==dict):
+        for data_i in x_dict:
+            plt.text(x_dict[data_i], 
+                     y_dict[data_i], 
+                     text[data_i],
+                     fontdict={'weight': 'bold', 'size': 9})
+    elif(text):
         for data_i in x_dict:
             plt.text(x_dict[data_i], 
                      y_dict[data_i], 
