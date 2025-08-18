@@ -1,5 +1,6 @@
 import numpy as np
 import tensorflow as tf
+import re
 import tree_feats,tree_clf
 import base,dataset,deep,utils
 
@@ -36,8 +37,15 @@ def get_clfs(clf_type):
                                 feature_params=feature_params,
                                 ens_params={ "ens_type":"binary",
                                              "weights":"CS"})
-
-    raise Exception(f"Unknown clf type:{clf_type}")
+    reg_expr=re.compile("(\\D)+(\\d)+")
+#    raise Exception(reg_expr)
+    if(reg_expr.match(clf_type)):
+        n=utils.extract_number(clf_type)
+        return CSTreeEnsFactory(hyper_params=hyper_params,
+                                feature_params=feature_params,
+                                ens_params={ "ens_type":n,
+                                              "weights":"basic"})
+    raise Exception(f"Unknown clf type:{clf_type}")   
 
 def basic_callback():
     return tf.keras.callbacks.EarlyStopping(monitor='accuracy', 
@@ -251,6 +259,7 @@ class CSTreeEnsFactory(NeuralClfFactory):
         self.hyper_params=hyper_params
         self.feature_params=feature_params
         self.ens_params=ens_params
+        self.params=None
 
     def __call__(self):
         extractor_factory=FeatureExtactorFactory(**self.feature_params)
@@ -261,10 +270,13 @@ class CSTreeEnsFactory(NeuralClfFactory):
                          weight_gen=self.get_weight_gen())
 
     def get_extr_gen(self):
-        if(self.ens_params["ens_type"]=="binary"):
+        ens_type=self.ens_params["ens_type"]
+        if(type(ens_type)==int):
+            return FullGen(ens_type)
+        if(ens_type=="binary"):
             return binary_gen
         else:
-            return full_gen
+            return FullGen()
 
     def get_weight_gen(self):
         if(self.ens_params["weights"]=="specific"):
@@ -328,13 +340,10 @@ class CSTreeEns(NeuralClfAdapter):
         for i,extr_i in enumerate(self.all_extract):
             X_i=extr_i(X=X)#,
             y_i=self.all_clfs[i].predict_proba(X_i)#,
-#                                        verbose=self.verbose)
-#            raise Exception(y_i.shape)
             votes.append(y_i)
         votes=np.array(votes)#,dtype=int)
         votes=np.sum(votes,axis=0)
         y_pred=np.argmax(votes,axis=1)
-#        raise Exception(votes)
 #        y_pred=[]
 #        for vote_i in votes.T:
 #            counts=np.bincount(vote_i)
@@ -351,10 +360,15 @@ class CSTreeEns(NeuralClfAdapter):
             extr_i.save(f"{out_i}/tree")
             clf_i.save(f"{out_i}/nn.keras")
 
-def full_gen(X,y,tree_features):
-    n_iters=int(max(y)+1)
-    for _ in range(n_iters):
-        yield tree_features(X=X,y=y)
+class FullGen(object):
+    def __init__(self,n_iters=None):
+        self.n_iters=n_iters
+
+    def __call__(self,X,y,tree_features):
+        if(self.n_iters is None):
+            self.n_iters=int(max(y)+1)
+        for _ in range(self.n_iters):
+            yield tree_features(X=X,y=y)
 
 def binary_gen(X,y,tree_features):
     data=dataset.Dataset(X,y)
