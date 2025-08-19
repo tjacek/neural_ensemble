@@ -76,6 +76,22 @@ def show_acc(in_path,metric_type="acc"):
                          title=path_i.split("/")[-1],
                          xlabel=metric_type)
 
+
+def show_param(in_path):
+    x=[ (j+1)*10 for j in range(10)] 
+    for path_i in utils.top_files(in_path):
+        data_i=dataset.read_csv(path_i)
+        split_i=base.random_split(data_i)
+        acc=[]
+        for x_j in x:
+            clf_j=RandomForestClassifier(n_estimators=x_j)
+            result_j,_=split_i.eval(data_i,clf_j)
+            acc.append(result_j.get_metric("acc"))
+        plot.simple_plot(x=x,
+                         y=acc,
+                         title=path_i.split("/")[-1],
+                         xlabel="acc")
+
 def stats(in_path):
     @utils.DirFun(out_arg=None)
     def helper(in_path):
@@ -90,4 +106,5 @@ def hoover_index(x):
     diff=np.abs(x-np.mean(x))
     return 0.5*np.sum(diff)/np.sum(x)
 
-clf=show_acc("uci_exp/data",metric_type="balance")
+#clf=show_acc("uci_exp/data",metric_type="balance")
+show_param("multi_exp/data")
