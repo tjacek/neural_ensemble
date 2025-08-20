@@ -126,7 +126,6 @@ class DirProxy(object):
                 name_i=path_i.split("/")[-1]
                 s_i=int(utils.extract_number(name_i)[0])
                 s_indexes.append(s_i)
-#        raise Exception(s_paths,s_indexes)
         return s_paths,s_indexes
 
     def path_dict(self,indexes,
@@ -170,6 +169,14 @@ def get_dir_path(out_path,clf_type=None):
                     clf_dict=clf_dict,
                     ext_dict=ext_dict)
 
+def get_ens_path(in_path):
+    ens_paths=[]
+    for path_i in utils.top_files(in_path):
+        id_i=path_i.split("/")[-1]
+        if("ENS" in id_i):
+            ens_paths.append(path_i)
+    return ens_paths
+                
 def read_split(in_path):
     raw_split=np.load(in_path)
     return Split(train_index=raw_split["arr_0"],
