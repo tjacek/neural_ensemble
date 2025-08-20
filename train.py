@@ -148,29 +148,37 @@ def valid_clf(clf_type):
     if(not (is_neural or is_other)):
         raise Exception(f"Unknown clf {clf_type}")
 
+def partial_pred( data_path:str,
+                  out_path:str):
+    @utils.DirFun("in_path","exp_path")
+    def helper(in_path,exp_path):
+        data=dataset.read_csv(in_path)
+        paths=base.get_ens_path(exp_path)
+        for path_i in paths:
+            print(path_i)
+            factor_i=clfs.read_factory(f"{path_i}/info.js")
+            model_paths=utils.top_files(f"{path_i}/models")
+            for j,model_path_j in tqdm(enumerate(model_paths)):
+                model_i=factor_i.read(model_path_j)
+                
+    helper(data_path,out_path)            
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type=str, default="bad_exp/data")
-    parser.add_argument("--out_path", type=str, default="bad_exp/exp")
+    parser.add_argument("--data", type=str, default="uci_exp/data")
+    parser.add_argument("--out_path", type=str, default="uci_exp/exp")
     parser.add_argument("--start", type=int, default=0)
     parser.add_argument("--step", type=int, default=10)
-    parser.add_argument('--retrain', action='store_true')
+#    parser.add_argument('--retrain', action='store_true')
     parser.add_argument("--clf_type", type=str, default="BINARY-CS-TREE-ENS")
     args = parser.parse_args()
     print(args)
 #   valid_clf(args.clf_type)
-    train(data_path=args.data,
-          out_path=args.out_path,
-          start=args.start,
-          step=args.step,
-          clf_type=args.clf_type,
-          retrain=False)
-#    interval=base.Interval(args.start,args.step)
-#    train_only(data_path=args.data,
-#               out_path=args.out_path,
-#               clf_type=args.clf_type,
-#               interval=interval,
-#               retrain=args.retrain)
-#    pred_only(data_path=args.data,
-#              out_path=args.out_path,
-#              clf_type=args.clf_type)
+#    train(data_path=args.data,
+#          out_path=args.out_path,
+#          start=args.start,
+#          step=args.step,
+#          clf_type=args.clf_type,
+#          retrain=False)
+    partial_pred( data_path=args.data,
+                  out_path=args.out_path)
