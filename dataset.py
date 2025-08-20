@@ -165,6 +165,38 @@ def read_result_group(in_path:str):
                  for path_i in utils.top_files(in_path)]
     return ResultGroup(results)
 
+class PartialResults(object):
+    def __init__(self,y_true,y_partial):
+        self.y_true=y_true
+        self.y_partial=y_partial
+    
+    def __len__(self):
+        return self.y_partial.shape[0]
+
+    def vote(self):
+        ballot= np.sum(self.y_partial,axis=0)
+        return np.argmax(ballot,axis=1)
+
+    def get_metric(self,metric_type="acc"):
+        y_pred=self.vote()
+        metric=dispatch_metric(metric_type)
+        return metric(self.y_true,y_pred)
+
+    def selected_acc(self,subset,metric_type="acc"):
+        s_votes=[self.y_partial[i] for i in subset]
+        s_ballot= np.sum(s_votes,axis=0)
+        s_pred=np.argmax(s_ballot,axis=1)
+        metric=dispatch_metric(metric_type)
+        return metric(self.y_true,s_pred)
+
+    def indiv(self,metric_type="acc"):
+        metric=dispatch_metric(metric_type)
+        return [metric(self.y_true,y_i) 
+                    for y_i in self.y_partial]
+
+    def save(self,out_path):
+        np.savez(out_path,name1=self.y_partial,name2=self.y_true)
+
 def dispatch_metric(metric_type):
     metric_type=metric_type.lower()
     if(metric_type=="acc"):
@@ -326,4 +358,4 @@ if __name__ == '__main__':
 #              ["madeline","philippine","sylvine"])
 #    data_desc("AutoML",
 #        first_set=["madeline","philippine","sylvine"])
-    csv_desc("binary_exp/data")
+    csv_desc("uci_exp/data")
