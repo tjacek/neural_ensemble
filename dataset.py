@@ -191,11 +191,25 @@ class PartialResults(object):
 
     def indiv(self,metric_type="acc"):
         metric=dispatch_metric(metric_type)
-        return [metric(self.y_true,y_i) 
+        return [metric(self.y_true,np.argmax(y_i,axis=1)) 
                     for y_i in self.y_partial]
 
     def save(self,out_path):
         np.savez(out_path,name1=self.y_partial,name2=self.y_true)
+
+class PartialGroup(object):
+    def __init__(self,partials):
+        self.partials=partials
+   
+    def n_clfs(self):
+        return self.partials[0].y_partial.shape[0]
+
+    def indv_acc(self,metric_type="acc"):
+        n_clf= self.n_clfs()
+        raw_votes= [ result_i.indiv(metric_type) 
+                    for result_i in self.partials]
+        raw_votes=np.array(raw_votes)
+        return np.mean(raw_votes,axis=0)
 
 def dispatch_metric(metric_type):
     metric_type=metric_type.lower()

@@ -356,7 +356,7 @@ class CSTreeEns(NeuralClfAdapter):
             X_i=extr_i(X=X)#,
             y_i=self.all_clfs[i].predict_proba(X_i)
             partial_y.append(y_i)
-        return partial_y
+        return np.array(partial_y)
     
     def save(self,out_path):
         utils.make_dir(out_path)

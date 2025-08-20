@@ -154,13 +154,25 @@ def partial_pred( data_path:str,
     def helper(in_path,exp_path):
         data=dataset.read_csv(in_path)
         paths=base.get_ens_path(exp_path)
+        print(in_path)
         for path_i in paths:
             print(path_i)
             factor_i=clfs.read_factory(f"{path_i}/info.js")
+            all_results=[]
             model_paths=utils.top_files(f"{path_i}/models")
             for j,model_path_j in tqdm(enumerate(model_paths)):
-                model_i=factor_i.read(model_path_j)
-                
+                model_j=factor_i.read(model_path_j)
+                print(model_path_j)
+                print(f"{exp_path}/splits/{j}.npz")
+                split_j=base.read_split(f"{exp_path}/splits/{j}.npz")
+                data_j=data.selection(split_j.test_index)
+                votes_j=model_j.votes(data_j.X)
+                result_j= dataset.PartialResults(y_true=data_j.y,
+                                       y_partial=votes_j)
+                all_results.append(result_j)
+            result_group=dataset.PartialGroup(all_results)
+            glob_acc=result_group.indv_acc()
+            print(glob_acc)
     helper(data_path,out_path)            
 
 if __name__ == '__main__':
