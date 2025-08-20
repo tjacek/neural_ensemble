@@ -25,8 +25,14 @@ def top_files(path):
         paths=[ f'{path}/{file_i}' for file_i in os.listdir(path)]
     else:
         paths=path
-    paths=sorted(paths)
+    paths=sorted(paths,key=natural_keys)
     return paths
+
+def natural_keys(text):
+    return [ atoi(c) for c in re.split('(\\d+)', text) ]
+
+def atoi(text):
+    return int(text) if text.isdigit() else text
 
 def read_json(in_path):
     with open(in_path, 'r') as file:

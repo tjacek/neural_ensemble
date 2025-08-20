@@ -162,8 +162,8 @@ def partial_pred( data_path:str,
             model_paths=utils.top_files(f"{path_i}/models")
             for j,model_path_j in tqdm(enumerate(model_paths)):
                 model_j=factor_i.read(model_path_j)
-                print(model_path_j)
-                print(f"{exp_path}/splits/{j}.npz")
+#                print(model_path_j)
+#                print(f"{exp_path}/splits/{j}.npz")
                 split_j=base.read_split(f"{exp_path}/splits/{j}.npz")
                 data_j=data.selection(split_j.test_index)
                 votes_j=model_j.votes(data_j.X)
