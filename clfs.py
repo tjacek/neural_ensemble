@@ -288,7 +288,7 @@ class CSTreeEnsFactory(NeuralClfFactory):
 #        in_path=in_path.split(".")[0]
         for path_i in utils.top_files(in_path):
             model_i=tf.keras.models.load_model(f"{path_i}/nn.keras")
-            tree_ens.all_clfs.append(model_i)
+            tree_ens.all_clfs.append(MLP(None,None,model_i))
             extractor_i=tree_feats.read_feats(f"{path_i}/tree")
             extractor_i=FeatureExtactor(extractor_i,
                                    concat=self.feature_params["concat"])
@@ -350,8 +350,15 @@ class CSTreeEns(NeuralClfAdapter):
 #            y_pred.append(np.argmax(counts))
         return y_pred
 
+    def votes(self,X):
+        partial_y=[]
+        for i,extr_i in enumerate(self.all_extract):
+            X_i=extr_i(X=X)#,
+            y_i=self.all_clfs[i].predict_proba(X_i)
+            partial_y.append(y_i)
+        return partial_y
+    
     def save(self,out_path):
-#        out_path=out_path.split(".")[0]
         utils.make_dir(out_path)
         for i,clf_i in enumerate(self.all_clfs):
             out_i=f"{out_path}/{i}"
