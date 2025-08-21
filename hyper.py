@@ -18,21 +18,22 @@ def hyper_comp(in_path,hyper,clf_type="TREE-ENS"):
                                  feature_params=None)
         eval_tree(data_split,clf_factory)
 
-def tree_comp(in_path):
+def tree_comp(in_path,clf_type="TREE-ENS"):
     data_split=base.get_splits(data_path=in_path,
                                n_splits=10,
                                n_repeats=1)
-    prototype={"clf_factory":"random",
-                "concat":True,
-                "ens_type":"full",
-                "weights":"specific"}
+    prototype={"tree_factory":"random",
+                "concat":True}
     extr=["info","ind"]
     n_feats=[20,30,50]
     hyper={'layers':2, 'units_0':1,'units_1':1,'batch':False}
     for extr_i in product(extr,n_feats):
         tree_i=prototype.copy()
         tree_i["extr_factory"]=extr_i
-        eval_tree(data_split,hyper,tree_i)
+        clf_factory=clfs.get_clfs(clf_type,
+                                 hyper_params=hyper,
+                                 feature_params=tree_i)
+        eval_tree(data_split,clf_factory)
 
 def eval_tree(data_split,clf_factory):
 #    nn_factory_i=clfs.CSTreeEnsFactory(hyper_i,tree_i)
@@ -48,4 +49,4 @@ def eval_tree(data_split,clf_factory):
 if __name__ == '__main__':
     hyper=[{'layers':2, 'units_0':2,'units_1':1,'batch':False}]#,
     in_path="bad_exp/_data/wine-quality-red"
-    hyper_comp(in_path,hyper)
+    tree_comp(in_path)#,hyper)
