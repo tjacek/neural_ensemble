@@ -4,16 +4,19 @@ import re
 import tree_feats,tree_clf
 import base,dataset,deep,utils
 
-def get_clfs(clf_type):
+def get_clfs(clf_type,
+             hyper_params,
+             feature_params=None):
     if(clf_type in base.OTHER_CLFS):
         return base.ClasicalClfFactory(clf_type)
-    hyper_params=default_hyperparams()
+    if(hyper_params is None):
+         hyper_params=default_hyperparams()
     if(clf_type=="MLP"):
         return MLPFactory()
-#    factory_type=get_nn_type(clf_type)
     if(clf_type=="TREE-MLP"):
         return TreeMLPFactory()
-    feature_params={ "tree_factory":"random",
+    if(feature_params is None):
+        feature_params={ "tree_factory":"random",
                      "extr_factory":("info",30),
                      "concat":True}
     if(clf_type=="TREE-ENS"):
@@ -38,7 +41,6 @@ def get_clfs(clf_type):
                                 ens_params={ "ens_type":"binary",
                                              "weights":"CS"})
     reg_expr=re.compile("(\\D)+(\\d)+")
-#    raise Exception(reg_expr)
     if(reg_expr.match(clf_type)):
         n=utils.extract_number(clf_type)
         return CSTreeEnsFactory(hyper_params=hyper_params,
