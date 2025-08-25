@@ -129,6 +129,9 @@ def get_extr_type(extr_feats):
         return IndFactory
     if(extr_feats=="cs"):
         return CSFactory
+    if(extr_feats=="mixed"):
+        return MixedFactory
+    raise Exception(f"Unknown extr type:{extr_feats}")
 
 class InfoFactory(object):
     def __init__(self,n_feats=10):
@@ -191,7 +194,21 @@ class CSFactory(object):
             feats=tree_dict.get_attr("feat",s_feats)
             feats_i=tree_feats.make_disc_feat(feats,thres)
             cs_feats.append(feats_i)
-        return tree_feats.ConcatFeatures(cs_feats) 
+        return tree_feats.ConcatFeatures(cs_feats)
+
+class MixedFactory(object):
+    def __init__(self,n_feats=20,n_trees=10):
+        self.n_feats=n_feats
+        self.n_trees=n_trees
+        
+    def __call__(self,X,y,tree_factory):
+        tree_dicts=[]
+        for i in range(self.n_trees):
+            tree_i=tree_factory()
+            tree_i.fit(X,y)
+            tree_dict_i=tree_feats.make_tree_dict(tree_i)
+            tree_dicts.append(tree_dict_i)
+        raise Exception("Not implemented")
 
 if __name__ == '__main__':
     import base,dataset

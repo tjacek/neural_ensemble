@@ -52,7 +52,8 @@ def eval_tree(data_split,clf_factory):
 if __name__ == '__main__':
     hyper=[{'layers':2, 'units_0':2,'units_1':1,'batch':False}]#,
     in_path="uci_exp/data/wine"
+#    in_path="multi_exp/data/first-order"
     tree_comp( in_path,
                clf_type="TREE-ENS",
-               extr=["info"],
+               extr=["mixed"],
                n_feats=[30])

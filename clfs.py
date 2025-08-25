@@ -287,7 +287,6 @@ class CSTreeEnsFactory(NeuralClfFactory):
     
     def read(self,in_path):
         tree_ens=self()
-#        in_path=in_path.split(".")[0]
         for path_i in utils.top_files(in_path):
             model_i=tf.keras.models.load_model(f"{path_i}/nn.keras")
             tree_ens.all_clfs.append(MLP(None,None,model_i))
