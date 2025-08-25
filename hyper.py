@@ -27,26 +27,29 @@ def tree_comp(in_path,clf_type="TREE-ENS"):
     extr=["info","ind"]
     n_feats=[20,30,50]
     hyper={'layers':2, 'units_0':1,'units_1':1,'batch':False}
-    for extr_i in product(extr,n_feats):
+    for feat_i,dim_i in product(extr,n_feats):
         tree_i=prototype.copy()
-        tree_i["extr_factory"]=extr_i
+        tree_i["extr_factory"]= (feat_i,dim_i)#extr_i
         clf_factory=clfs.get_clfs(clf_type,
                                  hyper_params=hyper,
                                  feature_params=tree_i)
-        eval_tree(data_split,clf_factory)
+        acc_i,balance_i=eval_tree(data_split,clf_factory)
+        print(f"{feat_i}.{dim_i},{acc_i:.4f},{balance_i:.4f}")
+#        line_i=[feat_i,dim_i,acc_i,balance_i]
+#        print(line_i)
 
 def eval_tree(data_split,clf_factory):
-#    nn_factory_i=clfs.CSTreeEnsFactory(hyper_i,tree_i)
     clf_factory.init(data_split.data)
-    acc_i,balance_i=[],[]
+    acc,balance=[],[]
     for clf_j,result_j in tqdm(data_split.eval(clf_factory)):
-        acc_i.append(result_j.get_acc())
-        balance_i.append(result_j.get_metric("balance"))
-    print(clf_factory.get_info())
-    print(f"{np.mean(acc_i):.4f},{np.mean(balance_i):.4f}")
+        acc.append(result_j.get_acc())
+        balance.append(result_j.get_metric("balance"))
+    return np.mean(acc),np.mean(balance)
+#    print(clf_factory.get_info())
+#    print(f"{np.mean(acc_i):.4f},{np.mean(balance_i):.4f}")
 
 
 if __name__ == '__main__':
     hyper=[{'layers':2, 'units_0':2,'units_1':1,'batch':False}]#,
-    in_path="bad_exp/_data/wine-quality-red"
+    in_path="uci_exp/data/wine"
     tree_comp(in_path)#,hyper)
