@@ -18,14 +18,19 @@ def hyper_comp(in_path,hyper,clf_type="TREE-ENS"):
                                  feature_params=None)
         eval_tree(data_split,clf_factory)
 
-def tree_comp(in_path,clf_type="TREE-ENS"):
+def tree_comp(in_path,
+              clf_type="TREE-ENS",
+              extr=None,
+              n_feats=None):
     data_split=base.get_splits(data_path=in_path,
                                n_splits=10,
                                n_repeats=1)
     prototype={"tree_factory":"random",
                 "concat":True}
-    extr=["info","ind"]
-    n_feats=[20,30,50]
+    if(extr is None):
+        extr=["info","ind"]
+    if(n_feats is None):
+        n_feats=[20,30,50]
     hyper={'layers':2, 'units_0':1,'units_1':1,'batch':False}
     for feat_i,dim_i in product(extr,n_feats):
         tree_i=prototype.copy()
@@ -35,8 +40,6 @@ def tree_comp(in_path,clf_type="TREE-ENS"):
                                  feature_params=tree_i)
         acc_i,balance_i=eval_tree(data_split,clf_factory)
         print(f"{feat_i}.{dim_i},{acc_i:.4f},{balance_i:.4f}")
-#        line_i=[feat_i,dim_i,acc_i,balance_i]
-#        print(line_i)
 
 def eval_tree(data_split,clf_factory):
     clf_factory.init(data_split.data)
@@ -45,11 +48,11 @@ def eval_tree(data_split,clf_factory):
         acc.append(result_j.get_acc())
         balance.append(result_j.get_metric("balance"))
     return np.mean(acc),np.mean(balance)
-#    print(clf_factory.get_info())
-#    print(f"{np.mean(acc_i):.4f},{np.mean(balance_i):.4f}")
-
 
 if __name__ == '__main__':
     hyper=[{'layers':2, 'units_0':2,'units_1':1,'batch':False}]#,
     in_path="uci_exp/data/wine"
-    tree_comp(in_path)#,hyper)
+    tree_comp( in_path,
+               clf_type="TREE-ENS",
+               extr=["info"],
+               n_feats=[30])
