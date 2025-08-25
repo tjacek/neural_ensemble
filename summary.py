@@ -12,8 +12,8 @@ def metric_plot(conf_dict):
         text=conf_dict["names"]
     plot.dict_plot( x_dict,
                     y_dict,
-                    x_clf,
-                    y_clf,
+                    xlabel=f"{x_clf}({metric})",
+                    ylabel=f"{y_clf}({metric})",
                     text=text)
 
 if __name__ == '__main__':
