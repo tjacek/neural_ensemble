@@ -64,6 +64,12 @@ class TreeDict(dict):
             path.append(i)
         return path
 
+    def get_all_paths(self,indexes):
+        s_feats=[]
+        for i in indexes:
+            s_feats+=self.get_path(i)
+        return list(set(s_feats))
+
 def make_tree_dict(clf):
     tree_dict=TreeDict()
     tree_dict["threshold"]=clf.tree_.threshold

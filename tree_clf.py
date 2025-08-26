@@ -198,17 +198,29 @@ class CSFactory(object):
         return tree_feats.ConcatFeatures(cs_feats)
 
 class MixedFactory(object):
-    def __init__(self,n_feats=20,n_trees=10):
+    def __init__(self,n_feats=30,n_trees=10):
         self.n_feats=n_feats
         self.n_trees=n_trees
         
     def __call__(self,X,y,tree_factory):
+        tree_dicts=self.get_dicts(X,y,tree_factory)
+        nodes_by_tree=self.get_nodes(tree_dicts)
+        for i,s_nodes in nodes_by_tree.items():
+
+            tree_i=tree_dicts[i]
+            print(tree_i)
+        raise Exception(nodes_by_tree)
+
+    def get_dicts(self,X,y,tree_factory):
         tree_dicts=[]
         for i in range(self.n_trees):
             tree_i=tree_factory()
             tree_i.fit(X,y)
             tree_dict_i=tree_feats.make_tree_dict(tree_i)
-            tree_dicts.append(tree_dict_i)
+            tree_dicts.append(tree_dict_i)  
+        return tree_dicts
+
+    def get_nodes(self,tree_dicts):
         MixedNode = collections.namedtuple('MixedNode', 'tree node mutual')
         mixed_nodes=[]
         for i,tree_dict_i in enumerate(tree_dicts):
@@ -217,10 +229,11 @@ class MixedFactory(object):
                 node_j=MixedNode(i,j,mutual_j)
                 mixed_nodes.append(node_j)
         mixed_nodes = sorted(mixed_nodes, key=lambda x: x.mutual, reverse=True)
-        print(mixed_nodes)
-        raise Exception(dir(tree_dicts[0]))
-
-
+        s_nodes=mixed_nodes[:self.n_feats]
+        nodes_by_tree= collections.defaultdict(lambda:[])
+        for node_i in s_nodes:
+            nodes_by_tree[node_i.tree].append(node_i.node)
+        return nodes_by_tree
 
 if __name__ == '__main__':
     import base,dataset
