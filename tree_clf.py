@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.stats import entropy 
+import collections
 import base,dataset,tree_feats
 
 class TreeFeatFactory(object):
@@ -208,7 +209,18 @@ class MixedFactory(object):
             tree_i.fit(X,y)
             tree_dict_i=tree_feats.make_tree_dict(tree_i)
             tree_dicts.append(tree_dict_i)
-        raise Exception("Not implemented")
+        MixedNode = collections.namedtuple('MixedNode', 'tree node mutual')
+        mixed_nodes=[]
+        for i,tree_dict_i in enumerate(tree_dicts):
+            mutual_i=tree_dict_i.mutual_info()
+            for j,mutual_j in enumerate(mutual_i):
+                node_j=MixedNode(i,j,mutual_j)
+                mixed_nodes.append(node_j)
+        mixed_nodes = sorted(mixed_nodes, key=lambda x: x.mutual, reverse=True)
+        print(mixed_nodes)
+        raise Exception(dir(tree_dicts[0]))
+
+
 
 if __name__ == '__main__':
     import base,dataset
