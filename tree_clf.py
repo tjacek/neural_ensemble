@@ -19,8 +19,14 @@ class TreeFeatFactory(object):
     def __str__(self):
         names=list(self.arg_dict.keys())
         names.sort()
-        desc=[str(self.arg_dict[name_i]) 
-                for name_i in names]
+        desc=[]
+        for name_i in names:
+            if(type(name_i)==tuple):
+                desc.append( ",".join(self.arg_dict[name_i]))
+            else:
+                desc.append(str(self.arg_dict[name_i]))
+#        desc=[str(self.arg_dict[name_i]) 
+#                for name_i in names]
         desc=[self.clf_type]+desc
         return ",".join(desc)
 
@@ -206,7 +212,6 @@ class MixedFactory(object):
         tree_dicts=self.get_dicts(X,y,tree_factory)
         nodes_by_tree=self.get_nodes(tree_dicts)
         for i,s_nodes in nodes_by_tree.items():
-
             tree_i=tree_dicts[i]
             print(tree_i)
         raise Exception(nodes_by_tree)
