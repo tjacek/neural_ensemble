@@ -64,23 +64,14 @@ def svm_tree(in_path):
               "clf_type":"SVM",
               "concat":True}
         factory_i=tree_clf.TreeFeatFactory(arg_i)
-        all_result=[]
-        for _,result_j in data_split.eval(factory_i):
-            all_result.append(result_j)
-        result=dataset.ResultGroup(all_result)
+        result=data_split.get_results(clf_factory)
+#        all_result=[]
+#        for _,result_j in data_split.eval(factory_i):
+#            all_result.append(result_j)
+#        result=dataset.ResultGroup(all_result)
         acc_i=np.mean(result.get_metric("acc"))
         balance_i=np.mean(result.get_metric("balance"))
         print(f"{factory_i},{acc_i:.4f},{balance_i:.4f}")
-#        tree_i=tree_clf.TreeFeatClf(tree_factory="random",
-#                             extr_factory=(feat_i,dim_i),
-#                             clf_type="SVM",
-#                             concat=False)
-#        print(tree_i)
-#        tree_i=prototype.copy()
-#        tree_i["extr_factory"]= (feat_i,dim_i)
-#        extractor=tree_clf.get_extractor((feat_i,dim_i))
-#        random_tree= tree_feats.get_tree("random")
-#        print(random_tree)
 
 if __name__ == '__main__':
     hyper=[{'layers':2, 'units_0':2,'units_1':1,'batch':False}]#,

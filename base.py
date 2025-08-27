@@ -24,6 +24,12 @@ class DataSplits(object):
             result_i=split_i.pred(self.data,clf_i)
             yield clf_i,result_i
 
+    def get_results(self,clf_factory):
+        all_result=[]
+        for _,result_j in self.eval(factory_i):
+            all_result.append(result_j)
+        return dataset.ResultGroup(all_result)
+
 class SplitProtocol(object):
     def __init__(self,n_splits,n_repeats):
         self.n_splits=n_splits
