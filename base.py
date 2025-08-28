@@ -26,7 +26,7 @@ class DataSplits(object):
 
     def get_results(self,clf_factory):
         all_result=[]
-        for _,result_j in self.eval(factory_i):
+        for _,result_j in self.eval(clf_factory):
             all_result.append(result_j)
         return dataset.ResultGroup(all_result)
 

@@ -275,6 +275,11 @@ def make_df(helper,
                                 columns=cols)
     return DFView(df)
 
+def from_lines(lines,cols):
+    df=pd.DataFrame.from_records(lines,
+                                columns=cols)
+    return DFView(df)
+
 def get_class_weights(y):
     params=WeightDict() 
     cats=  list(set(y))

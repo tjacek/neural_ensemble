@@ -50,35 +50,51 @@ def eval_tree(data_split,clf_factory):
     return np.mean(acc),np.mean(balance)
 
 
-def svm_tree(in_path):
-    data_split=base.get_splits(data_path=in_path,
+def svm_tree(in_path,multi=False):
+    extr=["info","ind"]
+    n_feats=[10,20,30,50]
+#    @utils.DirFun("in_path")#,"exp_path")
+    def helper(in_path):
+        data_split=base.get_splits(data_path=in_path,
                                n_splits=10,
                                n_repeats=1)
-    prototype={"tree_factory":"random",
-                "concat":True}
-    extr=["info"]
-    n_feats=[10,20,30,50]
-    for feat_i,dim_i in product(extr,n_feats):
-        arg_i={ "tree_factory":"random",
-              "extr_factory":(feat_i,dim_i),
-              "clf_type":"SVM",
-              "concat":True}
-        factory_i=tree_clf.TreeFeatFactory(arg_i)
-        result=data_split.get_results(clf_factory)
-#        all_result=[]
-#        for _,result_j in data_split.eval(factory_i):
-#            all_result.append(result_j)
-#        result=dataset.ResultGroup(all_result)
-        acc_i=np.mean(result.get_metric("acc"))
-        balance_i=np.mean(result.get_metric("balance"))
-        print(f"{factory_i},{acc_i:.4f},{balance_i:.4f}")
+        data=in_path.split("/")[-1]
+        lines=[]
+        for feat_i,dim_i in product(extr,n_feats):
+            arg_i={ "tree_factory":"random",
+                 "extr_factory":(feat_i,dim_i),
+                 "clf_type":"SVM",
+                 "concat":True}
+            factory_i=tree_clf.TreeFeatFactory(arg_i)
+            results=data_split.get_results(factory_i)
+            acc_i=np.mean(results.get_metric("acc"))
+            balance_i=np.mean(results.get_metric("balance"))
+            desc_i=str(factory_i)
+            print(f"{data},{desc_i},{acc_i:.4f},{balance_i:.4f}")
+            line_i=desc_i.split(",")[1:]
+            line_i= [data] + line_i + [acc_i,balance_i]
+            lines.append(line_i)
+        return lines
+    cols=[ "data","clf","concat","feats",
+           "dims","tree","acc","balance"]
+    if(multi):
+        df=dataset.make_df(helper=helper,
+                           iterable=utils.top_files(in_path),
+                           cols=cols,
+                           offset=None,
+                           multi=True)
+    else:
+        lines=helper(in_path)
+        df=dataset.from_lines(lines,cols)
+    df.print()
+#    print(lines)
 
 if __name__ == '__main__':
     hyper=[{'layers':2, 'units_0':2,'units_1':1,'batch':False}]#,
-    in_path="uci_exp/data/wine"
+    in_path="binary_exp/data" #"-quality-red"
 #    in_path="multi_exp/data/first-order"
 #    tree_comp( in_path,
 #               clf_type="TREE-ENS",
 #               extr=["mixed"],
 #               n_feats=[30])
-    svm_tree(in_path)
+    svm_tree(in_path,multi=True)
