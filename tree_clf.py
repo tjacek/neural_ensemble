@@ -21,12 +21,10 @@ class TreeFeatFactory(object):
         names.sort()
         desc=[]
         for name_i in names:
-            if(type(name_i)==tuple):
-                desc.append( ",".join(self.arg_dict[name_i]))
-            else:
-                desc.append(str(self.arg_dict[name_i]))
-#        desc=[str(self.arg_dict[name_i]) 
-#                for name_i in names]
+            arg_i= self.arg_dict[name_i]
+            if(type(arg_i)==tuple):
+                arg_i=str(arg_i).replace("(","").replace(")","")
+            desc.append(str(arg_i))
         desc=[self.clf_type]+desc
         return ",".join(desc)
 
@@ -239,6 +237,17 @@ class MixedFactory(object):
         for node_i in s_nodes:
             nodes_by_tree[node_i.tree].append(node_i.node)
         return nodes_by_tree
+
+class DistGroup(object):
+    def __init__(self,base_dist):
+        self.all_dist=[base_dist]
+
+    def add_dist(self,dist):
+        self.all_dist.append(dist)
+
+    def __call__(self,dist):
+        return np.sum([mutual_info(dist,dist_i) 
+                        for dist_i on self.all_dist])
 
 if __name__ == '__main__':
     import base,dataset
