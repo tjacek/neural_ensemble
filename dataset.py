@@ -367,10 +367,15 @@ def arff_to_csv(in_path,out_path,first_set=None):
         data_i.save_csv(f"{out_path}/{id_i}")
 
 def csv_desc(in_path):
+    lines=[]
     for path_i in utils.top_files(in_path):
         data_i=read_csv(path_i)
-        print(f"{path_i}-{data_i.n_cats()}")
-
+        id_i=path_i.split("/")[-1]
+        line_i=[id_i,str(data_i.n_cats()),str(data_i.dim()),
+                str(len(data_i))]
+        lines.append(line_i)
+    df=from_lines(lines,["id","cats","dims","samples"])
+    df.print()
 
 if __name__ == '__main__':
 #    arff_to_csv("AutoML","csv",
