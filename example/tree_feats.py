@@ -1,3 +1,5 @@
+import matplotlib.pyplot as plt
+from sklearn import tree
 from sklearn.tree import DecisionTreeClassifier
 import pandas as pd
 
@@ -17,8 +19,15 @@ def read_data(in_path,cols):
     X,y=raw[:,:-1],raw[:,-1]
     return Dataset(X,y,cols)
 
+def exp(in_path,cols):
+    data=read_data(in_path,cols)
+    clf = DecisionTreeClassifier(#criterion="entropy",
+                                 max_depth=4)
+    clf.fit(data.X,data.y)
+    tree.plot_tree(clf)
+    plt.show()
+
 in_path="../multi_exp/data/car"
 cols=[ 'buying','maint','doors', 
        'persons', 'lug_boot', 'safety' ]
-data=read_data(in_path,cols)
-print(len(data))
+exp(in_path,cols)
