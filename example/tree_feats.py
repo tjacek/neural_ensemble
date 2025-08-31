@@ -29,11 +29,14 @@ class Nodes(object):
             i_xy=h_y-h_yx
             mi.append(i_xy)
         return mi
+    
+    def get_rep(self):
+        for i,feat_i in enumerate(self.feats):
+            yield f"{self.cols[feat_i]},{self.thres[i]:.4f}"
 
     def print(self):
-        for i,feat_i in enumerate(self.feats):
-            col_i=self.cols[feat_i]
-            print(f"{col_i},{self.thres[i]:.4f}")
+        for col_i in self.get_rep():
+            print(col_i)
 
 def compute_dist(y):
     count_dict=Counter(y)
@@ -49,7 +52,7 @@ def entropy(p):
     h=0.0
     for p_i in p:
         if(p_i==0):
-            pass
+            continue
         h+= p_i*np.log(p_i)
     return -h
 
@@ -78,8 +81,8 @@ def exp(in_path,cols):
     nodes=parse_nodes(clf,cols)
     full_dist=compute_dist(y)
     info=nodes.mutual_info(full_dist,y)
-    raise Exception(info)
-    nodes.print()
+    for i,desc_i in enumerate(nodes.get_rep()):
+        print(f"{desc_i},{info[i]:.4f}")
     tree.plot_tree(clf,feature_names=cols)
     plt.show()
 
