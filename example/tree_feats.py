@@ -22,11 +22,14 @@ class Nodes(object):
         offset=np.ones(dist.shape)
         h_y=entropy(dist)
         mi=[]
-        for i,dist_i in enumerate(self.dists):
-            p_y=self.samples[i]/len(y)
-            h_yx= p_y * entropy(dist_i)
-            h_yx+= (1.0-p_y) * entropy(offset-dist_i)
-            i_xy=h_y-h_yx
+        for i,dist_y_i in enumerate(self.dists):
+            p_node=self.samples[i]/len(y)
+#            dist_node=np.array([p_node,1.0-p_node])
+#            h_node=entropy(dist_node)
+            h_node_y=    log_helper(dist_y_i, p_node)
+            h_node_y  +=  log_helper(offset-dist_y_i, 1.0-p_node)
+            i_xy= h_y - h_node_y
+            print(i_xy)
             mi.append(i_xy)
         return mi
     
@@ -55,6 +58,16 @@ def entropy(p):
             continue
         h+= p_i*np.log(p_i)
     return -h
+
+def log_helper(p_target_node, p_node):
+    if(p_node==0):
+        return 0
+    total=0
+    for i,p_i in enumerate(p_target_node):
+        if(p_i==0):
+            continue
+        total+= p_i*np.log(p_i/p_node)
+    return -total
 
 def parse_nodes(clf,cols):
     index=[ i for i,feat_i in enumerate(clf.tree_.feature)
