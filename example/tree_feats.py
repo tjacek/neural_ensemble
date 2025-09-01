@@ -18,18 +18,17 @@ class Nodes(object):
         self.samples=samples
         self.cols=cols
 
-    def mutual_info(self,dist,y):
-        offset=np.ones(dist.shape)
+    def mutual_info(self,y):
+        n_samples,n_cats= compute_stats(y)
+        dist=compute_dist(y)
+        offset=np.ones(n_cats)
         h_y=entropy(dist)
         mi=[]
         for i,dist_y_i in enumerate(self.dists):
-            p_node=self.samples[i]/len(y)
-#            dist_node=np.array([p_node,1.0-p_node])
-#            h_node=entropy(dist_node)
+            p_node=self.samples[i]/n_samples
             h_node_y=    log_helper(dist_y_i, p_node)
             h_node_y  +=  log_helper(offset-dist_y_i, 1.0-p_node)
             i_xy= h_y - h_node_y
-            print(i_xy)
             mi.append(i_xy)
         return mi
     
@@ -40,6 +39,10 @@ class Nodes(object):
     def print(self):
         for col_i in self.get_rep():
             print(col_i)
+
+def compute_stats(y):
+    n_cats=max(y)+1
+    return len(y),n_cats
 
 def compute_dist(y):
     count_dict=Counter(y)
@@ -88,18 +91,18 @@ def read_data(in_path,cols):
 
 def exp(in_path,cols):
     X,y=read_data(in_path,cols)
-    clf = DecisionTreeClassifier(#criterion="entropy",
-                                 max_depth=4)
+    clf = DecisionTreeClassifier(max_depth=4)
     clf.fit(X,y)
     nodes=parse_nodes(clf,cols)
-    full_dist=compute_dist(y)
-    info=nodes.mutual_info(full_dist,y)
+    info=nodes.mutual_info(y)#full_dist,y)
+    print("feature,threshold,mutual_info")
     for i,desc_i in enumerate(nodes.get_rep()):
         print(f"{desc_i},{info[i]:.4f}")
     tree.plot_tree(clf,feature_names=cols)
     plt.show()
 
-in_path="../multi_exp/data/car"
-cols=[ 'buying','maint','doors', 
+if __name__ == '__main__':
+    in_path="car"
+    cols=[ 'buying','maint','doors', 
        'persons', 'lug_boot', 'safety' ]
-exp(in_path,cols)
+    exp(in_path,cols)
