@@ -31,6 +31,21 @@ class TreeDict(dict):
         self.targe_dist=None
         self.n_samples=None
     
+    def mutual_info(self):
+        h_y=entropy(self.target_dist)
+        by_cat=self.target_dist*self.n_samples
+        info,nodes=[],[]
+        for i,node_i in self.items():
+            p_target_1=node_i.right_dist
+            p_target_0=node_i.get_dist(by_cat)
+            p_1= node_i.get_p(self.n_samples)
+            p_0=1.0-p_1
+            h_node_y  =  log_helper(p_target_1, p_1)
+            h_node_y +=  log_helper(p_target_0, p_0)
+            i_xy= h_y - h_node_y
+            info.append(i_xy)
+            nodes.append(i)
+        return info,nodes
 
 class NodeDesc(object):
     def __init__( self,
@@ -45,6 +60,15 @@ class NodeDesc(object):
         self.threshold=threshold
         self.right_dist=right_dist
         self.n_samples=n_samples
+    
+    def get_dist(self,by_cat):
+        dist_i=self.right_dist*self.n_samples
+        diff_i=by_cat-dist_i
+        diff_i/=np.sum(diff_i)
+        return diff_i
+
+    def get_p(self,total_samples):
+        return self.n_samples/total_samples
 
 def make_tree_dict(clf):
     tree_dict=TreeDict()
@@ -79,6 +103,24 @@ def find_params(raw_tree):
         parent[left_i]=  i
         parent[right_i]= i
     return parent
+
+def inf_features(tree_dict,n_feats=10):
+    info,nodes=tree_dict.mutual_info()
+    info_index=np.argsort(info)[:10]
+    s_nodes=[nodes[i] for i in info_index]
+    for i in s_nodes:
+        s=tree_dict[i]
+        print(s.right_dist)
+    raise Exception(s_nodes)
+def log_helper(p_target_node, p_node):
+    if(p_node==0):
+        return 0
+    total=0
+    for i,p_i in enumerate(p_target_node):
+        if(p_i==0):
+            continue
+        total+= p_i*np.log(p_i/p_node)
+    return -total
 
 class TreeDict_(dict):
     def __len__(self):
