@@ -29,6 +29,28 @@ class TreeDict(dict):
     def __len__(self):
         return len(self["feat"])
 
+def make_tree_dict(clf):
+    tree_dict=TreeDict()
+    raw_tree=clf.tree_
+    tree_dict["feat"]=raw_tree.feature
+    n_nodes=len(tree_dict["feat"])
+    tree_dict["parent"]= -np.ones((n_nodes,),dtype=int)
+    for i in range(n_nodes):
+        left_i=raw_tree.children_left[i]
+        right_i=raw_tree.children_right[i]
+        if(left_i<0 or right_i <0):
+            tree_dict["parent"][i]= 0
+            continue
+        tree_dict["parent"][left_i]=  i
+        tree_dict["parent"][right_i]= i
+    root=np.argmin(tree_dict["parent"])
+    dist= raw_tree.value[root][0] 
+    raise Exception(dist)
+
+class TreeDict_(dict):
+    def __len__(self):
+        return len(self["feat"])
+
     def get_node(self,i):
         keys=list(self.keys())
         keys.sort()
@@ -69,8 +91,8 @@ class TreeDict(dict):
         for i in indexes:
             s_feats+=self.get_path(i)
         return list(set(s_feats))
-
-def make_tree_dict(clf):
+        
+def make_tree_dict_(clf):
     tree_dict=TreeDict()
     tree_dict["threshold"]=clf.tree_.threshold
     tree_dict["feat"]=clf.tree_.feature
@@ -89,7 +111,7 @@ def make_tree_dict(clf):
             tree_dict["parent"][right_i]=i
     return tree_dict
 
-def inf_features(tree_dict,n_feats=5):
+def inf_features_(tree_dict,n_feats=5):
     mutual_info=tree_dict.mutual_info()
     index=np.argsort(mutual_info)
     s_feats=[]
