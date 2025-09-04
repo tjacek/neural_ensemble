@@ -26,26 +26,59 @@ class RandomTree(object):
         return "RandomTree"
 
 class TreeDict(dict):
-    def __len__(self):
-        return len(self["feat"])
+    def __init__(self, arg=[]):
+        super(TreeDict, self).__init__(arg)
+        self.targe_dist=None
+        self.n_samples=None
+    
+
+class NodeDesc(object):
+    def __init__( self,
+                  parent,
+                  feature,
+                  threshold,
+                  right_dist,
+                  n_samples):
+#                  left_dist):
+        self.parent=parent
+        self.feature=feature
+        self.threshold=threshold
+        self.right_dist=right_dist
+        self.n_samples=n_samples
 
 def make_tree_dict(clf):
     tree_dict=TreeDict()
     raw_tree=clf.tree_
-    tree_dict["feat"]=raw_tree.feature
-    n_nodes=len(tree_dict["feat"])
-    tree_dict["parent"]= -np.ones((n_nodes,),dtype=int)
+    parent=find_params(raw_tree)    
+    root=np.argmin(parent)
+    tree_dict.target_dist= raw_tree.value[root][0] 
+    tree_dict.n_samples=raw_tree.weighted_n_node_samples[root]
+    for i,parent in enumerate(parent):
+        if(parent!=(-1)):
+            right_i=raw_tree.children_right[i]
+            right_dist=raw_tree.value[right_i][0]
+            n_samples=raw_tree.weighted_n_node_samples[right_i]
+            node_i=NodeDesc(parent=parent,
+                            feature=raw_tree.feature[i],
+                            threshold=raw_tree.threshold[i],
+                            right_dist=right_dist,
+                            n_samples=n_samples)
+            tree_dict[i]=node_i            
+    return tree_dict
+#    raise Exception(tree_dict.target_dist)
+
+def find_params(raw_tree):
+    n_nodes=len(raw_tree.feature)
+    parent= -2*np.ones((n_nodes,),dtype=int)
     for i in range(n_nodes):
         left_i=raw_tree.children_left[i]
         right_i=raw_tree.children_right[i]
         if(left_i<0 or right_i <0):
-            tree_dict["parent"][i]= 0
+            parent[i]= -1
             continue
-        tree_dict["parent"][left_i]=  i
-        tree_dict["parent"][right_i]= i
-    root=np.argmin(tree_dict["parent"])
-    dist= raw_tree.value[root][0] 
-    raise Exception(dist)
+        parent[left_i]=  i
+        parent[right_i]= i
+    return parent
 
 class TreeDict_(dict):
     def __len__(self):
