@@ -79,6 +79,13 @@ class NodeDesc(object):
         if(attr=="feat"):
             return self.feature
 
+    def get_path(self,tree_dict):
+        path=[]
+        current=self
+        while(current.parent!= (-2)):
+            path.append(current.parent)
+            current=tree_dict[current.parent]
+        return path
 
 def make_tree_dict(clf):
     tree_dict=TreeDict()
@@ -113,15 +120,25 @@ def find_params(raw_tree):
         parent[right_i]= i
     return parent
 
-def inf_features(tree_dict,n_feats=10):
+def ind_features(tree_dict,n_feats=10):
     info,nodes=tree_dict.mutual_info()
-    info_index=np.argsort(info)[:10]
+    info_index=np.argsort(info)[:n_feats]
     s_nodes=[nodes[i] for i in info_index]
-#    for i in s_nodes:
-#        s=tree_dict[i]
-#        print(s.right_dist)
-#    raise Exception(s_nodes)
     return s_nodes
+
+def path_features(tree_dict,n_feats=10):
+    info,nodes=tree_dict.mutual_info()
+    info_index=np.argsort(info)[:n_feats]
+    s_nodes=[nodes[i] for i in info_index]   
+    indexes=[]
+    for i in s_nodes:
+        node_i=tree_dict[i]
+        indexes+=node_i.get_path(tree_dict)
+        indexes.append(i)
+    indexes=list(set(indexes))
+#    print(indexes)
+#    raise Exception(s_nodes)
+    return indexes #[tree_dict[i] for i in indexes]
 
 def log_helper(p_target_node, p_node):
     if(p_node==0):

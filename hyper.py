@@ -53,7 +53,6 @@ def eval_tree(data_split,clf_factory):
 def svm_tree(in_path,multi=False):
     extr=["info","ind"]
     n_feats=[10,20,30,50]
-#    @utils.DirFun("in_path")#,"exp_path")
     def helper(in_path):
         data_split=base.get_splits(data_path=in_path,
                                n_splits=10,
@@ -86,12 +85,12 @@ def svm_tree(in_path,multi=False):
     else:
         lines=helper(in_path)
         df=dataset.from_lines(lines,cols)
-    df.print()
+    df.by_data()
 #    print(lines)
 
 if __name__ == '__main__':
     hyper=[{'layers':2, 'units_0':2,'units_1':1,'batch':False}]#,
-    in_path="binary_exp/data" #"-quality-red"
+    in_path="uci_exp/data" #"-quality-red"
 #    in_path="multi_exp/data/first-order"
 #    tree_comp( in_path,
 #               clf_type="TREE-ENS",
