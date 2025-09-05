@@ -2,6 +2,7 @@ import numpy as np
 #from sklearn.decomposition import PCA
 from tqdm import tqdm
 from itertools import product
+import argparse
 import base,clfs,utils,tree_clf,tree_feats,dataset
 utils.silence_warnings()
 
@@ -86,14 +87,14 @@ def svm_tree(in_path,multi=False):
         lines=helper(in_path)
         df=dataset.from_lines(lines,cols)
     df.by_data()
-#    print(lines)
+    return df
 
 if __name__ == '__main__':
     hyper=[{'layers':2, 'units_0':2,'units_1':1,'batch':False}]#,
-    in_path="uci_exp/data" #"-quality-red"
-#    in_path="multi_exp/data/first-order"
-#    tree_comp( in_path,
-#               clf_type="TREE-ENS",
-#               extr=["mixed"],
-#               n_feats=[30])
-    svm_tree(in_path,multi=True)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--in_path", type=str,  default="uci")
+    parser.add_argument("--out_path", type=str, default=None)
+    args = parser.parse_args()
+    df=svm_tree(f"{args.in_path}_exp/data",multi=True)
+    if(args.out_path):
+        df.df.to_csv(args.out_path, sep=',')
