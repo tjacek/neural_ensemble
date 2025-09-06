@@ -58,18 +58,35 @@ class DirSource(object):
     def __init__(self,result_dict):
         self.result_dict=result_dict
         self.clfs= set(result_dict.clfs())
+    
+    def __call__(self,clf_type,metric):
+        return self.result_dict.get_clf(clf_type,metric)
 
     def __contains__(self, item):
+        if(type(item)==list):
+            return False
         return item in self.clfs 
 
 class FileSource(object):
     def __init__(self,df):
         self.df=df[['data', 'feats', 'dims',
-                    'acc','balance']]
+                    'accuracy','balance']]
         self.feats=set([feat_i.replace("'","") 
                         for feat_i in df['feats'].unique()])
         self.dims=set(df['dims'].unique())
     
+    def __call__(self,clf_type,metric):
+        if(type(clf_type)!=list):
+            return False
+        feat_i,dim_i=clf_type
+        grouped=self.df.groupby(by='data')
+        df=self.df[ self.df['feats']==f"'{feat_i}'"]
+        df=df[df['dims']==dim_i]
+        df=df[['data',metric]]
+        clf_dict=dict(zip(df['data'].tolist(),
+                          df[metric].tolist()))
+        return clf_dict
+
     def __contains__(self, item):
         feat_i,dim_i=item
         if(not feat_i in self.feats):
@@ -89,7 +106,15 @@ def diff_sources(conf_dict):
             df=pd.read_csv(path_i)
             source_i=FileSource(df)
         data_sources.append(source_i)
-    print(data_sources)
+    metric=conf_dict['metric']
+    def helper(clf_type):
+        for source_i in data_sources:
+            if(clf_type in source_i):
+                return source_i(clf_type,metric)
+        raise Exception(f"Unknown clf type {clf_type}")
+        print(clf_type)
+    print(helper(conf_dict['x']))
+    print(helper(conf_dict['y']))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
