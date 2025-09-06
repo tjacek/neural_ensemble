@@ -2,8 +2,9 @@ import numpy as np
 import argparse
 from collections import defaultdict
 import matplotlib.pyplot as plt
+import pandas as pd
+import os.path
 import pred,plot,utils
-
 
 def metric_plot(conf_dict):
     metric,text=conf_dict["metric"],conf_dict["text"]
@@ -45,7 +46,6 @@ def feat_hist(in_path):
         plt.bar(keys,y)
         plt.title(in_path.split("/")[-1])
         plt.show()
-
     helper(in_path)    
 
 def iter_feats(model_path):
@@ -54,10 +54,36 @@ def iter_feats(model_path):
         feat_i=np.load(feat_path_i)
         yield feat_i
 
+class DirSource(object):
+    def __init__(self,result_dict):
+        self.result_dict=result_dict
+        self.clfs= set(result_dict.clfs())
+
+    def __contains__(self, item):
+        return item in self.clfs
+
+class FileSource(object):
+    def __init__(self,df):
+        self.df=df
+
+def diff_sources(conf_dict):
+    print(conf_dict)
+    data_sources=[]
+    for path_i in conf_dict["data"]:
+        if(os.path.isdir(path_i)):
+            result_dict=pred.unify_results([path_i])
+            source_i=DirSource(result_dict)
+        else:
+            df=pd.read_csv(path_i)
+            source_i=FileSource(df)
+        data_sources.append(source_i)
+    print(data_sources)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--conf", type=str, default="sum.json")
+    parser.add_argument("--conf", type=str, default="hete.json")
     args = parser.parse_args()
     conf_dict=utils.read_json(args.conf)
+    diff_sources(conf_dict)
 #    metric_plot(conf_dict)
-    feat_hist("uci_exp/exp")
+#    feat_hist("binary_exp/exp")
