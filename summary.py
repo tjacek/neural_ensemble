@@ -60,7 +60,9 @@ class DirSource(object):
         self.clfs= set(result_dict.clfs())
     
     def __call__(self,clf_type,metric):
-        return self.result_dict.get_clf(clf_type,metric)
+        clf_dict=self.result_dict.get_clf(clf_type,metric)
+        return { clf_i:np.mean(value_i) 
+                    for clf_i,value_i in clf_dict.items()}
 
     def __contains__(self, item):
         if(type(item)==list):
@@ -113,9 +115,14 @@ def diff_sources(conf_dict):
                 return source_i(clf_type,metric)
         raise Exception(f"Unknown clf type {clf_type}")
         print(clf_type)
-    print(helper(conf_dict['x']))
-    print(helper(conf_dict['y']))
-
+    x_clf,y_clf=conf_dict['x'],conf_dict['y']
+    x_dict= helper(x_clf)
+    y_dict= helper(y_clf)
+    plot.dict_plot( x_dict,
+                    y_dict,
+                    xlabel=f"{x_clf}({metric})",
+                    ylabel=f"{y_clf}({metric})",
+                    text=conf_dict["text"])
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--conf", type=str, default="hete.json")
