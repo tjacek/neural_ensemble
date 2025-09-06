@@ -3,7 +3,7 @@ import argparse
 from collections import defaultdict
 import matplotlib.pyplot as plt
 import pandas as pd
-import os.path
+import itertools,os.path
 import pred,plot,utils
 
 def metric_plot(conf_dict):
@@ -60,11 +60,23 @@ class DirSource(object):
         self.clfs= set(result_dict.clfs())
 
     def __contains__(self, item):
-        return item in self.clfs
+        return item in self.clfs 
 
 class FileSource(object):
     def __init__(self,df):
-        self.df=df
+        self.df=df[['data', 'feats', 'dims',
+                    'acc','balance']]
+        self.feats=set([feat_i.replace("'","") 
+                        for feat_i in df['feats'].unique()])
+        self.dims=set(df['dims'].unique())
+    
+    def __contains__(self, item):
+        feat_i,dim_i=item
+        if(not feat_i in self.feats):
+            return False
+        if(not dim_i in self.dims):
+            return False
+        return True
 
 def diff_sources(conf_dict):
     print(conf_dict)
