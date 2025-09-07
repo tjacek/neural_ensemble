@@ -138,8 +138,7 @@ def get_extr_type(extr_feats):
         return MixedFactory
     raise Exception(f"Unknown extr type:{extr_feats}")
 
-
-class InfoFactory(object):
+class FeatFactory(object):
     def __init__(self,n_feats=10):
         self.n_feats=n_feats
 
@@ -147,27 +146,27 @@ class InfoFactory(object):
         tree=tree_factory()
         tree.fit(X,y)
         tree_dict=tree_feats.make_tree_dict(tree)
+        return self.make_feats(tree_dict)
+
+    def make_feats(self,tree_feats):
+        raise NotImplementedError()
+
+class InfoFactory(FeatFactory):
+    def make_feats(self,tree_dict):
         s_feats=tree_feats.path_features(tree_dict,
                                         n_feats=self.n_feats)
         thres=tree_dict.get_attr("threshold",s_feats)
         feats=tree_dict.get_attr("feat",s_feats)
         return tree_feats.TreeFeatures(features=feats,
-                                   thresholds=thres)
-
-class IndFactory(object):
-    def __init__(self,n_feats=10):
-        self.n_feats=n_feats
-
-    def __call__(self,X,y,tree_factory):
-        tree=tree_factory()
-        tree.fit(X,y)
-        tree_dict=tree_feats.make_tree_dict(tree)
+                                       thresholds=thres)        
+class IndFactory(FeatFactory):
+    def make_feats(self,tree_dict):
         s_feats=tree_feats.ind_features(tree_dict,
                                         n_feats=self.n_feats)
         thres=tree_dict.get_attr("threshold",s_feats)
         feats=tree_dict.get_attr("feat",s_feats)
         return tree_feats.TreeFeatures(features=feats,
-                                   thresholds=thres)
+                                       thresholds=thres)
 
 #class DiscreteFactory(object):
 #    def __init__(self,n_feats=20):
