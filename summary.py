@@ -81,21 +81,36 @@ class FileSource(object):
         if(type(clf_type)!=list):
             return False
         feat_i,dim_i=clf_type
-        grouped=self.df.groupby(by='data')
-        df=self.df[ self.df['feats']==f"'{feat_i}'"]
-        df=df[df['dims']==dim_i]
-        df=df[['data',metric]]
-        clf_dict=dict(zip(df['data'].tolist(),
-                          df[metric].tolist()))
-        return clf_dict
+        if(dim_i=="?"):
+            return best_dict(self.df,feat_i,dim_i,metric)
+        return selected_dict(self.df,feat_i,dim_i,metric)
 
     def __contains__(self, item):
         feat_i,dim_i=item
         if(not feat_i in self.feats):
             return False
-        if(not dim_i in self.dims):
+        if(not dim_i in self.dims and 
+            dim_i!='?'):
             return False
         return True
+
+def selected_dict(df,feat_i,dim_i,metric):
+    df=df[df['feats']==f"'{feat_i}'"]
+    df=df[df['dims']==dim_i]
+    df=df[['data',metric]]
+    return dict(zip(df['data'].tolist(),
+                      df[metric].tolist()))
+
+def best_dict(df,feat_i,dim_i,metric):
+    grouped=df.groupby(by='data')
+    def helper(df_i):
+#        df_i= df_i.drop('data', axis=1)
+        df_i=df_i.sort_values(by=metric,ascending=False)
+        row_j=df_i.iloc[0]
+        return row_j#.to_frame()      
+    df=grouped.apply(helper)
+    return dict(zip(df['data'].tolist(),
+                      df[metric].tolist()))
 
 def diff_sources(conf_dict):
     print(conf_dict)
