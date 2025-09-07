@@ -50,6 +50,23 @@ class TreeDict(dict):
             nodes.append(i)
         return info,nodes
 
+    def get_paths(self,s_nodes):
+        indexes=[]
+        for path_j in self.indv_paths(s_nodes):     
+            indexes+=path_j 
+#            indexes.append(i)
+        return list(set(indexes))
+
+    def indv_paths(self,s_nodes):
+        for i in s_nodes:
+            node_i=self[i]
+            path_j=[i]
+            current=node_i
+            while(current.parent!= (-2)):
+                path_j.append(current.parent)
+                current=self[current.parent]
+            yield path_j
+
 class NodeDesc(object):
     def __init__( self,
                   parent,
@@ -78,14 +95,6 @@ class NodeDesc(object):
             return self.threshold
         if(attr=="feat"):
             return self.feature
-
-    def get_path(self,tree_dict):
-        path=[]
-        current=self
-        while(current.parent!= (-2)):
-            path.append(current.parent)
-            current=tree_dict[current.parent]
-        return path
 
 def make_tree_dict(clf):
     tree_dict=TreeDict()
@@ -120,26 +129,6 @@ def find_params(raw_tree):
         parent[right_i]= i
     return parent
 
-def ind_features(tree_dict,n_feats=10):
-    info,nodes=tree_dict.mutual_info()
-    info_index=np.argsort(info)[:n_feats]
-    s_nodes=[nodes[i] for i in info_index]
-    return s_nodes
-
-def path_features(tree_dict,n_feats=10):
-    info,nodes=tree_dict.mutual_info()
-    info_index=np.argsort(info)[:n_feats]
-    s_nodes=[nodes[i] for i in info_index]   
-    indexes=[]
-    for i in s_nodes:
-        node_i=tree_dict[i]
-        indexes+=node_i.get_path(tree_dict)
-        indexes.append(i)
-    indexes=list(set(indexes))
-#    print(indexes)
-#    raise Exception(s_nodes)
-    return indexes #[tree_dict[i] for i in indexes]
-
 def log_helper(p_target_node, p_node):
     if(p_node==0):
         return 0
@@ -147,7 +136,10 @@ def log_helper(p_target_node, p_node):
     for i,p_i in enumerate(p_target_node):
         if(p_i==0):
             continue
-        total+= p_i*np.log(p_i/p_node)
+        quot_i=p_i/p_node
+        if(quot_i<=0):
+            continue
+        total+= p_i*np.log(quot_i)
     return -total
 
 class TabFeatures(object):
@@ -186,3 +178,25 @@ def read_feats(in_path):
     feats=np.load(f"{in_path}/feats.npy")
     thres=np.load(f"{in_path}/thresholds.npy")
     return TreeFeatures(feats,thres)
+
+class ProductFeatures(TabFeatures):
+    def __init__(self,features,
+                      thresholds,
+                      paths):
+        self.features=features
+        self.thresholds=thresholds
+        self.paths=paths
+
+    def n_feats(self):
+        return len(self.paths)
+
+    def compute_feats(self,x_i):
+        new_feats=[]
+        for i,path_i in enumerate(self.paths):
+            values=[]
+            for j in path_i:
+                value_j = x_i[self.features[j]] 
+                thre_j = self.thresholds[j]
+                values.append(value_j < thre_j)
+            new_feats.append(all(values))
+        return np.array(new_feats)

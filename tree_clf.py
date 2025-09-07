@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.stats import entropy 
-import collections
+import collections,itertools
 import base,dataset,tree_feats
 
 class TreeFeatFactory(object):
@@ -128,10 +128,12 @@ def get_extractor(extr_feats):
 def get_extr_type(extr_feats):
     if(extr_feats=="info"):
         return InfoFactory
-    if(extr_feats=="disc"):
-        return DiscreteFactory
+#    if(extr_feats=="disc"):
+#        return DiscreteFactory
     if(extr_feats=="ind"):
         return IndFactory
+    if(extr_feats=="prod"):
+        return ProductFactory
     if(extr_feats=="cs"):
         return CSFactory
     if(extr_feats=="mixed"):
@@ -153,21 +155,41 @@ class FeatFactory(object):
 
 class InfoFactory(FeatFactory):
     def make_feats(self,tree_dict):
-        s_feats=tree_feats.path_features(tree_dict,
-                                        n_feats=self.n_feats)
+        info,nodes=tree_dict.mutual_info()
+        info_index=np.argsort(info)[:self.n_feats]
+        s_nodes=[nodes[i] for i in info_index]
+        s_feats=tree_dict.get_paths(s_nodes)
         thres=tree_dict.get_attr("threshold",s_feats)
         feats=tree_dict.get_attr("feat",s_feats)
         return tree_feats.TreeFeatures(features=feats,
                                        thresholds=thres)        
 class IndFactory(FeatFactory):
     def make_feats(self,tree_dict):
-        s_feats=tree_feats.ind_features(tree_dict,
-                                        n_feats=self.n_feats)
+        info,nodes=tree_dict.mutual_info()
+        info_index=np.argsort(info)[:self.n_feats]
+        s_feats=[nodes[i] for i in info_index]
         thres=tree_dict.get_attr("threshold",s_feats)
         feats=tree_dict.get_attr("feat",s_feats)
         return tree_feats.TreeFeatures(features=feats,
                                        thresholds=thres)
 
+class ProductFactory(FeatFactory):
+    def make_feats(self,tree_dict):
+        info,nodes=tree_dict.mutual_info()
+        info_index=np.argsort(info)[:self.n_feats]
+        s_nodes=[nodes[i] for i in info_index]
+        indv_paths=list(tree_dict.indv_paths(s_nodes))
+        path_nodes = list(itertools.chain.from_iterable(indv_paths))
+        path_nodes=list(set(path_nodes))
+        thres=tree_dict.get_attr("threshold",path_nodes)
+        feats=tree_dict.get_attr("feat",path_nodes)
+        node_dict={ node_i:i for i,node_i in enumerate(path_nodes)}
+        paths=[[ node_dict[j] for j in path_i]
+                    for path_i in indv_paths]
+        return tree_feats.ProductFeatures(features=feats,
+                                          thresholds=thres,
+                                          paths=paths)
+        
 #class DiscreteFactory(object):
 #    def __init__(self,n_feats=20):
 #        self.n_feats=n_feats
