@@ -5,7 +5,10 @@ utils.silence_warnings()
 
 class ResultDict(dict):
     def clfs(self):
-        all_clfs=list(self.values())[0].keys()
+        all_clfs=[]
+        for value_i in self.values():    
+            all_clfs+= list(value_i.keys())
+        all_clfs= list(set(all_clfs))
         all_clfs=list(all_clfs)
         all_clfs.sort()
         return all_clfs
@@ -16,8 +19,11 @@ class ResultDict(dict):
         return all_data
     
     def __call__(self,clf_type,fun):
-        return { data_i:fun(dict_i[clf_type])
-                    for data_i,dict_i in self.items()}
+        data_dict={}
+        for data_i,dict_i in self.items():
+            if(clf_type in dict_i):
+                data_dict[data_i]=fun(dict_i[clf_type])
+        return data_dict
 
     def get_clf(self,clf_type,metric="acc"):
         return self(clf_type,lambda r:r.get_metric(metric))
@@ -74,6 +80,6 @@ def summary(exp_path):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--exp_path", type=str, default="uci_exp/exp")
+    parser.add_argument("--exp_path", type=str, default="new_exp/uci/exp")
     args = parser.parse_args()
     summary(exp_path=args.exp_path)
