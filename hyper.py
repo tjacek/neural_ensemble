@@ -52,7 +52,7 @@ def eval_tree(data_split,clf_factory):
 
 
 def svm_tree(in_path,multi=False):
-    extr=["info","ind"]
+    extr=["info","ind","prod"]
     n_feats=[10,20,30,50]
     def helper(in_path):
         data_split=base.get_splits(data_path=in_path,
@@ -94,7 +94,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--in_path", type=str,  default="uci")
     parser.add_argument("--out_path", type=str, default=None)
+    parser.add_argument("--hyper_path", type=str, default=None)
     args = parser.parse_args()
     df=svm_tree(f"{args.in_path}_exp/data",multi=True)
     if(args.out_path):
         df.df.to_csv(args.out_path, sep=',')
+    if(args.hyper_path):
+        best_df=df.best()[['data','feats','dims','acc']]
+#        print(best_df)
+        best_df.to_csv(args.hyper_path, sep=',')

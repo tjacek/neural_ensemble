@@ -245,13 +245,12 @@ class DFView(object):
             df_i=df_i.sort_values(by=sort,ascending=False)
             print(df_i)
 
-#    def group(self,sort="acc"):
-#        grouped=self.df.groupby(by='data')
-#        def helper(df_i):
-#            return df_i.sort_values(by=sort)
-#            print(df.round(4))
-#            return df['dataset'].tolist()
-#        self.df= grouped.apply(helper)
+    def best(self,sort_by="acc"):
+        grouped=self.df.groupby(by='data')
+        def helper(df_i):
+            df_i=df_i.sort_values(by=sort_by,ascending=False)
+            return df_i.iloc[0]
+        return grouped.apply(helper)
 
 def make_df(helper,
             iterable,
