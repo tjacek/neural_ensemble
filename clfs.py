@@ -14,11 +14,12 @@ def get_clfs(clf_type,
     if(clf_type=="MLP"):
         return MLPFactory()
     if(clf_type=="TREE-MLP"):
-        return TreeMLPFactory()
+        return TreeMLPFactory(feature_params=feature_params)
     if(feature_params is None):
         feature_params={ "tree_factory":"random",
                      "extr_factory":("info",30),
                      "concat":True}
+
     if(clf_type=="TREE-ENS"):
         return CSTreeEnsFactory(hyper_params=hyper_params,
                                 feature_params=feature_params,
