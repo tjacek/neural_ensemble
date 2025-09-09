@@ -80,7 +80,8 @@ def dict_plot(x_dict,
               y_dict,
               xlabel,
               ylabel,
-              text=True):
+              text=True,
+              title=None):
     fig=plt.figure()
     if(type(text)==dict):
         for data_i in x_dict:
@@ -106,6 +107,8 @@ def dict_plot(x_dict,
     plt.ylim(0.9*min(y_dict.values()),
              1.1*max(y_dict.values()))
     plt.axline((0, 0), (1, 1))
+    if(title):
+        plt.title(title)
     plt.grid()
     plt.show()
 

@@ -10,6 +10,7 @@ def metric_plot(conf_dict):
     metric,text=conf_dict["metric"],conf_dict["text"]
     x_clf,y_clf=conf_dict["x_clf"],conf_dict["y_clf"]
     result_dict=pred.unify_results(conf_dict["exp_path"])
+#    raise Exception(result_dict)
     x_dict=result_dict.get_mean_metric(x_clf,metric=metric)
     y_dict=result_dict.get_mean_metric(y_clf,metric=metric)
     if("names" in conf_dict):
@@ -18,7 +19,8 @@ def metric_plot(conf_dict):
                     y_dict,
                     xlabel=f"{x_clf}({metric})",
                     ylabel=f"{y_clf}({metric})",
-                    text=text)
+                    text=text,
+                    title=conf_dict["title"])
 
 def count_feats(conf_dict):
     @utils.DirFun(out_arg=None)
@@ -104,10 +106,9 @@ def selected_dict(df,feat_i,dim_i,metric):
 def best_dict(df,feat_i,dim_i,metric):
     grouped=df.groupby(by='data')
     def helper(df_i):
-#        df_i= df_i.drop('data', axis=1)
         df_i=df_i.sort_values(by=metric,ascending=False)
         row_j=df_i.iloc[0]
-        return row_j#.to_frame()      
+        return row_j     
     df=grouped.apply(helper)
     return dict(zip(df['data'].tolist(),
                       df[metric].tolist()))
@@ -140,9 +141,9 @@ def diff_sources(conf_dict):
                     text=conf_dict["text"])
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--conf", type=str, default="hete.json")
+    parser.add_argument("--conf", type=str, default="sum.json")
     args = parser.parse_args()
     conf_dict=utils.read_json(args.conf)
-    diff_sources(conf_dict)
-#    metric_plot(conf_dict)
+#    diff_sources(conf_dict)
+    metric_plot(conf_dict)
 #    feat_hist("binary_exp/exp")
