@@ -6,49 +6,80 @@ import argparse
 import base,clfs,utils,tree_clf,tree_feats,dataset
 utils.silence_warnings()
 
-def hyper_comp(in_path,hyper,clf_type="TREE-ENS"):
-    data_split=base.get_splits(data_path=in_path,
-                               n_splits=10,
-                               n_repeats=1)
-    feature_params={"tree_factory":"random",
-                            "extr_factory":("info",30),
-                            "concat":True}
-    for hyper_i in hyper:
-        clf_factory=clfs.get_clfs(clf_type,
-                                 hyper_params=hyper_i,
-                                 feature_params=None)
-        eval_tree(data_split,clf_factory)
 
-def tree_comp(in_path,
-              clf_type="TREE-ENS",
-              extr=None,
-              n_feats=None):
-    data_split=base.get_splits(data_path=in_path,
-                               n_splits=10,
-                               n_repeats=1)
-    prototype={"tree_factory":"random",
-                "concat":True}
-    if(extr is None):
-        extr=["info","ind"]
-    if(n_feats is None):
-        n_feats=[20,30,50]
-    hyper={'layers':2, 'units_0':1,'units_1':1,'batch':False}
-    for feat_i,dim_i in product(extr,n_feats):
-        tree_i=prototype.copy()
-        tree_i["extr_factory"]= (feat_i,dim_i)#extr_i
-        clf_factory=clfs.get_clfs(clf_type,
-                                 hyper_params=hyper,
-                                 feature_params=tree_i)
-        acc_i,balance_i=eval_tree(data_split,clf_factory)
-        print(f"{feat_i}.{dim_i},{acc_i:.4f},{balance_i:.4f}")
+def nn_tree(in_path,multi=False):
+    extr=["ind"]#"info","ind","prod"]
+    n_feats=[10,20] #,30,50]
+    hyper_params={ 'layers':2, 'units_0':1,
+                   'units_1':1,'batch':False}
 
-def eval_tree(data_split,clf_factory):
-    clf_factory.init(data_split.data)
-    acc,balance=[],[]
-    for clf_j,result_j in tqdm(data_split.eval(clf_factory)):
-        acc.append(result_j.get_acc())
-        balance.append(result_j.get_metric("balance"))
-    return np.mean(acc),np.mean(balance)
+    def helper(in_path):
+        data_split=base.get_splits( data_path=in_path,
+                                    n_splits=10,
+                                    n_repeats=1)
+        data=in_path.split("/")[-1]
+        lines=[]
+        for feat_i,dim_i in product(extr,n_feats):
+            arg_i={ "tree_factory":"random",
+                    "extr_factory":(feat_i,dim_i),
+                    "concat":True}
+            clf_factory=clfs.get_clfs("TREE-MLP",
+                                      hyper_params=hyper_params,
+                                      feature_params=arg_i)
+            clf_factory.init(data_split.data)
+            results=data_split.get_results(clf_factory)
+            acc_i=np.mean(results.get_metric("acc"))
+            balance_i=np.mean(results.get_metric("balance"))
+            line_i=[feat_i,dim_i,hyper_params['units_0']]
+            desc_i=",".join([str(c_j) for c_j in line_i])
+            print(f"{data},{desc_i},{acc_i:.4f},{balance_i:.4f}")
+            line_i= [data] + line_i + [acc_i,balance_i]
+            lines.append(line_i)
+        return lines
+    cols=[ "data","feats","dims","layer_1",
+           "acc","balance"]
+    if(multi):
+        df=dataset.make_df(helper=helper,
+                           iterable=utils.top_files(in_path),
+                           cols=cols,
+                           offset=None,
+                           multi=True)
+    else:
+        lines=helper(in_path)
+        df=dataset.from_lines(lines,cols)
+    df.by_data()
+    return df
+  
+#def tree_comp(in_path,
+#              clf_type="TREE-ENS",
+#              extr=None,
+#              n_feats=None):
+#    data_split=base.get_splits(data_path=in_path,
+#                               n_splits=10,
+#                               n_repeats=1)
+#    prototype={"tree_factory":"random",
+#                "concat":True}
+#    if(extr is None):
+#        extr=["info","ind"]
+#    if(n_feats is None):
+#        n_feats=[20,30,50]
+#    hyper={'layers':2, 'units_0':1,'units_1':1,'batch':False}
+#    for feat_i,dim_i in product(extr,n_feats):
+#        tree_i=prototype.copy()
+#        tree_i["extr_factory"]= (feat_i,dim_i)#extr_i
+#        clf_factory=clfs.get_clfs(clf_type,
+#                                 hyper_params=hyper,
+#                                 feature_params=tree_i)
+#        acc_i,balance_i=eval_tree(data_split,clf_factory)
+#        print(f"{feat_i}.{dim_i},{acc_i:.4f},{balance_i:.4f}")
+
+#def eval_tree(data_split,clf_factory):
+#    clf_factory.init(data_split.data)
+#    acc,balance=[],[]
+#    for clf_j,result_j in tqdm(data_split.eval(clf_factory)):
+#        acc.append(result_j.get_acc())
+#        balance.append(result_j.get_metric("balance"))
+#    return np.mean(acc),np.mean(balance)
 
 
 def svm_tree(in_path,multi=False):
@@ -90,13 +121,12 @@ def svm_tree(in_path,multi=False):
     return df
 
 if __name__ == '__main__':
-    hyper=[{'layers':2, 'units_0':2,'units_1':1,'batch':False}]#,
     parser = argparse.ArgumentParser()
-    parser.add_argument("--in_path", type=str,  default="uci")
+    parser.add_argument("--in_path", type=str,  default="bad")
     parser.add_argument("--out_path", type=str, default=None)
     parser.add_argument("--hyper_path", type=str, default=None)
     args = parser.parse_args()
-    df=svm_tree(f"{args.in_path}_exp/data",multi=True)
+    df=nn_tree(f"{args.in_path}_exp/data",multi=True)
     if(args.out_path):
         df.df.to_csv(args.out_path, sep=',')
     if(args.hyper_path):
