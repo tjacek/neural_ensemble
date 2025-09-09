@@ -10,27 +10,38 @@ utils.silence_warnings()
 def nn_tree(in_path,multi=False):
     extr=["ind"]#"info","ind","prod"]
     n_feats=[10,20] #,30,50]
-    hyper_params={ 'layers':2, 'units_0':1,
-                   'units_1':1,'batch':False}
-
+    units=[1,2]
+#    hyper_params={ 'layers':2, 'units_0':1,
+#                   'units_1':1,'batch':False}
+    def arg_iter():
+        for feat_i,dim_i in product(extr,n_feats):
+            arg_i={ "tree_factory":"random",
+                    "extr_factory":(feat_i,dim_i),
+                    "concat":True}
+            for unit_j in units:
+                hyper_j={ 'layers':2, 'units_0':unit_j,
+                          'units_1':1,'batch':False}
+                yield arg_i,hyper_j
     def helper(in_path):
         data_split=base.get_splits( data_path=in_path,
                                     n_splits=10,
                                     n_repeats=1)
         data=in_path.split("/")[-1]
         lines=[]
-        for feat_i,dim_i in product(extr,n_feats):
-            arg_i={ "tree_factory":"random",
-                    "extr_factory":(feat_i,dim_i),
-                    "concat":True}
+        for arg_i,hyper_i in arg_iter():
+#        for feat_i,dim_i in product(extr,n_feats):
+#            arg_i={ "tree_factory":"random",
+#                    "extr_factory":(feat_i,dim_i),
+#                    "concat":True}
+            feat_i,dim_i=arg_i['extr_factory']
             clf_factory=clfs.get_clfs("TREE-MLP",
-                                      hyper_params=hyper_params,
+                                      hyper_params=hyper_i,
                                       feature_params=arg_i)
             clf_factory.init(data_split.data)
             results=data_split.get_results(clf_factory)
             acc_i=np.mean(results.get_metric("acc"))
             balance_i=np.mean(results.get_metric("balance"))
-            line_i=[feat_i,dim_i,hyper_params['units_0']]
+            line_i=[feat_i,dim_i,hyper_i['units_0']]
             desc_i=",".join([str(c_j) for c_j in line_i])
             print(f"{data},{desc_i},{acc_i:.4f},{balance_i:.4f}")
             line_i= [data] + line_i + [acc_i,balance_i]
