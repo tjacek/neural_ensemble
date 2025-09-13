@@ -142,8 +142,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print(args)
     df=nn_tree(f"{args.in_path}_exp/data",multi=True,
-                  selected=["cleveland","cmc",
-                            "dermatology","led7digit"])
+                  selected=[ "mfeat-fourier","mfeat-karh",
+                             "newthyroid", "satimage"])
     if(args.out_path):
         df.df.to_csv(args.out_path, sep=',')
     if(args.hyper_path):

@@ -61,13 +61,12 @@ def neural_train( data_path:str,
         data=dataset.read_csv(in_path)
         data_id=in_path.split("/")[-1]
         print(data_id)
-        if(data_id!="cleveland"):
-        	raise Exception(data_id)
         dir_proxy=base.get_dir_path(out_path=exp_path,
                                     clf_type=clf_type)
+        hyper_params,feature_params=hyper_dict[data_id]
         clf_factory=clfs.get_clfs(clf_type=clf_type,
-        	                      hyper_params=None,
-                                  feature_params=hyper_dict[data_id])
+        	                      hyper_params=hyper_params,
+                                  feature_params=feature_params)
         clf_factory.init(data)
         dir_proxy.make_dir(["history","models","results"])
         path_dict=dir_proxy.path_dict(indexes=interval,
@@ -82,7 +81,6 @@ def neural_train( data_path:str,
             clf_i.save(path_dict["models"][i])
             result_i=clf_i.eval(data,split_i)
             result_i.save(path_dict["results"][i])
-            print(result_i.get_acc())
         dir_proxy.save_info(clf_factory)
     helper(data_path,out_path)            
 
@@ -100,22 +98,25 @@ def parse_hyper(hyper_path):
     df=pd.read_csv(hyper_path)
     hyper_dict={}
     for index, row_i in df.iterrows():
-    	dict_i=row_i.to_dict()
-    	data_i=dict_i['data']
-    	extr_i=(dict_i["feats"].replace("'",""),dict_i["dims"])
-    	hyper_dict[data_i]={ "tree_factory":"random",
-                             "extr_factory":extr_i,
-                             "concat":True}
+        dict_i=row_i.to_dict()
+        data_i=dict_i['data']
+        extr_i=(dict_i["feats"].replace("'",""),dict_i["dims"])
+        hyper_i={'layers':2, 'units_0':dict_i["layer"],
+                 'units_1':1,'batch':False}
+        hyper_dict[data_i]=[ hyper_i,
+                             { "tree_factory":"random",
+                               "extr_factory":extr_i,
+                               "concat":True}]
     return hyper_dict
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type=str, default="new_exp/uci/data")
-    parser.add_argument("--out_path", type=str, default="new_exp/uci/exp")
+    parser.add_argument("--data", type=str, default="neural/uci/data")
+    parser.add_argument("--out_path", type=str, default="neural/uci/exp")
     parser.add_argument("--start", type=int, default=0)
     parser.add_argument("--step", type=int, default=10)
-    parser.add_argument("--clf_type", type=str, default="TREE-MLP")
-    parser.add_argument("--hyper_path", type=str, default="new_exp/uci/hyper.csv")
+    parser.add_argument("--clf_type", type=str, default="MLP")
+    parser.add_argument("--hyper_path", type=str, default="neural/uci/hyper.csv")
 
     args = parser.parse_args()
     print(args)
