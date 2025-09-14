@@ -224,6 +224,9 @@ class AbstractClfFactory(object):
 
     def get_info(self):
         raise NotImplementedError()
+    
+    def __repr__(self):
+        return str(self)
 
 class AbstractClfAdapter(object):
 
@@ -235,6 +238,9 @@ class AbstractClfAdapter(object):
 
     def save(self,out_path):
         pass
+
+    def __repr__(self):
+        return str(self)
 
 class ClasicalClfFactory(AbstractClfFactory):
     def __init__(self,clf_type="RF"):
