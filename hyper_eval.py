@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 import dataset
 
 def best_param(in_path,metric="accuracy"):
@@ -23,6 +24,22 @@ def var_param(in_path,metric="accuracy"):
         return pd.Series([data_i,mean_i,std_i])
     return grouped.apply(helper)
 
+def plot_dim( in_path,
+              metric="accuracy",
+              feats="info"):
+    df=pd.read_csv(in_path)
+    df=dataset.DFView(df)
+    for df_i in df.by_data(sort=metric):
+        feat_i=df_i[df_i["feats"]==feats]
+        units=feat_i["dims"]*feat_i["layer"]
+        units=units.tolist()
+        metric_values=feat_i[metric].tolist()
+        data_i=feat_i.iloc[0]["data"]
+#        print(data_i)
+        plt.scatter(units, metric_values)
+        plt.title(data_i)
+        plt.show()
+
 in_path="neural/uci/raw_hyper.csv"
-df=var_param(in_path,metric="accuracy")
-print(df)
+plot_dim(in_path,metric="accuracy")
+#print(df)
