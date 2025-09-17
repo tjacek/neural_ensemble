@@ -40,6 +40,23 @@ def plot_dim( in_path,
         plt.title(data_i)
         plt.show()
 
-in_path="neural/uci/raw_hyper.csv"
-plot_dim(in_path,metric="accuracy")
-#print(df)
+def plot_xy( in_path,
+             series="layer",
+             x_series=1,
+             y_series=2,
+             value="accuracy"):
+    df=pd.read_csv(in_path)
+    df=dataset.DFView(df)
+    for df_i in df.by_data("accuracy"):
+        data_i=df_i.iloc[0]["data"]
+        x_i=df_i[df_i[series]==x_series][value].tolist()
+        y_i=df_i[df_i[series]==y_series][value].tolist()
+        plt.scatter(x_i, y_i)
+        plt.title(data_i)
+        plt.show()
+
+
+if __name__ == '__main__':
+    in_path="neural/uci/raw_hyper.csv"
+    df=plot_xy(in_path)#,metric="accuracy")
+    print(df)
