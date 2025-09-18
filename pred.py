@@ -1,6 +1,6 @@
 import numpy as np
 import argparse
-import base,dataset,utils
+import base,dataset,plot,utils
 utils.silence_warnings()
 
 class ResultDict(dict):
@@ -75,11 +75,28 @@ def summary(exp_path):
                       iterable=result_dict.clfs(),
                       cols=["data","clf","acc","balance","n_splits"],
                       multi=True)     
-    print(df.by_data(sort='acc'))
+    for df_i in df.by_data(sort='acc'):
+        print(df_i)
 
+def box_plot(exp_path,split_size=None):
+    result_dict=get_result_dict(exp_path)
+    data=list(result_dict.keys())
+    if(split_size):
+        splits=utils.split_list(data,split_size)
+    else:
+        splits=[data]
+    for split_i in splits:
+        plot.plot_box(result_dict,
+                      data=split_i,
+                      clf_types=None)
+        print(result_dict.keys())
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--exp_path", type=str, default="new_exp/uci/exp")
+    parser.add_argument("--exp_path", type=str, default="neural/multi/exp")
+    parser.add_argument('--plot',action='store_true')
     args = parser.parse_args()
-    summary(exp_path=args.exp_path)
+    if(args.plot):
+        box_plot(exp_path=args.exp_path)
+    else:
+        summary(exp_path=args.exp_path)

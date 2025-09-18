@@ -134,3 +134,8 @@ def split_dict(full_dict,split_set):
         else:
             neg_dict[key_i]=value_i
     return pos_dict,neg_dict
+
+def split_list(data,split_size):
+    n_splits=int(len(data)/split_size)
+    return [ data[i*split_size:(i+1)*split_size] 
+                for i in range(n_splits)]
