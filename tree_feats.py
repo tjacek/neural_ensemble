@@ -200,3 +200,9 @@ class ProductFeatures(TabFeatures):
                 values.append(value_j < thre_j)
             new_feats.append(all(values))
         return np.array(new_feats)
+
+    def save(self,out_path):
+        utils.make_dir(out_path)
+        np.save(f"{out_path}/feats.npy",self.features)
+        np.save(f"{out_path}/thresholds.npy",self.thresholds)
+        utils.save_json(self.paths,f"{out_path}/paths")

@@ -111,12 +111,12 @@ def parse_hyper(hyper_path):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type=str, default="neural/uci/data")
-    parser.add_argument("--out_path", type=str, default="neural/uci/exp")
+    parser.add_argument("--data", type=str, default="neural/binary/data")
+    parser.add_argument("--out_path", type=str, default="neural/binary/exp")
     parser.add_argument("--start", type=int, default=0)
     parser.add_argument("--step", type=int, default=10)
-    parser.add_argument("--clf_type", type=str, default="MLP")
-    parser.add_argument("--hyper_path", type=str, default="neural/uci/hyper.csv")
+    parser.add_argument("--clf_type", type=str, default="TREE-MLP")
+    parser.add_argument("--hyper_path", type=str, default="neural/binary/hyper.csv")
 
     args = parser.parse_args()
     print(args)
