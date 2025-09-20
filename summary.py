@@ -139,11 +139,27 @@ def diff_sources(conf_dict):
                     xlabel=f"{x_clf}({metric})",
                     ylabel=f"{y_clf}({metric})",
                     text=conf_dict["text"])
+
+def show_csv( in_path,
+              x_clf="RF",
+              y_clf="TREE-ENS(5)",
+              metric="acc"):
+    df=pd.read_csv(in_path)
+    x_df=df[df["clf"]==x_clf]
+    x_value=x_df[metric].tolist()
+    y_df=df[df["clf"]==y_clf]
+    y_value=y_df[metric].tolist()
+    plt.scatter(x_value, y_value)
+    plt.axline((0, 0), (1, 1))
+    print(y_clf)
+    plt.grid()
+    plt.show()
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--conf", type=str, default="sum.json")
+    parser.add_argument("--conf", type=str, default="hete.json")
     args = parser.parse_args()
     conf_dict=utils.read_json(args.conf)
+    show_csv("binary_raw.csv")
 #    diff_sources(conf_dict)
-    metric_plot(conf_dict)
+#    metric_plot(conf_dict)
 #    feat_hist("binary_exp/exp")
