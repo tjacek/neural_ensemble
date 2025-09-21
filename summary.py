@@ -145,15 +145,20 @@ def show_csv( in_path,
               y_clf="TREE-ENS(5)",
               metric="acc"):
     df=pd.read_csv(in_path)
-    x_df=df[df["clf"]==x_clf]
-    x_value=x_df[metric].tolist()
-    y_df=df[df["clf"]==y_clf]
-    y_value=y_df[metric].tolist()
-    plt.scatter(x_value, y_value)
-    plt.axline((0, 0), (1, 1))
-    print(y_clf)
-    plt.grid()
-    plt.show()
+    def helper(clf_type):
+         x_df=df[df["clf"]==clf_type]
+         x_value=x_df[metric].tolist()
+         x_data=x_df["data"].tolist()
+         pairs=list(zip(x_data,x_value))
+         return dict(pairs)
+    x_dict=helper(x_clf)
+    y_dict=helper(y_clf)
+    plot.dict_plot( x_dict,
+                    y_dict,
+                    xlabel=f"{x_clf}({metric})",
+                    ylabel=f"{y_clf}({metric})",
+                    text=True)
+    
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--conf", type=str, default="hete.json")
