@@ -71,7 +71,7 @@ class DirSource(object):
             return False
         return item in self.clfs 
 
-class FileSource(object):
+class HyperSource(object):
     def __init__(self,df):
         self.df=df[['data', 'feats', 'dims',
                     'accuracy','balance']]
@@ -95,6 +95,26 @@ class FileSource(object):
             dim_i!='?'):
             return False
         return True
+
+class CsvSource(object):
+    def __init__(self,df):
+        self.df=df
+        self.clfs=set(df["clf"].tolist())
+    
+    def __call__(self,clf_type,metric):
+        df_clf=self.df[self.df["clf"]==clf_type]
+#        df_clf["me"]
+        return dict(zip(df_clf['data'].tolist(),
+                        df_clf[metric].tolist()))
+    def __contains__(self, item):
+        return item in self.clfs
+
+def parse_csv(in_path):
+    df=pd.read_csv(in_path)
+    cols=set(df.columns)
+    if("clf" in cols):
+        return CsvSource(df)
+    return HyperSource(df)
 
 def selected_dict(df,feat_i,dim_i,metric):
     df=df[df['feats']==f"'{feat_i}'"]
@@ -121,8 +141,7 @@ def diff_sources(conf_dict):
             result_dict=pred.unify_results([path_i])
             source_i=DirSource(result_dict)
         else:
-            df=pd.read_csv(path_i)
-            source_i=FileSource(df)
+            source_i=parse_csv(path_i)
         data_sources.append(source_i)
     metric=conf_dict['metric']
     def helper(clf_type):
@@ -157,14 +176,14 @@ def show_csv( in_path,
                     y_dict,
                     xlabel=f"{x_clf}({metric})",
                     ylabel=f"{y_clf}({metric})",
-                    text=True)
-    
+                    text=False)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--conf", type=str, default="hete.json")
     args = parser.parse_args()
     conf_dict=utils.read_json(args.conf)
-    show_csv("binary_raw.csv")
-#    diff_sources(conf_dict)
+#    show_csv("binary_raw.csv")
+    diff_sources(conf_dict)
 #    metric_plot(conf_dict)
 #    feat_hist("binary_exp/exp")
