@@ -4,13 +4,12 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import pandas as pd
 import itertools,os.path
-import pred,plot,utils
+import dataset,pred,plot,utils
 
 def metric_plot(conf_dict):
     metric,text=conf_dict["metric"],conf_dict["text"]
     x_clf,y_clf=conf_dict["x_clf"],conf_dict["y_clf"]
     result_dict=pred.unify_results(conf_dict["exp_path"])
-#    raise Exception(result_dict)
     x_dict=result_dict.get_mean_metric(x_clf,metric=metric)
     y_dict=result_dict.get_mean_metric(y_clf,metric=metric)
     if("names" in conf_dict):
@@ -103,7 +102,6 @@ class CsvSource(object):
     
     def __call__(self,clf_type,metric):
         df_clf=self.df[self.df["clf"]==clf_type]
-#        df_clf["me"]
         return dict(zip(df_clf['data'].tolist(),
                         df_clf[metric].tolist()))
     def __contains__(self, item):
@@ -133,57 +131,57 @@ def best_dict(df,feat_i,dim_i,metric):
     return dict(zip(df['data'].tolist(),
                       df[metric].tolist()))
 
-def diff_sources(conf_dict):
-    print(conf_dict)
+def make_source(result,metric):
     data_sources=[]
-    for path_i in conf_dict["data"]:
+    for path_i in result:
         if(os.path.isdir(path_i)):
             result_dict=pred.unify_results([path_i])
             source_i=DirSource(result_dict)
         else:
             source_i=parse_csv(path_i)
         data_sources.append(source_i)
-    metric=conf_dict['metric']
     def helper(clf_type):
         for source_i in data_sources:
             if(clf_type in source_i):
                 return source_i(clf_type,metric)
         raise Exception(f"Unknown clf type {clf_type}")
-        print(clf_type)
-    x_clf,y_clf=conf_dict['x'],conf_dict['y']
-    x_dict= helper(x_clf)
-    y_dict= helper(y_clf)
+    return helper
+
+def hete_sources(conf_dict):
+    result,metric=conf_dict["result"],conf_dict['metric']
+    helper=make_source(result,metric)
+    x_dict= helper(conf_dict['x'])
+    y_dict= helper(conf_dict['y'])
     plot.dict_plot( x_dict,
                     y_dict,
                     xlabel=f"{x_clf}({metric})",
                     ylabel=f"{y_clf}({metric})",
                     text=conf_dict["text"])
 
-def show_csv( in_path,
-              x_clf="RF",
-              y_clf="TREE-ENS(5)",
-              metric="acc"):
-    df=pd.read_csv(in_path)
-    def helper(clf_type):
-         x_df=df[df["clf"]==clf_type]
-         x_value=x_df[metric].tolist()
-         x_data=x_df["data"].tolist()
-         pairs=list(zip(x_data,x_value))
-         return dict(pairs)
-    x_dict=helper(x_clf)
-    y_dict=helper(y_clf)
-    plot.dict_plot( x_dict,
-                    y_dict,
-                    xlabel=f"{x_clf}({metric})",
-                    ylabel=f"{y_clf}({metric})",
-                    text=False)
+def diff(conf_dict):
+    result,metric=conf_dict["result"],conf_dict['metric']
+    helper=make_source(result,metric)
+    df=dataset.csv_desc(conf_dict['data'])
+    desc_dict= df.get_dict("id",conf_dict["desc"])
+    desc_dict={ name_i:float(value_i) 
+            for name_i,value_i in desc_dict.items()}
+    x_dict= helper(conf_dict['x'])
+    y_dict= helper(conf_dict['y'])
+    diff_dict={ key_i:(x_dict[key_i]-y_dict[key_i])
+                            for key_i in x_dict}
+    plot.dict_plot( desc_dict,
+                    diff_dict,
+                    xlabel="x",#f"{x_clf}({metric})",
+                    ylabel="y",#f"{y_clf}({metric})",
+                    text=conf_dict["text"])
+
+#    print(diff_dict)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--conf", type=str, default="hete.json")
     args = parser.parse_args()
     conf_dict=utils.read_json(args.conf)
-#    show_csv("binary_raw.csv")
-    diff_sources(conf_dict)
+    diff(conf_dict)
 #    metric_plot(conf_dict)
 #    feat_hist("binary_exp/exp")

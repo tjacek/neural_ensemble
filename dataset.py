@@ -243,7 +243,7 @@ class DFView(object):
         for name_i in names:
             df_i=self.df[self.df['data']==name_i]
             df_i=df_i.sort_values(by=sort,ascending=False)
-            print(df_i)
+            yield df_i
 
     def best(self,sort_by="acc"):
         grouped=self.df.groupby(by='data')
@@ -251,6 +251,10 @@ class DFView(object):
             df_i=df_i.sort_values(by=sort_by,ascending=False)
             return df_i.iloc[0]
         return grouped.apply(helper)
+
+    def get_dict(self,x,y):
+        return dict(zip(self.df[x].tolist(),
+                        self.df[y].tolist()))
 
 def make_df(helper,
             iterable,
@@ -373,12 +377,12 @@ def csv_desc(in_path):
         line_i=[id_i,str(data_i.n_cats()),str(data_i.dim()),
                 str(len(data_i))]
         lines.append(line_i)
-    df=from_lines(lines,["id","cats","dims","samples"])
-    df.print()
-
+    return from_lines(lines,["id","cats","dims","samples"])
+    
 if __name__ == '__main__':
 #    arff_to_csv("AutoML","csv",
 #              ["madeline","philippine","sylvine"])
 #    data_desc("AutoML",
 #        first_set=["madeline","philippine","sylvine"])
-    csv_desc("uci_exp/data")
+    df=csv_desc("binary_exp/data")
+    df.print()
