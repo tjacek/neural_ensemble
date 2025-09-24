@@ -150,8 +150,11 @@ def make_source(result,metric):
 def hete_sources(conf_dict):
     result,metric=conf_dict["result"],conf_dict['metric']
     helper=make_source(result,metric)
-    x_dict= helper(conf_dict['x'])
-    y_dict= helper(conf_dict['y'])
+    x_clf,y_clf=conf_dict['x'],conf_dict['y']
+    x_dict= helper(x_clf)
+    y_dict= helper(y_clf)
+    print(x_dict)
+    print(y_dict)
     plot.dict_plot( x_dict,
                     y_dict,
                     xlabel=f"{x_clf}({metric})",
@@ -165,17 +168,18 @@ def diff(conf_dict):
     desc_dict= df.get_dict("id",conf_dict["desc"])
     desc_dict={ name_i:float(value_i) 
             for name_i,value_i in desc_dict.items()}
-    x_dict= helper(conf_dict['x'])
-    y_dict= helper(conf_dict['y'])
+    x,y=conf_dict['x'],conf_dict['y']
+    x_dict= helper(x)
+    y_dict= helper(y)
+    print(x_dict.keys())
+    print(y_dict.keys())
     diff_dict={ key_i:(x_dict[key_i]-y_dict[key_i])
                             for key_i in x_dict}
     plot.dict_plot( desc_dict,
                     diff_dict,
-                    xlabel="x",#f"{x_clf}({metric})",
-                    ylabel="y",#f"{y_clf}({metric})",
+                    xlabel=conf_dict["desc"],#f"{x_clf}({metric})",
+                    ylabel=f"{x}-{y}",#f"{y_clf}({metric})",
                     text=conf_dict["text"])
-
-#    print(diff_dict)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
