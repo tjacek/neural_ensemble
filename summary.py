@@ -141,10 +141,12 @@ def make_source(result,metric):
             source_i=parse_csv(path_i)
         data_sources.append(source_i)
     def helper(clf_type):
+        clf_dict={}
         for source_i in data_sources:
             if(clf_type in source_i):
-                return source_i(clf_type,metric)
-        raise Exception(f"Unknown clf type {clf_type}")
+                clf_dict=clf_dict | source_i(clf_type,metric)
+        return clf_dict
+#        raise Exception(f"Unknown clf type {clf_type}")
     return helper
 
 def hete_sources(conf_dict):
@@ -164,8 +166,7 @@ def hete_sources(conf_dict):
 def diff(conf_dict):
     result,metric=conf_dict["result"],conf_dict['metric']
     helper=make_source(result,metric)
-    df=dataset.csv_desc(conf_dict['data'])
-    desc_dict= df.get_dict("id",conf_dict["desc"])
+    desc_dict= get_desc(conf_dict['data'],conf_dict['desc'])
     desc_dict={ name_i:float(value_i) 
             for name_i,value_i in desc_dict.items()}
     x,y=conf_dict['x'],conf_dict['y']
@@ -177,9 +178,21 @@ def diff(conf_dict):
                             for key_i in x_dict}
     plot.dict_plot( desc_dict,
                     diff_dict,
-                    xlabel=conf_dict["desc"],#f"{x_clf}({metric})",
-                    ylabel=f"{x}-{y}",#f"{y_clf}({metric})",
+                    xlabel=conf_dict["desc"],
+                    ylabel=f"{x}-{y}",
                     text=conf_dict["text"])
+
+def get_desc(in_path,desc):
+    if(type(in_path)==list):
+        full_dict={}
+        for path_i in in_path:
+            full_dict=full_dict|get_desc(path_i,desc)
+        return full_dict
+    else:
+        df=dataset.csv_desc(in_path)
+        desc_dict= df.get_dict("id",desc)
+        return desc_dict
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
