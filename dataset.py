@@ -374,15 +374,15 @@ def csv_desc(in_path):
     for path_i in utils.top_files(in_path):
         data_i=read_csv(path_i)
         id_i=path_i.split("/")[-1]
-        line_i=[id_i,str(data_i.n_cats()),str(data_i.dim()),
-                str(len(data_i))]
+        line_i=[id_i,data_i.n_cats(),data_i.dim(),
+                len(data_i),data_i.gini()]
         lines.append(line_i)
-    return from_lines(lines,["id","cats","dims","samples"])
+    return from_lines(lines,["id","cats","dims","samples","gini"])
     
 if __name__ == '__main__':
 #    arff_to_csv("AutoML","csv",
 #              ["madeline","philippine","sylvine"])
 #    data_desc("AutoML",
 #        first_set=["madeline","philippine","sylvine"])
-    df=csv_desc("binary_exp/data")
+    df=csv_desc("neural/uci/data")
     df.print()
