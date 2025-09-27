@@ -120,7 +120,7 @@ class NeuralClfFactory(base.AbstractClfFactory):
                      'n_cats':data.n_cats(),
                      'n_epochs':1000,
                      "class_weights":class_dict}
-
+    
 class NeuralClfAdapter(base.AbstractClfAdapter):
     def __init__(self, params,
                        hyper_params,
@@ -368,6 +368,10 @@ class CSTreeEns(NeuralClfAdapter):
             extr_i=self.all_extract[i]
             extr_i.save(f"{out_i}/tree")
             clf_i.save(f"{out_i}/nn.keras")
+
+    def __str__(self):
+        n_clf=len(self,all_clfs)
+        return f"TREE-ENS{n_clf}"
 
 class FullGen(object):
     def __init__(self,n_iters=None):
