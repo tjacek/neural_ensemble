@@ -247,6 +247,9 @@ class TreeMLP(NeuralClfAdapter):
         self.extractor.extractor.save(f"{out_path}/tree")
         self.model.save(f"{out_path}/nn.keras")
 
+    def __str__(self):
+        return "TREE-MLP"
+        
 class CSTreeEnsFactory(NeuralClfFactory):
     def __init__(self,
                  hyper_params,
