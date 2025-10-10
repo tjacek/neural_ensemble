@@ -268,5 +268,5 @@ class ClasicalClfAdapter(AbstractClfAdapter):
     def eval(self,data,split_i):
         return split_i.pred(data,self.clf)
 
-     def __str__(self):
+    def __str__(self):
         return self.base
