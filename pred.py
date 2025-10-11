@@ -58,7 +58,7 @@ def unify_results(paths):
 #    print(raw_dict.keys())
     return ResultDict(raw_dict)
 
-def summary(exp_path):
+def summary(exp_path,csv=False):
     result_dict=get_result_dict(exp_path)
     def df_helper(clf_type):
         acc_dict=result_dict.get_clf(clf_type,metric="acc")
@@ -75,8 +75,11 @@ def summary(exp_path):
                       iterable=result_dict.clfs(),
                       cols=["data","clf","acc","balance","n_splits"],
                       multi=True)     
-    for df_i in df.by_data(sort='acc'):
-        print(df_i)
+    if(csv):
+        print(df.to_csv())
+    else:
+        for df_i in df.by_data(sort='acc'):
+            print(df_i)
 
 def box_plot(exp_path,split_size=None):
     result_dict=get_result_dict(exp_path)
@@ -95,8 +98,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--exp_path", type=str, default="neural/multi/exp")
     parser.add_argument('--plot',action='store_true')
+    parser.add_argument('--csv',action='store_true')
+
     args = parser.parse_args()
     if(args.plot):
         box_plot(exp_path=args.exp_path)
     else:
-        summary(exp_path=args.exp_path)
+        summary(exp_path=args.exp_path,
+                csv=args.csv)
