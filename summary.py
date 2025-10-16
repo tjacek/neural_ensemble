@@ -8,8 +8,8 @@ import dataset,pred,plot,utils
 
 def metric_plot(conf_dict):
     metric,text=conf_dict["metric"],conf_dict["text"]
-    x_clf,y_clf=conf_dict["x_clf"],conf_dict["y_clf"]
-    result_dict=pred.unify_results(conf_dict["exp_path"])
+    x_clf,y_clf=conf_dict["x"],conf_dict["y"]
+    result_dict=pred.unify_results(conf_dict["result"])
     x_dict=result_dict.get_mean_metric(x_clf,metric=metric)
     y_dict=result_dict.get_mean_metric(y_clf,metric=metric)
     if("names" in conf_dict):
@@ -200,6 +200,8 @@ if __name__ == '__main__':
     parser.add_argument("--conf", type=str, default="hete.json")
     args = parser.parse_args()
     conf_dict=utils.read_json(args.conf)
-    diff(conf_dict)
-#    metric_plot(conf_dict)
+    if(conf_dict["type"]=="diff"):
+        diff(conf_dict)
+    else:
+        metric_plot(conf_dict)
 #    feat_hist("binary_exp/exp")
