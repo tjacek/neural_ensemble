@@ -180,7 +180,8 @@ def diff(conf_dict):
                     diff_dict,
                     xlabel=conf_dict["desc"],
                     ylabel=f"{x}-{y}",
-                    text=conf_dict["text"])
+                    text=conf_dict["text"],
+                    title=conf_dict["title"])
 
 def get_desc(in_path,desc):
     if(type(in_path)==list):
