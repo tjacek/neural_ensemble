@@ -82,11 +82,15 @@ def show_acc(in_path,metric_type="acc"):
     output_dict=helper(in_path)
     plot.multi_plot(output_dict)
 
-def show_param(in_path,step=5,max_clf=100):
+def show_param( in_path,
+                step=5,
+                max_clf=100,
+                labels=None):
     n_iters= int(max_clf/step)
     x=[ (j+1)*step for j in range(n_iters)] 
     @utils.DirFun(out_arg=None)
     def helper(path_i):
+        print(path_i)
         data_i=dataset.read_csv(path_i)
         split_i=base.random_split(data_i)
         acc=[]
@@ -95,8 +99,18 @@ def show_param(in_path,step=5,max_clf=100):
             result_j,_=split_i.eval(data_i,clf_j)
             acc.append(result_j.get_metric("acc"))
         return x,acc
-    output_dict=helper(in_path)
-    plot.multi_plot(output_dict)    
+    if(type(in_path)==list):
+        output_dict={}
+        for path_i in in_path:
+            output_dict= output_dict|helper(path_i)
+    else:
+        output_dict=helper(in_path)
+    if(labels):
+        output_dict={label_i:output_dict[label_i] 
+                        for label_i in labels}
+    plot.multi_plot( output_dict,
+                     xlabel="n_trees",
+                     ylabel="Accuracy")    
 
 def stats(in_path):
     @utils.DirFun(out_arg=None)
@@ -113,5 +127,9 @@ def hoover_index(x):
     return 0.5*np.sum(diff)/np.sum(x)
 
 if __name__ == '__main__':
-    in_path="neural/multi/data"#yeast"
-    show_param(in_path)
+    in_path=["neural/multi/data",
+             "neural/uci/data"]
+    labels=["first-order","gesture",
+            "wine-quality-red","wine-quality-white"]
+    labels=["car","vehicle","mfeat-fourier","mfeat-karh"]
+    show_param(in_path,labels=labels)
