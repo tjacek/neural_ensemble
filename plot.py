@@ -7,7 +7,8 @@ class SimpleColorMap(object):
     def __init__(self,colors=None):
         if(colors is None):
             colors=['lime','red','blue','tomato',
-                    'orange','skyblue','peachpuff', ]
+                    'orange','skyblue','peachpuff',
+                    'yellow','black' ]
         self.colors=colors
 
     def __call__(self,i):
@@ -19,11 +20,23 @@ class SimpleColorMap(object):
 
 
 def simple_plot(x,y,title="",xlabel="x"):
-#    x,dens=compute_density(value)
     fig, ax = plt.subplots()
     ax.plot(x,y)
     ax.set_title(title,fontsize=10)
     plt.xlabel(xlabel)
+    plt.show()
+
+def multi_plot(plot_dict,
+               xlabel="Accuracy",
+               ylabel="Density"):
+    fig, ax = plt.subplots()
+    color_map=SimpleColorMap()
+    for i,id_i in enumerate(plot_dict.keys()):
+        x_i,y_i=plot_dict[id_i]
+        ax.plot(x_i,y_i,color=color_map(i),label=id_i)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.legend()
     plt.show()
 
 def compute_density(value,x=None,n_steps=100):
@@ -44,7 +57,7 @@ def plot_box(result_dict,data,clf_types=None):
     fig, ax = plt.subplots()
     if(clf_types is None):
         clf_types=result_dict.clfs()
-    clf_types=["RF","GRAD","MLP","TREE-MLP","TREE-ENS"]
+#    clf_types=["RF","GRAD","MLP","TREE-MLP","TREE-ENS"]
     step=len(clf_types)
     for i,clf_i in enumerate(clf_types):
         dict_i=result_dict.get_clf(clf_i,metric="acc")

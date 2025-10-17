@@ -71,32 +71,32 @@ def tree_depths(clf):
     print(depths)
 
 def show_acc(in_path,metric_type="acc"):
-    for path_i in utils.top_files(in_path):
-        acc_i=tree_acc(path_i,
+    @utils.DirFun(out_arg=None)
+    def helper(in_path):
+        print(in_path)
+        acc_i=tree_acc(in_path,
                        clf_type="RF",
                        metric_type=metric_type)
         x,dens= plot.compute_density(acc_i)
-        plot.simple_plot(x=x,
-                         y=dens,
-                         title=path_i.split("/")[-1],
-                         xlabel=metric_type)
-
+        return x,dens
+    output_dict=helper(in_path)
+    plot.multi_plot(output_dict)
 
 def show_param(in_path,step=5,max_clf=100):
     n_iters= int(max_clf/step)
     x=[ (j+1)*step for j in range(n_iters)] 
-    for path_i in utils.top_files(in_path):
+    @utils.DirFun(out_arg=None)
+    def helper(path_i):
         data_i=dataset.read_csv(path_i)
         split_i=base.random_split(data_i)
         acc=[]
-        for x_j in x:
+        for x_j in tqdm(x):
             clf_j=RandomForestClassifier(n_estimators=x_j)
             result_j,_=split_i.eval(data_i,clf_j)
             acc.append(result_j.get_metric("acc"))
-        plot.simple_plot(x=x,
-                         y=acc,
-                         title=path_i.split("/")[-1],
-                         xlabel="acc")
+        return x,acc
+    output_dict=helper(in_path)
+    plot.multi_plot(output_dict)    
 
 def stats(in_path):
     @utils.DirFun(out_arg=None)
@@ -113,5 +113,5 @@ def hoover_index(x):
     return 0.5*np.sum(diff)/np.sum(x)
 
 if __name__ == '__main__':
-    in_path="neural/uci/data/"#yeast"
-    show_acc(in_path)
+    in_path="neural/multi/data"#yeast"
+    show_param(in_path)
