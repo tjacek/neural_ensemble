@@ -4,30 +4,52 @@ from sklearn.ensemble import GradientBoostingClassifier
 from tqdm import tqdm
 import base,clfs,dataset,plot,utils
 
+class TreeClfAdapter(object):
+    def __init__(self,clf,split,data):
+        self.clf=clf
+        self.split=split
+        self.data=data
+
+    def get_indiv_trees(self):
+        if(str(self)=="GRAD"):
+            trees=[]
+            for est_i in self.clf.estimators_:
+                trees+=list(est_i)
+            return trees
+        else:   
+            return self.clf.estimators_
+
+    def __str__(self):
+        if(type(self.clf)==RandomForestClassifier):
+            return "RF"
+        elif(type(self.clf)==GradientBoostingClassifier):
+            return "GRAD"   
+
+    def __repr__(self):
+        return str(self)
+
+def tree_acc(in_path,
+             clf_type="RF",
+             metric_type="acc"):
+    clf=get_clf(in_path,clf_type=clf_type)
+    acc=[]
+    indv_trees=clf.get_indiv_trees()
+    print(len(indv_trees))
+    for tree_j in tqdm(indv_trees):
+        result_j,_= clf.split.eval(clf.data,tree_j)
+        result_j.y_pred= result_j.y_pred.astype(int)
+        acc.append(result_j.get_metric(metric_type))
+    print(np.mean(acc))
+    print(np.std(acc))
+    return np.array(acc)
+
 def get_clf(in_path,clf_type="RF"):
     data_i=dataset.read_csv(in_path)
-    split_k=base.random_split(data_i)
+    split_k=base.random_split(data_i,p=0.9)
     clf=base.get_clf(clf_type=clf_type)
     result,_=split_k.eval(data_i,clf)
     print(result.get_acc())
-    return clf
-
-def get_type(clf):
-    if(type(clf)==RandomForestClassifier):
-        return "RF"
-    elif(type(clf)==GradientBoostingClassifier):
-        return "GRAD"	
-
-def get_indiv_trees(clf):
-    clf_type=get_type(clf)
-    if(clf_type=="GRAD"):
-        trees=[]
-        for est_i in clf.estimators_:
-            trees+=list(est_i)
-        raise Exception(trees[0]==trees[-1])
-        return trees
-    else:	
-        return clf.estimators_
+    return TreeClfAdapter(clf,split_k,data_i)
 
 def tree_histogram(clf):
     n_feats=clf.n_features_in_
@@ -41,29 +63,12 @@ def tree_histogram(clf):
     all_hist=np.array(all_hist)
     feat_hist=np.sum(all_hist,axis=0)
     return (feat_hist/ np.sum(feat_hist))
-#        print(est_i.features)
 
 def tree_depths(clf):
     depths=[[tree_i.tree_.max_depth,
              tree_i.tree_.node_count] 
                 for tree_i in get_indiv_trees(clf)]
     print(depths)
-
-def tree_acc(in_path,
-             clf_type="RF",
-             metric_type="acc"):
-    data=dataset.read_csv(in_path)
-    split=base.random_split(data)
-    clf=base.get_clf(clf_type=clf_type)
-    result,_=split.eval(data,clf)
-    acc=[]
-    indv_trees=get_indiv_trees(clf)
-    for tree_j in tqdm(indv_trees):
-        result_j,_=split.eval(data,tree_j)
-        result_j.y_pred= result_j.y_pred.astype(int)
-        acc.append(result_j.get_metric(metric_type))
-#        print(tree_j)
-    return np.array(acc)
 
 def show_acc(in_path,metric_type="acc"):
     for path_i in utils.top_files(in_path):
@@ -77,8 +82,9 @@ def show_acc(in_path,metric_type="acc"):
                          xlabel=metric_type)
 
 
-def show_param(in_path):
-    x=[ (j+1)*10 for j in range(10)] 
+def show_param(in_path,step=5,max_clf=100):
+    n_iters= int(max_clf/step)
+    x=[ (j+1)*step for j in range(n_iters)] 
     for path_i in utils.top_files(in_path):
         data_i=dataset.read_csv(path_i)
         split_i=base.random_split(data_i)
@@ -106,5 +112,6 @@ def hoover_index(x):
     diff=np.abs(x-np.mean(x))
     return 0.5*np.sum(diff)/np.sum(x)
 
-#clf=show_acc("uci_exp/data",metric_type="balance")
-show_param("multi_exp/data")
+if __name__ == '__main__':
+    in_path="neural/uci/data/"#yeast"
+    show_acc(in_path)
