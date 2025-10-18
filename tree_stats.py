@@ -88,7 +88,7 @@ def show_param( in_path,
                 labels=None):
     n_iters= int(max_clf/step)
     x=[ (j+1)*step for j in range(n_iters)] 
-    @utils.DirFun(out_arg=None)
+#    @utils.DirFun(out
     def helper(path_i):
         print(path_i)
         data_i=dataset.read_csv(path_i)
@@ -99,15 +99,17 @@ def show_param( in_path,
             result_j,_=split_i.eval(data_i,clf_j)
             acc.append(result_j.get_metric("acc"))
         return x,acc
-    if(type(in_path)==list):
-        output_dict={}
-        for path_i in in_path:
-            output_dict= output_dict|helper(path_i)
-    else:
-        output_dict=helper(in_path)
-    if(labels):
-        output_dict={label_i:output_dict[label_i] 
-                        for label_i in labels}
+    labels=set(labels)
+    if(type(in_path)!=list):
+         in_path=[in_path]
+    path_dict={}
+    for dir_i in in_path:
+        for path_j in utils.top_files(dir_i):
+            id_j=path_j.split("/")[-1]
+            if(id_j in labels):
+                path_dict[id_j]=path_j
+    output_dict={ id_i:helper(path_i)
+                     for id_i,path_i in path_dict.items()}
     plot.multi_plot( output_dict,
                      xlabel="n_trees",
                      ylabel="Accuracy")    
@@ -131,5 +133,6 @@ if __name__ == '__main__':
              "neural/uci/data"]
     labels=["first-order","gesture",
             "wine-quality-red","wine-quality-white"]
+    show_param(in_path,labels=labels)
     labels=["car","vehicle","mfeat-fourier","mfeat-karh"]
     show_param(in_path,labels=labels)
