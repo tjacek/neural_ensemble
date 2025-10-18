@@ -70,8 +70,10 @@ def tree_depths(clf):
                 for tree_i in get_indiv_trees(clf)]
     print(depths)
 
-def show_acc(in_path,metric_type="acc"):
-    @utils.DirFun(out_arg=None)
+def show_acc( in_path,
+              labels=None,
+              metric_type="acc"):
+    @utils.selected_files
     def helper(in_path):
         print(in_path)
         acc_i=tree_acc(in_path,
@@ -79,7 +81,7 @@ def show_acc(in_path,metric_type="acc"):
                        metric_type=metric_type)
         x,dens= plot.compute_density(acc_i)
         return x,dens
-    output_dict=helper(in_path)
+    output_dict=helper(in_path,labels)
     plot.multi_plot(output_dict)
 
 def show_param( in_path,
@@ -88,7 +90,7 @@ def show_param( in_path,
                 labels=None):
     n_iters= int(max_clf/step)
     x=[ (j+1)*step for j in range(n_iters)] 
-#    @utils.DirFun(out
+    @utils.selected_files
     def helper(path_i):
         print(path_i)
         data_i=dataset.read_csv(path_i)
@@ -99,18 +101,7 @@ def show_param( in_path,
             result_j,_=split_i.eval(data_i,clf_j)
             acc.append(result_j.get_metric("acc"))
         return x,acc
-    labels=set(labels)
-    if(type(in_path)!=list):
-         in_path=[in_path]
-    path_dict={}
-    for dir_i in in_path:
-        for path_j in utils.top_files(dir_i):
-            id_j=path_j.split("/")[-1]
-            if(id_j in labels):
-                path_dict[id_j]=path_j
-    output_dict={ id_i:helper(path_i)
-                     for id_i,path_i in path_dict.items()}
-    plot.multi_plot( output_dict,
+    plot.multi_plot( helper(in_path,labels),
                      xlabel="n_trees",
                      ylabel="Accuracy")    
 
@@ -133,6 +124,7 @@ if __name__ == '__main__':
              "neural/uci/data"]
     labels=["first-order","gesture",
             "wine-quality-red","wine-quality-white"]
-    show_param(in_path,labels=labels)
+    labels=["cmc","cleveland"]
+    show_acc(in_path,labels=labels)
     labels=["car","vehicle","mfeat-fourier","mfeat-karh"]
-    show_param(in_path,labels=labels)
+    show_acc(in_path,labels=labels)

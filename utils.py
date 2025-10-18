@@ -139,3 +139,20 @@ def split_list(data,split_size):
     n_splits=int(len(data)/split_size)
     return [ data[i*split_size:(i+1)*split_size] 
                 for i in range(n_splits)]
+
+def selected_files(fun):
+    @wraps(fun)
+    def decor_fun(in_path,labels):
+        labels=set(labels)
+        if(type(in_path)!=list):
+            in_path=[in_path]
+        path_dict={}
+        for dir_i in in_path:
+            for path_j in top_files(dir_i):
+                id_j=path_j.split("/")[-1]
+                if(id_j in labels):
+                    path_dict[id_j]=path_j
+        output_dict={ id_i:fun(path_i)
+                        for id_i,path_i in path_dict.items()}
+        return output_dict
+    return decor_fun
