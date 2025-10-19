@@ -18,7 +18,6 @@ class SimpleColorMap(object):
         return [plt.Rectangle((0,0),1,1, color=color_i) 
                     for color_i in self.colors]
 
-
 def simple_plot(x,y,title="",xlabel="x"):
     fig, ax = plt.subplots()
     ax.plot(x,y)
@@ -38,6 +37,29 @@ def multi_plot(plot_dict,
     plt.ylabel(ylabel)
     plt.legend()
     plt.show()
+
+def group_plot(plot_dict,
+               xlabel="Accuracy",
+               ylabel="Density"):
+    fig, ax = plt.subplots()
+    color_map=SimpleColorMap()
+    for i,(type_i,labels_i)  in enumerate(plot_dict.items()):
+#            output_i=helper(in_path,labels_i)
+            for x_j,y_j in labels_i.values(): 
+                ax.plot(x_j,y_j,
+                       color=color_map(i),
+                       label=type_i)#,
+    plt.legend()
+    plt.show()    
+
+
+#    for i,id_i in enumerate(plot_dict.keys()):
+#        x_i,y_i=plot_dict[id_i]
+#        ax.plot(x_i,y_i,color=color_map(i),label=id_i)
+#    plt.xlabel(xlabel)
+#    plt.ylabel(ylabel)
+#    plt.legend()
+#    plt.show()
 
 def compute_density(value,x=None,n_steps=100):
     value=value.reshape(-1, 1)
