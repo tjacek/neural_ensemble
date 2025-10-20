@@ -52,15 +52,6 @@ def group_plot(plot_dict,
     plt.legend()
     plt.show()    
 
-
-#    for i,id_i in enumerate(plot_dict.keys()):
-#        x_i,y_i=plot_dict[id_i]
-#        ax.plot(x_i,y_i,color=color_map(i),label=id_i)
-#    plt.xlabel(xlabel)
-#    plt.ylabel(ylabel)
-#    plt.legend()
-#    plt.show()
-
 def compute_density(value,x=None,n_steps=100):
     value=value.reshape(-1, 1)
     kde = KernelDensity(kernel='gaussian', bandwidth=0.01).fit(value)

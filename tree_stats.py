@@ -81,8 +81,14 @@ def show_acc( in_path,
                        metric_type=metric_type)
         x,dens= plot.compute_density(acc_i)
         return x,dens
-    output_dict=helper(in_path,labels)
-    plot.multi_plot(output_dict)
+    if(type(labels)==dict):
+        label_dict={ key_i:helper(in_path,labels_i)
+                     for key_i,labels_i in labels.items()}
+        plot.group_plot(label_dict)       
+    else:
+        plot.multi_plot(helper(in_path,labels),
+                    xlabel="Accuracy",
+                    ylabel="Density")
 
 def show_param( in_path,
                 step=5,
@@ -101,22 +107,10 @@ def show_param( in_path,
             result_j,_=split_i.eval(data_i,clf_j)
             acc.append(result_j.get_metric("acc"))
         return x,acc
-    import matplotlib.pyplot as plt
-
     if(type(labels)==dict):
         label_dict={ key_i:helper(in_path,labels_i)
                      for key_i,labels_i in labels.items()}
-        plot.group_plot(label_dict)
-#        fig, ax = plt.subplots()
-#        colors=["red","blue"]
-#        for i,(type_i,labels_i)  in enumerate(labels.items()):
-#            output_i=helper(in_path,labels_i)
-#            for x_j,y_j in output_i.values(): 
-#                ax.plot(x_j,y_j,
-#                       color=colors[i],
-#                       label=type_i)#,
-#        plt.legend()
-#        plt.show()            
+        plot.group_plot(label_dict)       
     else:
         plot.multi_plot( helper(in_path,labels),
                          xlabel="n_trees",
@@ -143,5 +137,5 @@ if __name__ == '__main__':
             "wine-quality-red","wine-quality-white"]
     labels2=["car","vehicle","mfeat-fourier","mfeat-karh"]
     label_dict={"bad":labels1,"good":labels1}
-    show_param(in_path,labels=label_dict)
-#    show_param(in_path,labels=labels2)
+    show_acc(in_path,labels=label_dict)
+#    show_acc(in_path,labels=labels2)
