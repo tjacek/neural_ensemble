@@ -9,15 +9,21 @@ def incr_train(in_path,split_path="split",n=5):
         clf_factory=clfs.get_clfs(clf_type=f'TREE-ENS({n})',
                     	          hyper_params=None,
                                   feature_params=None)
+        
+        model_path=prepare_dirs(exp_path)
         clf_factory.init(data)
-        for split_i in tqdm(splits_gen(exp_path)):
+        for i,split_i in tqdm(splits_gen(exp_path)):
             clf_i=clf_factory()
             clf_i,history_i=split_i.fit_clf(data,clf_i)
+            clf_i.save(f"{model_path}/{i}")
             print(split_i)	
-#	    dir_proxy=base.get_dir_path(out_path=exp_path,
-#                                    clf_type="TREE-ENS")
-#	    print(dir_proxy)
     helper(in_path,"bad_exp/exp")
+
+def prepare_dirs(exp_path):
+    utils.make_dir(f"{exp_path}/TREE-ENS")
+    model_path=f"{exp_path}/TREE-ENS/models"
+    utils.make_dir(model_path)
+    return model_path
 
 def splits_gen(exp_path,
                n_splits=10,
