@@ -1,22 +1,23 @@
 import numpy as np
+#import json
 from tqdm import tqdm
 import base,clfs,dataset,utils
 
-def incr_train(in_path,exp_path,n=5):
+def incr_train(in_path,
+               exp_path,
+               hyper_path,
+               n=5):
+    build_clf=get_factory(hyper_path)
     @utils.DirFun("in_path","exp_path")
     def helper(in_path,exp_path):
         data=dataset.read_csv(in_path)
-      
-        clf_factory=clfs.get_clfs(clf_type=f'TREE-ENS({n})',
-                    	          hyper_params=None,
-                                  feature_params=None)
-        
-        model_path,_=prepare_dirs(exp_path)
+        name=in_path.split("/")[-1]
+        clf_factory=build_clf(name,n)
+        model_path=prepare_dirs(exp_path)
         clf_factory.init(data)
         for i,split_i in tqdm(splits_gen(exp_path)):
             clf_i=clf_factory()
             clf_i,history_i=split_i.fit_clf(data,clf_i)
-#            clf_i.save(f"{model_path}/{i}")
             save_incr(clf_i,f"{model_path}/{i}")
             print(split_i)	
     helper(in_path,"bad_exp/exp")
@@ -33,16 +34,20 @@ def save_incr(clf,out_path):
         extr_i.save(f"{out_k}/tree")
         clf_i.save(f"{out_k}/nn.keras")
 
-#def get_factory(n):
-
+def get_factory(hyper_path):
+    hyper_dict=utils.read_json(hyper_path)
+    def build_clf(name,n):
+        info_dict=hyper_dict[name]
+        return clfs.get_clfs( clf_type=f'TREE-ENS({n})',
+                              hyper_params=info_dict["hyper"],
+                              feature_params=info_dict["feature_params"])
+    return build_clf
 
 def prepare_dirs(exp_path):
     utils.make_dir(f"{exp_path}/TREE-ENS")
     model_path=f"{exp_path}/TREE-ENS/models"
     utils.make_dir(model_path)
-    result_path=f"{exp_path}/TREE-ENS/results"
-    utils.make_dir(model_path)
-    return model_path,result_path
+    return model_path
 
 def splits_gen(exp_path,
                n_splits=10,
@@ -54,14 +59,18 @@ def splits_gen(exp_path,
         split_i=base.read_split(split_path_i)
         yield start+i,split_i
 
-def incr_pred(n_path,exp_path):
+def incr_pred( in_path,
+               exp_path,
+               hyper_path):
+    build_clf=get_factory(hyper_path)
     @utils.DirFun("in_path","exp_path")
     def helper(in_path,exp_path):
         data=dataset.read_csv(in_path)
-        model_path,result_path=prepare_dirs(exp_path)
-        clf_factory=clfs.get_clfs(clf_type=f'TREE-ENS',
-                                  hyper_params=None,
-                                  feature_params=None)
+        model_path=prepare_dirs(exp_path)
+        if(not utils.top_files(model_path)):
+            return None
+        name=in_path.split("/")[-1]
+        clf_factory=build_clf(name,n=2)
         clf_factory.init(data)
         all_results=[]
         for i,split_i in splits_gen(exp_path):
@@ -77,5 +86,9 @@ def incr_pred(n_path,exp_path):
 
 if __name__ == '__main__':
     in_path="bad_exp/data"
-    incr_train(in_path,"bad_exp/exp",4)
-    incr_pred(in_path,"bad_exp/exp")
+    hyper_path="bad_exp/hyper.js"
+    incr_train(in_path,
+               "bad_exp/exp",
+               hyper_path,
+               2)
+    incr_pred(in_path,"bad_exp/exp",hyper_path)

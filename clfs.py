@@ -43,7 +43,7 @@ def get_clfs(clf_type,
                                              "weights":"CS"})
     reg_expr=re.compile("(\\D)+(\\d)+")
     if(reg_expr.match(clf_type)):
-        n=utils.extract_number(clf_type)
+        n=int(utils.extract_number(clf_type)[0])
         return CSTreeEnsFactory(hyper_params=hyper_params,
                                 feature_params=feature_params,
                                 ens_params={ "ens_type":n,
@@ -86,7 +86,8 @@ class FeatureExtactorFactory(object):
                       concat):
         if(type(tree_factory)==str):
             tree_factory=tree_feats.get_tree(tree_factory)
-        if(type(extr_factory)==tuple):
+        if(type(extr_factory)==tuple or 
+            type(extr_factory)==list):
             extr_factory=tree_clf.get_extractor(extr_factory)
         self.tree_factory=tree_factory
         self.extr_factory=extr_factory
@@ -120,6 +121,7 @@ class NeuralClfFactory(base.AbstractClfFactory):
                      'n_cats':data.n_cats(),
                      'n_epochs':1000,
                      "class_weights":class_dict}
+
     
 class NeuralClfAdapter(base.AbstractClfAdapter):
     def __init__(self, params,
@@ -268,6 +270,7 @@ class CSTreeEnsFactory(NeuralClfFactory):
         self.params=None
 
     def __call__(self):
+#        raise Exception(self.feature_params)
         extractor_factory=FeatureExtactorFactory(**self.feature_params)
         return CSTreeEns(params=self.params,
                          hyper_params=self.hyper_params,
@@ -305,6 +308,9 @@ class CSTreeEnsFactory(NeuralClfFactory):
                 "hyper":self.hyper_params,
                 "feature_params":self.feature_params,
                 "ens_params":self.ens_params}
+
+    def __str__(self):
+        return str(self.get_info())
 
 class CSTreeEns(NeuralClfAdapter):
     def __init__(self, params,
