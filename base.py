@@ -5,6 +5,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn import tree
 from sklearn import svm
+from abc import ABC, abstractmethod
 import os.path
 import dataset,utils
 
@@ -212,16 +213,17 @@ def get_splits(data_path,
                       splits=protocol.get_split(data))
 
 class AbstractClfFactory(object):
-    
     def init(self,data):
         pass
 
     def __call__(self):
         raise NotImplementedError()
-
+    
+    @abstractmethod
     def read(self,model_path):
         raise NotImplementedError()
 
+    @abstractmethod
     def get_info(self):
         raise NotImplementedError()
     
@@ -229,10 +231,11 @@ class AbstractClfFactory(object):
         return str(self)
 
 class AbstractClfAdapter(object):
-
+    @abstractmethod
     def fit(self,X,y):
         raise NotImplementedError()
-
+    
+    @abstractmethod
     def eval(self,data,split_i):
         raise NotImplementedError()
 
