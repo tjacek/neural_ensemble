@@ -129,6 +129,15 @@ class Result(object):
         y_pair=np.array([self.y_pred,self.y_true])
         np.savez(out_path,y_pair)
 
+    @classmethod
+    def read(in_path:str):
+        if(type(in_path)==Result):
+            return in_path
+        raw=list(np.load(in_path).values())[0]
+        y_pred,y_true=raw[0],raw[1]
+        return Result(y_pred=y_pred,
+                      y_true=y_true)
+
 class ResultGroup(object):
     def __init__(self,results):
         self.results=results
@@ -152,18 +161,11 @@ class ResultGroup(object):
         for i,result_i in enumerate(self.results):
             result_i.save(f"{out_path}/{i}")
 
-def read_result(in_path:str):
-    if(type(in_path)==Result):
-        return in_path
-    raw=list(np.load(in_path).values())[0]
-    y_pred,y_true=raw[0],raw[1]
-    return Result(y_pred=y_pred,
-                  y_true=y_true)
-
-def read_result_group(in_path:str):
-    results= [ read_result(path_i) 
+    @classmethod
+    def read(in_path:str):
+        results= [ read_result(path_i) 
                  for path_i in utils.top_files(in_path)]
-    return ResultGroup(results)
+        return ResultGroup(results)
 
 class PartialResults(object):
     def __init__(self,y_true,y_partial):
