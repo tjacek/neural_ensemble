@@ -55,6 +55,14 @@ class Dataset(object):
             X_test,y_test=self.X[test_index],self.y[test_index]
         y_pred=clf.predict(X_test)
         return Result(y_pred,y_test)
+    
+    def pred_partial(self,test_index,clf):
+        if(test_index is None):
+            X_test,y_test=self.X,self.y
+        else:
+            X_test,y_test=self.X[test_index],self.y[test_index]   
+        y_partial=clf.predict_partial(X_test)
+        return PartialResults(y_test,y_partial)
 
     def eval(self,train_index,test_index,clf,as_result=True):
         clf,history=self.fit_clf(train_index,clf)

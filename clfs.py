@@ -347,19 +347,19 @@ class CSTreeEns(NeuralClfAdapter):
         return history
 
     def predict(self,X):
+        votes=self.predict_partial(X)
+        votes=np.array(votes)#,dtype=int)
+        votes=np.sum(votes,axis=0)
+        y_pred=np.argmax(votes,axis=1)
+        return y_pred
+
+    def predict_partial(self,X):
         votes=[]
         for i,extr_i in enumerate(self.all_extract):
             X_i=extr_i(X=X)#,
             y_i=self.all_clfs[i].predict_proba(X_i)#,
             votes.append(y_i)
-        votes=np.array(votes)#,dtype=int)
-        votes=np.sum(votes,axis=0)
-        y_pred=np.argmax(votes,axis=1)
-#        y_pred=[]
-#        for vote_i in votes.T:
-#            counts=np.bincount(vote_i)
-#            y_pred.append(np.argmax(counts))
-        return y_pred
+        return votes
 
     def votes(self,X):
         partial_y=[]

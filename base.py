@@ -17,6 +17,13 @@ class DataSplits(object):
     def __init__(self,data,splits):
         self.data=data
         self.splits=splits
+    
+    def fit_clf(self,clf_factory):
+        clf_factory.init(self.data)
+        for split_i in self.splits:
+            clf_i=clf_factory()
+            split_i.fit_clf(self.data,clf_i)
+            yield clf_i,split_i
 
     def eval(self,clf_factory):
         for split_i in self.splits:
@@ -50,7 +57,6 @@ class Split(object):
         self.train_index=train_index
         self.test_index=test_index
 
-        
     def eval(self,data,clf):
         if(type(clf)==str):
             clf=get_clf(clf)
@@ -64,6 +70,10 @@ class Split(object):
     def pred(self,data,clf):
         return data.pred(self.test_index,
                          clf=clf)
+
+    def pred_partial(self,data,clf):
+        return data.pred_partial(self.test_index,
+                                 clf=clf)
 
     def save(self,out_path):
         return np.savez(out_path,self.train_index,self.test_index)
