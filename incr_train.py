@@ -59,6 +59,15 @@ def splits_gen(exp_path,
         split_i=base.read_split(split_path_i)
         yield start+i,split_i
 
+
+def model_iter(clf_factory,exp_path):
+    model_path=prepare_dirs(exp_path)
+    if(not utils.top_files(model_path)):
+        raise Exception(f"No models at {model_path}")
+    for i,split_i in splits_gen(exp_path):
+        clf_i=clf_factory.read(f"{model_path}/{i}")
+        yield clf_i,split_i
+
 def incr_pred( in_path,
                exp_path,
                hyper_path):
@@ -84,11 +93,34 @@ def incr_pred( in_path,
     output_dict=helper(in_path,exp_path)
     print(output_dict)
 
+def incr_partial( in_path,
+                  exp_path,
+                  hyper_path):
+    build_clf=get_factory(hyper_path)
+    @utils.DirFun("in_path","exp_path")
+    def helper(in_path,exp_path):
+        data=dataset.read_csv(in_path)
+        name=in_path.split("/")[-1]
+        clf_factory=build_clf(name,n=2)
+        clf_factory.init(data)
+        all_acc=[]
+        gen=model_iter(clf_factory,exp_path)
+        for clf_i,split_i in tqdm(gen):
+            partial_i=split_i.pred_partial(data,clf_i)
+            indiv_acc=partial_i.indiv(metric_type="acc")
+            all_acc.append(indiv_acc)
+#            print(indiv_acc)
+        all_acc=np.array(all_acc)
+        print(np.mean(all_acc,axis=0))
+    output_dict=helper(in_path,exp_path)
+    print(output_dict)
+
 if __name__ == '__main__':
     in_path="bad_exp/data"
     hyper_path="bad_exp/hyper.js"
     incr_train(in_path,
                "bad_exp/exp",
                hyper_path,
-               2)
-    incr_pred(in_path,"bad_exp/exp",hyper_path)
+               12)
+#    incr_pred(in_path,"bad_exp/exp",hyper_path)
+#    incr_partial(in_path,"bad_exp/exp",hyper_path)
