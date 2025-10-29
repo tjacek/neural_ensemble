@@ -212,7 +212,7 @@ class PartialGroup(object):
         self.partials=partials
    
     def n_clfs(self):
-        return self.partials[0].y_partial.shape[0]
+        return len(self.partials[0].y_partial)#.shape[0]
 
     def indv_acc(self,metric_type="acc"):
         n_clf= self.n_clfs()
