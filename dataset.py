@@ -181,7 +181,7 @@ class PartialResults(object):
         self.y_partial=y_partial
     
     def __len__(self):
-        return self.y_partial.shape[0]
+        return len(self.y_partial)#.shape[0]
 
     def vote(self):
         ballot= np.sum(self.y_partial,axis=0)
@@ -210,12 +210,37 @@ class PartialResults(object):
 class PartialGroup(object):
     def __init__(self,partials):
         self.partials=partials
-   
+
+
+    def random(self,size,n_iters=10):
+        acc=[ self.random_single(size) 
+                for i in range(n_iters)]
+        return np.mean(acc),np.std(acc)
+
+    def random_single(self,size=10):
+        n_clfs=self.n_clfs() 
+        subset=np.random.randint(0,n_clfs,size)
+        acc=[partial_i.selected_acc(subset) 
+              for partial_i in self.partials]
+        return np.mean(acc)
+
     def n_clfs(self):
         return len(self.partials[0].y_partial)#.shape[0]
 
+    def subset_series(self,step=5,n_iters=10):
+        n_clfs=self.n_clfs()
+        n_steps=int(n_clfs/step)-1
+        x=[ (i+1)*step for i in range(n_steps)]
+        if((n_clfs%step)!=0):
+            x.append(n_clfs)
+        means,stds=[],[]
+        for size_i in x:
+            mean_i,std_i=self.random(size_i,n_iters)
+            means.append(mean_i)
+            stds.append(std_i)
+        return means,stds
+
     def indv_acc(self,metric_type="acc"):
-        n_clf= self.n_clfs()
         raw_votes= [ result_i.indiv(metric_type) 
                     for result_i in self.partials]
         raw_votes=np.array(raw_votes)

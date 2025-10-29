@@ -103,24 +103,27 @@ def incr_partial( in_path,
         name=in_path.split("/")[-1]
         clf_factory=build_clf(name,n=2)
         clf_factory.init(data)
-        all_acc=[]
+        all_partials=[]
         gen=model_iter(clf_factory,exp_path)
         for clf_i,split_i in tqdm(gen):
             partial_i=split_i.pred_partial(data,clf_i)
-            indiv_acc=partial_i.indiv(metric_type="acc")
-            all_acc.append(indiv_acc)
-#            print(indiv_acc)
-        all_acc=np.array(all_acc)
-        print(np.mean(all_acc,axis=0))
+            all_partials.append(partial_i)
+        part_group=dataset.PartialGroup(all_partials)
+        print(part_group.indv_acc())
+        return part_group
     output_dict=helper(in_path,exp_path)
-    print(output_dict)
+    for name_i,partial_i in output_dict.items():
+        print(name_i)
+        means,stds=partial_i.subset_series(step=5)
+        print(means)
+        print(stds)
 
 if __name__ == '__main__':
     in_path="bad_exp/data"
     hyper_path="bad_exp/hyper.js"
-#    incr_train(in_path,
-#               "bad_exp/exp",
-#               hyper_path,
-#               30)
-#    incr_pred(in_path,"bad_exp/exp",hyper_path)
+    incr_train(in_path,
+               "bad_exp/exp",
+               hyper_path,
+               10)
+    incr_pred(in_path,"bad_exp/exp",hyper_path)
     incr_partial(in_path,"bad_exp/exp",hyper_path)
