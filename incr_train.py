@@ -118,9 +118,9 @@ def incr_partial( in_path,
 if __name__ == '__main__':
     in_path="bad_exp/data"
     hyper_path="bad_exp/hyper.js"
-    incr_train(in_path,
-               "bad_exp/exp",
-               hyper_path,
-               12)
+#    incr_train(in_path,
+#               "bad_exp/exp",
+#               hyper_path,
+#               30)
 #    incr_pred(in_path,"bad_exp/exp",hyper_path)
-#    incr_partial(in_path,"bad_exp/exp",hyper_path)
+    incr_partial(in_path,"bad_exp/exp",hyper_path)
