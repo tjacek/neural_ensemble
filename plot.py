@@ -140,11 +140,15 @@ def dict_plot(x_dict,
 
 def error_plot( x,y,
                 error,
-                name,
-                xlabel,
-                ylabel):
+                vertical=None,
+                name="Plot",
+                xlabel="x",
+                ylabel="y"):
     plt.errorbar(x, y, 
                 yerr=error)
+    if(vertical):
+        plt.hlines(y=[vertical], colors=['r'],
+                   xmin=x[0],xmax=x[-1])
     plt.title(name)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)

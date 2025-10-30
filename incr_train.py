@@ -112,6 +112,9 @@ def incr_partial( in_path,
         print(part_group.indv_acc())
         return part_group
     output_dict=helper(in_path,exp_path)
+    rf_dict={"gesture":0.6797,"first-order":0.6299,
+             "wine-quality-white":0.6954,
+             "wine-quality-red":0.7155}
     for name_i,partial_i in output_dict.items():
         print(name_i)
         partial_series=partial_i.subset_series(step=5)
@@ -121,11 +124,12 @@ def incr_partial( in_path,
         plot.error_plot(partial_series.steps,
                         partial_series.means,
                         partial_series.stds,
-                        name_i,
-                        "n_clfs",
-                        "accuracy")
+                        name=name_i,
+                        vertical=rf_dict[name_i],
+                        xlabel="n_clfs",
+                        ylabel="accuracy")
 if __name__ == '__main__':
-    in_path="bad_exp/__data"
+    in_path="bad_exp/data"
     hyper_path="bad_exp/hyper.js"
 #    incr_train(in_path,
 #               "bad_exp/exp",
