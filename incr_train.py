@@ -1,7 +1,7 @@
 import numpy as np
 #import json
 from tqdm import tqdm
-import base,clfs,dataset,utils
+import base,clfs,dataset,plot,utils
 
 def incr_train(in_path,
                exp_path,
@@ -92,7 +92,7 @@ def incr_pred( in_path,
         return np.mean(all_results.get_acc())
     output_dict=helper(in_path,exp_path)
     print(output_dict)
-
+    
 def incr_partial( in_path,
                   exp_path,
                   hyper_path):
@@ -114,16 +114,22 @@ def incr_partial( in_path,
     output_dict=helper(in_path,exp_path)
     for name_i,partial_i in output_dict.items():
         print(name_i)
-        means,stds=partial_i.subset_series(step=5)
-        print(means)
-        print(stds)
-
+        partial_series=partial_i.subset_series(step=5)
+        print(partial_series.steps)
+        print(partial_series.means)
+        print(partial_series.stds)
+        plot.error_plot(partial_series.steps,
+                        partial_series.means,
+                        partial_series.stds,
+                        name_i,
+                        "n_clfs",
+                        "accuracy")
 if __name__ == '__main__':
-    in_path="bad_exp/data"
+    in_path="bad_exp/__data"
     hyper_path="bad_exp/hyper.js"
-    incr_train(in_path,
-               "bad_exp/exp",
-               hyper_path,
-               10)
-    incr_pred(in_path,"bad_exp/exp",hyper_path)
+#    incr_train(in_path,
+#               "bad_exp/exp",
+#               hyper_path,
+#               10)
+#    incr_pred(in_path,"bad_exp/exp",hyper_path)
     incr_partial(in_path,"bad_exp/exp",hyper_path)

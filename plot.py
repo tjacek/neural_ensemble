@@ -138,5 +138,17 @@ def dict_plot(x_dict,
     plt.grid()
     plt.show()
 
+def error_plot( x,y,
+                error,
+                name,
+                xlabel,
+                ylabel):
+    plt.errorbar(x, y, 
+                yerr=error)
+    plt.title(name)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.show()
+
 if __name__ == '__main__':
     make_plots("plot.json")
