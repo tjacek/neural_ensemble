@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import accuracy_score,f1_score,balanced_accuracy_score
 from sklearn import preprocessing
+from dataclasses import dataclass
 import utils
 
 class Dataset(object):
@@ -138,7 +139,7 @@ class Result(object):
         np.savez(out_path,y_pair)
 
     @classmethod
-    def read(in_path:str):
+    def read(cls,in_path:str):
         if(type(in_path)==Result):
             return in_path
         raw=list(np.load(in_path).values())[0]
@@ -170,8 +171,8 @@ class ResultGroup(object):
             result_i.save(f"{out_path}/{i}")
 
     @classmethod
-    def read(in_path:str):
-        results= [ read_result(path_i) 
+    def read(cls,in_path:str):
+        results= [ Result.read(path_i) 
                  for path_i in utils.top_files(in_path)]
         return ResultGroup(results)
 
@@ -238,13 +239,19 @@ class PartialGroup(object):
             mean_i,std_i=self.random(size_i,n_iters)
             means.append(mean_i)
             stds.append(std_i)
-        return means,stds
+        return PartialSeries(x,means,stds)
 
     def indv_acc(self,metric_type="acc"):
         raw_votes= [ result_i.indiv(metric_type) 
                     for result_i in self.partials]
         raw_votes=np.array(raw_votes)
         return np.mean(raw_votes,axis=0)
+
+@dataclass
+class PartialSeries:
+    steps:list
+    means:list
+    stds:list
 
 def dispatch_metric(metric_type):
     metric_type=metric_type.lower()
