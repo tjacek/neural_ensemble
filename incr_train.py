@@ -81,10 +81,9 @@ def incr_pred( in_path,
         name=in_path.split("/")[-1]
         clf_factory=build_clf(name,n=2)
         clf_factory.init(data)
+        gen=model_iter(clf_factory,exp_path)
         all_results=[]
-        for i,split_i in splits_gen(exp_path):
-            clf_i=clf_factory.read(f"{model_path}/{i}")
-            print(clf_i)
+        for clf_i,split_i in tqdm(gen):
             result_i=split_i.pred(data,clf_i)
             all_results.append(result_i)
             print(result_i.get_acc())
