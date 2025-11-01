@@ -6,7 +6,8 @@ import base,clfs,dataset,plot,utils
 def incr_train(in_path,
                exp_path,
                hyper_path,
-               n=5):
+               n=2,
+               n_splits=30):
     build_clf=get_factory(hyper_path)
     @utils.DirFun("in_path","exp_path")
     def helper(in_path,exp_path):
@@ -15,12 +16,13 @@ def incr_train(in_path,
         clf_factory=build_clf(name,n)
         model_path=prepare_dirs(exp_path)
         clf_factory.init(data)
-        for i,split_i in tqdm(splits_gen(exp_path)):
+        gen=splits_gen(exp_path,n_splits)
+        for i,split_i in tqdm(gen):
             clf_i=clf_factory()
             clf_i,history_i=split_i.fit_clf(data,clf_i)
             save_incr(clf_i,f"{model_path}/{i}")
             print(split_i)	
-    helper(in_path,"bad_exp/exp")
+    helper(in_path,exp_path)
 
 
 def save_incr(clf,out_path):
@@ -128,11 +130,11 @@ def incr_partial( in_path,
                         xlabel="n_clfs",
                         ylabel="accuracy")
 if __name__ == '__main__':
-    in_path="bad_exp/data"
-    hyper_path="bad_exp/hyper.js"
-#    incr_train(in_path,
-#               "bad_exp/exp",
-#               hyper_path,
-#               10)
-#    incr_pred(in_path,"bad_exp/exp",hyper_path)
-    incr_partial(in_path,"bad_exp/exp",hyper_path)
+    in_path="incr_exp/multi/data"
+    hyper_path="incr_exp/multi/hyper.js"
+    incr_train(in_path,
+               "incr_exp/multi/exp",
+               hyper_path,
+               1)
+    incr_pred(in_path,"incr_exp/multi/exp",hyper_path)
+#    incr_partial(in_path,"bad_exp/exp",hyper_path)
