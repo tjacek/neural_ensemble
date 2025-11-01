@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.stats import entropy 
 import collections,itertools
-import base,dataset,tree_feats
+import base,dataset,tree_feats,utils
 
 class TreeFeatFactory(object):
     def __init__(self,arg_dict,clf_type="clf"):
@@ -118,7 +118,8 @@ class TreeEns(object):
         return y_pred
 
 def get_extractor(extr_feats):
-    if(type(extr_feats)==tuple):
+    if(type(extr_feats)==tuple or 
+        type(extr_feats)==list):
         extr_type,n_feats=extr_feats
         factory=get_extr_type(extr_type)
         return factory(n_feats)
@@ -163,6 +164,12 @@ class InfoFactory(FeatFactory):
         feats=tree_dict.get_attr("feat",s_feats)
         return tree_feats.TreeFeatures(features=feats,
                                        thresholds=thres)        
+    @classmethod
+    def read(cls,in_path):    
+        feats=np.load(f"{in_path}/feats.npy")
+        thres=np.load(f"{in_path}/thresholds.npy")
+        return tree_feats.TreeFeatures(feats,thres)
+
 class IndFactory(FeatFactory):
     def make_feats(self,tree_dict):
         info,nodes=tree_dict.mutual_info()
@@ -172,6 +179,11 @@ class IndFactory(FeatFactory):
         feats=tree_dict.get_attr("feat",s_feats)
         return tree_feats.TreeFeatures(features=feats,
                                        thresholds=thres)
+    @classmethod
+    def read(cls,in_path):    
+        feats=np.load(f"{in_path}/feats.npy")
+        thres=np.load(f"{in_path}/thresholds.npy")
+        return tree_feats.TreeFeatures(feats,thres)
 
 class ProductFactory(FeatFactory):
     def make_feats(self,tree_dict):
@@ -189,7 +201,13 @@ class ProductFactory(FeatFactory):
         return tree_feats.ProductFeatures(features=feats,
                                           thresholds=thres,
                                           paths=paths)
-        
+    @classmethod
+    def read(cls,in_path:str):
+        feats=np.load(f"{in_path}/feats.npy")
+        thres=np.load(f"{in_path}/thresholds.npy")
+        paths=utils.read_json(f"{in_path}/paths")
+        return tree_feats.ProductFeatures(feats,thres,paths)
+
 #class DiscreteFactory(object):
 #    def __init__(self,n_feats=20):
 #        self.n_feats=n_feats

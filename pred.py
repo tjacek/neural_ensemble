@@ -44,7 +44,7 @@ def get_result_dict(in_path):
             name_i=path_i.split("/")[-1]
             if(name_i!="splits"):
                 result_path_i=f"{path_i}/results"
-                result_i=dataset.read_result_group(result_path_i)
+                result_i=dataset.ResultGroup.read(result_path_i)
                 output[name_i]=result_i
         return output
     return ResultDict(helper(in_path))
@@ -96,7 +96,7 @@ def box_plot(exp_path,split_size=None):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--exp_path", type=str, default="neural/multi/exp")
+    parser.add_argument("--exp_path", type=str, default="incr_exp/multi/exp")
     parser.add_argument('--plot',action='store_true')
     parser.add_argument('--csv',action='store_true')
 

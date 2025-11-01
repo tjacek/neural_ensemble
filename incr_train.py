@@ -62,11 +62,11 @@ def splits_gen(exp_path,
         yield start+i,split_i
 
 
-def model_iter(clf_factory,exp_path):
+def model_iter(clf_factory,exp_path,n_splits=30):
     model_path=prepare_dirs(exp_path)
     if(not utils.top_files(model_path)):
         raise Exception(f"No models at {model_path}")
-    for i,split_i in splits_gen(exp_path):
+    for i,split_i in splits_gen(exp_path,n_splits):
         clf_i=clf_factory.read(f"{model_path}/{i}")
         yield clf_i,split_i
 
@@ -88,9 +88,10 @@ def incr_pred( in_path,
         for clf_i,split_i in tqdm(gen):
             result_i=split_i.pred(data,clf_i)
             all_results.append(result_i)
-            print(result_i.get_acc())
-        all_results=dataset.ResultGroup(all_results)
-        return np.mean(all_results.get_acc())
+#            print(result_i.get_acc())
+        result_group=dataset.ResultGroup(all_results)
+        result_group.save(f"{exp_path}/TREE-ENS/results")
+        return np.mean(result_group.get_acc())
     output_dict=helper(in_path,exp_path)
     print(output_dict)
     
@@ -130,11 +131,11 @@ def incr_partial( in_path,
                         xlabel="n_clfs",
                         ylabel="accuracy")
 if __name__ == '__main__':
-    in_path="incr_exp/multi/data"
+    in_path="incr_exp/multi/_data"
     hyper_path="incr_exp/multi/hyper.js"
-    incr_train(in_path,
-               "incr_exp/multi/exp",
-               hyper_path,
-               1)
+#    incr_train(in_path,
+#               "incr_exp/multi/exp",
+#               hyper_path,
+#               1)
     incr_pred(in_path,"incr_exp/multi/exp",hyper_path)
 #    incr_partial(in_path,"bad_exp/exp",hyper_path)

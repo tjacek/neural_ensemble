@@ -174,10 +174,6 @@ class TreeFeatures(TabFeatures):
         np.save(f"{out_path}/feats.npy",self.features)
         np.save(f"{out_path}/thresholds.npy",self.thresholds)
 
-def read_feats(in_path):    
-    feats=np.load(f"{in_path}/feats.npy")
-    thres=np.load(f"{in_path}/thresholds.npy")
-    return TreeFeatures(feats,thres)
 
 class ProductFeatures(TabFeatures):
     def __init__(self,features,

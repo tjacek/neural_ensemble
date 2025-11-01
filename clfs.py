@@ -270,7 +270,6 @@ class CSTreeEnsFactory(NeuralClfFactory):
         self.params=None
 
     def __call__(self):
-#        raise Exception(self.feature_params)
         extractor_factory=FeatureExtactorFactory(**self.feature_params)
         return CSTreeEns(params=self.params,
                          hyper_params=self.hyper_params,
@@ -293,15 +292,22 @@ class CSTreeEnsFactory(NeuralClfFactory):
         return basic_weights
     
     def read(self,in_path):
+        #raise Exception(self.get_extractor()) 
+        extractor_type=self.get_extractor()
         tree_ens=self()
         for path_i in utils.top_files(in_path):
             model_i=tf.keras.models.load_model(f"{path_i}/nn.keras")
             tree_ens.all_clfs.append(MLP(None,None,model_i))
-            extractor_i=tree_feats.read_feats(f"{path_i}/tree")
-            extractor_i=FeatureExtactor(extractor_i,
-                                   concat=self.feature_params["concat"])
+            extractor_i=extractor_type.read(f"{path_i}/tree")
+#            extractor_i=tree_feats.read_feats(f"{path_i}/tree")
+#            extractor_i=FeatureExtactor(extractor_i,
+#                                   concat=self.feature_params["concat"])
             tree_ens.all_extract.append(extractor_i)
         return tree_ens
+    
+    def get_extractor(self):
+        extr_name=self.feature_params['extr_factory'][0]
+        return tree_clf.get_extr_type(extr_name) 
 
     def get_info(self):
         return {"clf_type":"TREE-ENS","callback":"basic",
@@ -354,6 +360,8 @@ class CSTreeEns(NeuralClfAdapter):
         return y_pred
 
     def predict_partial(self,X):
+        print(len(self.all_extract))
+
         votes=[]
         for i,extr_i in enumerate(self.all_extract):
             X_i=extr_i(X=X)#,
