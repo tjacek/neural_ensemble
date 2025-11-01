@@ -7,12 +7,18 @@ def incr_train(in_path,
                exp_path,
                hyper_path,
                n=2,
-               n_splits=30):
+               n_splits=30,
+               selected=None):
+    if(not selected):
+        selected=[]
+    selected=set(selected)
     build_clf=get_factory(hyper_path)
     @utils.DirFun("in_path","exp_path")
     def helper(in_path,exp_path):
+        name_i=in_path.split("/")[-1]
+        if(not name_i in selected):
+            return
         data=dataset.read_csv(in_path)
-        name=in_path.split("/")[-1]
         clf_factory=build_clf(name,n)
         model_path=prepare_dirs(exp_path)
         clf_factory.init(data)
