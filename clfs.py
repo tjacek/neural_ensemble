@@ -360,8 +360,6 @@ class CSTreeEns(NeuralClfAdapter):
         return y_pred
 
     def predict_partial(self,X):
-        print(len(self.all_extract))
-
         votes=[]
         for i,extr_i in enumerate(self.all_extract):
             X_i=extr_i(X=X)#,

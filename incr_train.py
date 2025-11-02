@@ -15,9 +15,10 @@ def incr_train(in_path,
     build_clf=get_factory(hyper_path)
     @utils.DirFun("in_path","exp_path")
     def helper(in_path,exp_path):
-        name_i=in_path.split("/")[-1]
-        if(not name_i in selected):
+        name=in_path.split("/")[-1]
+        if(name in selected):
             return
+        print(name)
         data=dataset.read_csv(in_path)
         clf_factory=build_clf(name,n)
         model_path=prepare_dirs(exp_path)
@@ -87,6 +88,7 @@ def incr_pred( in_path,
         if(not utils.top_files(model_path)):
             return None
         name=in_path.split("/")[-1]
+        print(name)
         clf_factory=build_clf(name,n=2)
         clf_factory.init(data)
         gen=model_iter(clf_factory,exp_path)
@@ -94,7 +96,6 @@ def incr_pred( in_path,
         for clf_i,split_i in tqdm(gen):
             result_i=split_i.pred(data,clf_i)
             all_results.append(result_i)
-#            print(result_i.get_acc())
         result_group=dataset.ResultGroup(all_results)
         result_group.save(f"{exp_path}/TREE-ENS/results")
         return np.mean(result_group.get_acc())
@@ -109,6 +110,7 @@ def incr_partial( in_path,
     def helper(in_path,exp_path):
         data=dataset.read_csv(in_path)
         name=in_path.split("/")[-1]
+        print(name)
         clf_factory=build_clf(name,n=2)
         clf_factory.init(data)
         all_partials=[]
@@ -142,6 +144,6 @@ if __name__ == '__main__':
 #    incr_train(in_path,
 #               "incr_exp/multi/exp",
 #               hyper_path,
-#               1)
+#               3)
     incr_pred(in_path,"incr_exp/multi/exp",hyper_path)
 #    incr_partial(in_path,"bad_exp/exp",hyper_path)
