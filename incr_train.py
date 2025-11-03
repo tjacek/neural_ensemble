@@ -9,14 +9,12 @@ def incr_train(in_path,
                n=2,
                n_splits=30,
                selected=None):
-    if(not selected):
-        selected=[]
-    selected=set(selected)
+    selector=get_selector(selected,pos=True)
     build_clf=get_factory(hyper_path)
     @utils.DirFun("in_path","exp_path")
     def helper(in_path,exp_path):
         name=in_path.split("/")[-1]
-        if(name in selected):
+        if(selector(name)):
             return
         print(name)
         data=dataset.read_csv(in_path)
@@ -31,6 +29,12 @@ def incr_train(in_path,
             print(split_i)	
     helper(in_path,exp_path)
 
+def get_selector(selected,pos=True):
+    selected=set(selected)
+    if(pos):
+        return lambda name: name in selected
+    else
+        return lambda name: not name in selected
 
 def save_incr(clf,out_path):
     utils.make_dir(out_path)
