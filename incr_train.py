@@ -30,10 +30,12 @@ def incr_train(in_path,
     helper(in_path,exp_path)
 
 def get_selector(selected,pos=True):
+    if(selected is None):
+        return lambda name:False
     selected=set(selected)
     if(pos):
         return lambda name: name in selected
-    else
+    else:
         return lambda name: not name in selected
 
 def save_incr(clf,out_path):
@@ -145,9 +147,9 @@ def incr_partial( in_path,
 if __name__ == '__main__':
     in_path="incr_exp/multi/_data"
     hyper_path="incr_exp/multi/hyper.js"
-#    incr_train(in_path,
-#               "incr_exp/multi/exp",
-#               hyper_path,
-#               3)
+    incr_train(in_path,
+               "incr_exp/multi/exp",
+               hyper_path,
+               3)
     incr_pred(in_path,"incr_exp/multi/exp",hyper_path)
 #    incr_partial(in_path,"bad_exp/exp",hyper_path)
