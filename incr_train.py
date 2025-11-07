@@ -8,8 +8,9 @@ def incr_train(in_path,
                hyper_path,
                n=2,
                n_splits=30,
-               selected=None):
-    selector=get_selector(selected,pos=True)
+               selected=None,
+               pos=False):
+    selector=get_selector(selected,pos=pos)
     build_clf=get_factory(hyper_path)
     @utils.DirFun("in_path","exp_path")
     def helper(in_path,exp_path):
@@ -26,7 +27,6 @@ def incr_train(in_path,
             clf_i=clf_factory()
             clf_i,history_i=split_i.fit_clf(data,clf_i)
             save_incr(clf_i,f"{model_path}/{i}")
-            print(split_i)	
     helper(in_path,exp_path)
 
 def get_selector(selected,pos=True):
@@ -85,16 +85,21 @@ def model_iter(clf_factory,exp_path,n_splits=30):
 
 def incr_pred( in_path,
                exp_path,
-               hyper_path):
+               hyper_path,
+               selected):
+    selector=get_selector(selected,pos=False)
+
     build_clf=get_factory(hyper_path)
     @utils.DirFun("in_path","exp_path")
     def helper(in_path,exp_path):
+        name=in_path.split("/")[-1]
+        if(selector(name)):
+            return
+        print(name)
         data=dataset.read_csv(in_path)
         model_path=prepare_dirs(exp_path)
         if(not utils.top_files(model_path)):
             return None
-        name=in_path.split("/")[-1]
-        print(name)
         clf_factory=build_clf(name,n=2)
         clf_factory.init(data)
         gen=model_iter(clf_factory,exp_path)
@@ -145,11 +150,19 @@ def incr_partial( in_path,
                         xlabel="n_clfs",
                         ylabel="accuracy")
 if __name__ == '__main__':
-    in_path="incr_exp/multi/_data"
-    hyper_path="incr_exp/multi/hyper.js"
+    in_path="incr_exp/uci/data"
+    exp_path="incr_exp/uci/exp"
+    hyper_path="incr_exp/uci/hyper.js"
+    selected=[ 'cleveland',
+               'cmc',
+               'lymphography']
     incr_train(in_path,
-               "incr_exp/multi/exp",
+               exp_path,
                hyper_path,
-               3)
-    incr_pred(in_path,"incr_exp/multi/exp",hyper_path)
+               3,
+               selected=selected)
+    incr_pred(in_path,
+              exp_path,
+              hyper_path,
+              selected=selected)
 #    incr_partial(in_path,"bad_exp/exp",hyper_path)
