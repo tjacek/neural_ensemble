@@ -149,20 +149,29 @@ def incr_partial( in_path,
                         vertical=rf_dict[name_i],
                         xlabel="n_clfs",
                         ylabel="accuracy")
+def clf_count(exp_path):
+    for path_i in utils.top_files(exp_path):
+        name_i=path_i.split("/")[-1]
+        tree_path=f"{path_i}/TREE-ENS/models"
+        count=[ len(utils.top_files(tree_i))
+                  for tree_i in utils.top_files(tree_path)]
+        print(name_i)
+        print(count)
+
 if __name__ == '__main__':
     in_path="incr_exp/uci/data"
     exp_path="incr_exp/uci/exp"
     hyper_path="incr_exp/uci/hyper.js"
-    selected=[ 'cleveland',
-               'cmc',
-               'lymphography']
+    selected=[ 'wine-quality-red']#,
+#               'lymphography']
     incr_train(in_path,
                exp_path,
                hyper_path,
-               3,
+               10,
                selected=selected)
     incr_pred(in_path,
               exp_path,
               hyper_path,
               selected=selected)
+    clf_count(exp_path)
 #    incr_partial(in_path,"bad_exp/exp",hyper_path)
