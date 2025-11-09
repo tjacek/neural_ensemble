@@ -105,9 +105,10 @@ def incr_pred( in_path,
         gen=model_iter(clf_factory,exp_path)
         all_results=[]
         for clf_i,split_i in tqdm(gen):
-            result_i=split_i.pred(data,clf_i)
+            result_i=split_i.pred_partial(data,clf_i)
             all_results.append(result_i)
-        result_group=dataset.ResultGroup(all_results)
+#        result_group=dataset.ResultGroup(all_results)
+        result_group=dataset.PartialGroup(all_results)
         result_group.save(f"{exp_path}/TREE-ENS/results")
         return np.mean(result_group.get_acc())
     output_dict=helper(in_path,exp_path)
@@ -159,16 +160,16 @@ def clf_count(exp_path):
         print(count)
 
 if __name__ == '__main__':
-    in_path="incr_exp/uci/data"
-    exp_path="incr_exp/uci/exp"
-    hyper_path="incr_exp/uci/hyper.js"
-    selected=[ 'wine-quality-red']#,
-#               'lymphography']
-    incr_train(in_path,
-               exp_path,
-               hyper_path,
-               10,
-               selected=selected)
+    in_path="incr_exp/multi/data"
+    exp_path="incr_exp/multi/exp"
+    hyper_path="incr_exp/multi/hyper.js"
+    selected=[ 'wine-quality-white',
+               'first-order']
+#    incr_train(in_path,
+#               exp_path,
+#               hyper_path,
+#               2,
+#               selected=selected)
     incr_pred(in_path,
               exp_path,
               hyper_path,

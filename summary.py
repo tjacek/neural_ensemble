@@ -20,6 +20,36 @@ def metric_plot(conf_dict):
                     ylabel=f"{y_clf}({metric})",
                     text=text,
                     title=conf_dict["title"])
+def diff(conf_dict):
+    result,metric=conf_dict["result"],conf_dict['metric']
+    helper=make_source(result,metric)
+    desc_dict= get_desc(conf_dict['data'],conf_dict['desc'])
+    desc_dict={ name_i:float(value_i) 
+            for name_i,value_i in desc_dict.items()}
+    x,y=conf_dict['x'],conf_dict['y']
+    x_dict= helper(x)
+    y_dict= helper(y)
+    print(x_dict.keys())
+    print(y_dict.keys())
+    diff_dict={ key_i:(x_dict[key_i]-y_dict[key_i])
+                            for key_i in x_dict}
+    plot.dict_plot( desc_dict,
+                    diff_dict,
+                    xlabel=conf_dict["desc"],
+                    ylabel=f"{x}-{y}",
+                    text=conf_dict["text"],
+                    title=conf_dict["title"])
+
+def get_desc(in_path,desc):
+    if(type(in_path)==list):
+        full_dict={}
+        for path_i in in_path:
+            full_dict=full_dict|get_desc(path_i,desc)
+        return full_dict
+    else:
+        df=dataset.csv_desc(in_path)
+        desc_dict= df.get_dict("id",desc)
+        return desc_dict
 
 def count_feats(conf_dict):
     @utils.DirFun(out_arg=None)
@@ -55,149 +85,116 @@ def iter_feats(model_path):
         feat_i=np.load(feat_path_i)
         yield feat_i
 
-class DirSource(object):
-    def __init__(self,result_dict):
-        self.result_dict=result_dict
-        self.clfs= set(result_dict.clfs())
+#class DirSource(object):
+#    def __init__(self,result_dict):
+#        self.result_dict=result_dict
+#        self.clfs= set(result_dict.clfs())
     
-    def __call__(self,clf_type,metric):
-        clf_dict=self.result_dict.get_clf(clf_type,metric)
-        return { clf_i:np.mean(value_i) 
-                    for clf_i,value_i in clf_dict.items()}
+#    def __call__(self,clf_type,metric):
+#        clf_dict=self.result_dict.get_clf(clf_type,metric)
+#        return { clf_i:np.mean(value_i) 
+#                    for clf_i,value_i in clf_dict.items()}
 
-    def __contains__(self, item):
-        if(type(item)==list):
-            return False
-        return item in self.clfs 
+#    def __contains__(self, item):
+#        if(type(item)==list):
+#            return False
+#        return item in self.clfs 
 
-class HyperSource(object):
-    def __init__(self,df):
-        self.df=df[['data', 'feats', 'dims',
-                    'accuracy','balance']]
-        self.feats=set([feat_i.replace("'","") 
-                        for feat_i in df['feats'].unique()])
-        self.dims=set(df['dims'].unique())
+#class HyperSource(object):
+#    def __init__(self,df):
+#        self.df=df[['data', 'feats', 'dims',
+#                    'accuracy','balance']]
+#        self.feats=set([feat_i.replace("'","") 
+#                        for feat_i in df['feats'].unique()])
+#        self.dims=set(df['dims'].unique())
     
-    def __call__(self,clf_type,metric):
-        if(type(clf_type)!=list):
-            return False
-        feat_i,dim_i=clf_type
-        if(dim_i=="?"):
-            return best_dict(self.df,feat_i,dim_i,metric)
-        return selected_dict(self.df,feat_i,dim_i,metric)
+#    def __call__(self,clf_type,metric):
+#        if(type(clf_type)!=list):
+#            return False
+#        feat_i,dim_i=clf_type
+#        if(dim_i=="?"):
+#            return best_dict(self.df,feat_i,dim_i,metric)
+#        return selected_dict(self.df,feat_i,dim_i,metric)
 
-    def __contains__(self, item):
-        feat_i,dim_i=item
-        if(not feat_i in self.feats):
-            return False
-        if(not dim_i in self.dims and 
-            dim_i!='?'):
-            return False
-        return True
+#    def __contains__(self, item):
+#        feat_i,dim_i=item
+#        if(not feat_i in self.feats):
+#            return False
+#        if(not dim_i in self.dims and 
+#            dim_i!='?'):
+#            return False
+#        return True
 
-class CsvSource(object):
-    def __init__(self,df):
-        self.df=df
-        self.clfs=set(df["clf"].tolist())
+#class CsvSource(object):
+#    def __init__(self,df):
+#        self.df=df
+#        self.clfs=set(df["clf"].tolist())
     
-    def __call__(self,clf_type,metric):
-        df_clf=self.df[self.df["clf"]==clf_type]
-        return dict(zip(df_clf['data'].tolist(),
-                        df_clf[metric].tolist()))
-    def __contains__(self, item):
-        return item in self.clfs
+#    def __call__(self,clf_type,metric):
+#        df_clf=self.df[self.df["clf"]==clf_type]
+#        return dict(zip(df_clf['data'].tolist(),
+#                        df_clf[metric].tolist()))
+#    def __contains__(self, item):
+#        return item in self.clfs
 
-def parse_csv(in_path):
-    df=pd.read_csv(in_path)
-    cols=set(df.columns)
-    if("clf" in cols):
-        return CsvSource(df)
-    return HyperSource(df)
+#def parse_csv(in_path):
+#    df=pd.read_csv(in_path)
+#    cols=set(df.columns)
+#    if("clf" in cols):
+#        return CsvSource(df)
+#    return HyperSource(df)
 
-def selected_dict(df,feat_i,dim_i,metric):
-    df=df[df['feats']==f"'{feat_i}'"]
-    df=df[df['dims']==dim_i]
-    df=df[['data',metric]]
-    return dict(zip(df['data'].tolist(),
-                      df[metric].tolist()))
+#def selected_dict(df,feat_i,dim_i,metric):
+#    df=df[df['feats']==f"'{feat_i}'"]
+#    df=df[df['dims']==dim_i]
+#    df=df[['data',metric]]
+#    return dict(zip(df['data'].tolist(),
+#                      df[metric].tolist()))
 
-def best_dict(df,feat_i,dim_i,metric):
-    grouped=df.groupby(by='data')
-    def helper(df_i):
-        df_i=df_i.sort_values(by=metric,ascending=False)
-        row_j=df_i.iloc[0]
-        return row_j     
-    df=grouped.apply(helper)
-    return dict(zip(df['data'].tolist(),
-                      df[metric].tolist()))
+#def best_dict(df,feat_i,dim_i,metric):
+#    grouped=df.groupby(by='data')#
+#    def helper(df_i):
+#        df_i=df_i.sort_values(by=metric,ascending=False)
+#        row_j=df_i.iloc[0]
+#        return row_j     
+#    df=grouped.apply(helper)
+#    return dict(zip(df['data'].tolist(),
+#                      df[metric].tolist()))
 
-def make_source(result,metric):
-    data_sources=[]
-    for path_i in result:
-        if(os.path.isdir(path_i)):
-            result_dict=pred.unify_results([path_i])
-            source_i=DirSource(result_dict)
-        else:
-            source_i=parse_csv(path_i)
-        data_sources.append(source_i)
-    def helper(clf_type):
-        clf_dict={}
-        for source_i in data_sources:
-            if(clf_type in source_i):
-                clf_dict=clf_dict | source_i(clf_type,metric)
-        return clf_dict
-#        raise Exception(f"Unknown clf type {clf_type}")
-    return helper
+#def make_source(result,metric):
+#    data_sources=[]
+#    for path_i in result:
+#        if(os.path.isdir(path_i)):
+#            result_dict=pred.unify_results([path_i])
+#            source_i=DirSource(result_dict)
+#        else:
+#            source_i=parse_csv(path_i)
+#        data_sources.append(source_i)
+#    def helper(clf_type):
+#        clf_dict={}
+#        for source_i in data_sources:
+#            if(clf_type in source_i):
+#                clf_dict=clf_dict | source_i(clf_type,metric)
+#        return clf_dict
+#    return helper
 
-def hete_sources(conf_dict):
-    result,metric=conf_dict["result"],conf_dict['metric']
-    helper=make_source(result,metric)
-    x_clf,y_clf=conf_dict['x'],conf_dict['y']
-    x_dict= helper(x_clf)
-    y_dict= helper(y_clf)
-    print(x_dict)
-    print(y_dict)
-    plot.dict_plot( x_dict,
-                    y_dict,
-                    xlabel=f"{x_clf}({metric})",
-                    ylabel=f"{y_clf}({metric})",
-                    text=conf_dict["text"])
-
-def diff(conf_dict):
-    result,metric=conf_dict["result"],conf_dict['metric']
-    helper=make_source(result,metric)
-    desc_dict= get_desc(conf_dict['data'],conf_dict['desc'])
-    desc_dict={ name_i:float(value_i) 
-            for name_i,value_i in desc_dict.items()}
-    x,y=conf_dict['x'],conf_dict['y']
-    x_dict= helper(x)
-    y_dict= helper(y)
-    print(x_dict.keys())
-    print(y_dict.keys())
-    diff_dict={ key_i:(x_dict[key_i]-y_dict[key_i])
-                            for key_i in x_dict}
-    plot.dict_plot( desc_dict,
-                    diff_dict,
-                    xlabel=conf_dict["desc"],
-                    ylabel=f"{x}-{y}",
-                    text=conf_dict["text"],
-                    title=conf_dict["title"])
-
-def get_desc(in_path,desc):
-    if(type(in_path)==list):
-        full_dict={}
-        for path_i in in_path:
-            full_dict=full_dict|get_desc(path_i,desc)
-        return full_dict
-    else:
-        df=dataset.csv_desc(in_path)
-        desc_dict= df.get_dict("id",desc)
-        return desc_dict
-
+#def hete_sources(conf_dict):
+#    result,metric=conf_dict["result"],conf_dict['metric']
+#    helper=make_source(result,metric)
+#    x_clf,y_clf=conf_dict['x'],conf_dict['y']
+#    x_dict= helper(x_clf)
+#    y_dict= helper(y_clf)
+#    print(x_dict)
+#    print(y_dict)
+#    plot.dict_plot( x_dict,
+#                    y_dict,
+#                    xlabel=f"{x_clf}({metric})",
+#                    ylabel=f"{y_clf}({metric})",
+#                    text=conf_dict["text"])
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--conf", type=str, default="hete.json")
+    parser.add_argument("--conf", type=str, default="incr_exp/plot.json")
     args = parser.parse_args()
     conf_dict=utils.read_json(args.conf)
     if(conf_dict["type"]=="diff"):
