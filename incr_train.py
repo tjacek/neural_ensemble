@@ -128,45 +128,10 @@ def incr_partial( in_path,
         print(part_i.indv_acc())
         return part_i
     output_dict=helper(in_path,exp_path)
+    rf_dict=RF_acc(exp_path)
+    print(rf_dict)
     for name_i,partial_i in output_dict.items():
         partial_series=partial_i.subset_series(step=2)
-        plot.error_plot(partial_series.steps,
-                        partial_series.means,
-                        partial_series.stds,
-                        name=name_i,
-#                        vertical=rf_dict[name_i],
-                        xlabel="n_clfs",
-                        ylabel="accuracy")
-
-def _incr_partial( in_path,
-                  exp_path,
-                  hyper_path):
-    build_clf=get_factory(hyper_path)
-    @utils.DirFun("in_path","exp_path")
-    def helper(in_path,exp_path):
-        data=dataset.read_csv(in_path)
-        name=in_path.split("/")[-1]
-        print(name)
-        clf_factory=build_clf(name,n=2)
-        clf_factory.init(data)
-        all_partials=[]
-        gen=model_iter(clf_factory,exp_path)
-        for clf_i,split_i in tqdm(gen):
-            partial_i=split_i.pred_partial(data,clf_i)
-            all_partials.append(partial_i)
-        part_group=dataset.PartialGroup(all_partials)
-        print(part_group.indv_acc())
-        return part_group
-    output_dict=helper(in_path,exp_path)
-    rf_dict={"gesture":0.6797,"first-order":0.6299,
-             "wine-quality-white":0.6954,
-             "wine-quality-red":0.7155}
-    for name_i,partial_i in output_dict.items():
-        print(name_i)
-        partial_series=partial_i.subset_series(step=2)
-        print(partial_series.steps)
-        print(partial_series.means)
-        print(partial_series.stds)
         plot.error_plot(partial_series.steps,
                         partial_series.means,
                         partial_series.stds,
@@ -174,6 +139,15 @@ def _incr_partial( in_path,
                         vertical=rf_dict[name_i],
                         xlabel="n_clfs",
                         ylabel="accuracy")
+
+def RF_acc(exp_path):
+    @utils.DirFun("exp_path",None)
+    def helper(exp_path):
+        result_path=f"{exp_path}/RF/results"
+        result=dataset.ResultGroup.read(result_path)
+        return np.mean(result.get_acc())
+    return helper(exp_path)
+
 def clf_count(exp_path):
     for path_i in utils.top_files(exp_path):
         name_i=path_i.split("/")[-1]
