@@ -173,6 +173,6 @@ if __name__ == '__main__':
     incr_pred(in_path,
               exp_path,
               hyper_path,
-              selected=selected)
-    clf_count(exp_path)
+              selected=None)
+#    clf_count(exp_path)
 #    incr_partial(in_path,"bad_exp/exp",hyper_path)
