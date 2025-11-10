@@ -207,6 +207,12 @@ class PartialResults(object):
 
     def save(self,out_path):
         np.savez(out_path,y_part=self.y_partial,y_true=self.y_true)
+    
+    @classmethod
+    def read(cls,in_path:str):
+        raw=np.load(in_path)
+        return PartialResults(y_true=raw['y_true'],
+                              y_partial=raw['y_part'])
 
 class PartialGroup(object):
     def __init__(self,partials):
@@ -215,7 +221,7 @@ class PartialGroup(object):
     def get_acc(self):
         return [partial_i.get_metric("acc") 
                     for partial_i in self.partials]
-                    
+
     def random(self,size,n_iters=10):
         acc=[ self.random_single(size) 
                 for i in range(n_iters)]
@@ -254,6 +260,12 @@ class PartialGroup(object):
         utils.make_dir(out_path)
         for i,partial_i in enumerate(self.partials):
             partial_i.save(f"{out_path}/{i}")
+    
+    @classmethod
+    def read(cls,in_path:str):
+        results= [ PartialResults.read(path_i) 
+                 for path_i in utils.top_files(in_path)]
+        return PartialGroup(results)
 
 @dataclass
 class PartialSeries:

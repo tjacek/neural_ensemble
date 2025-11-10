@@ -113,8 +113,32 @@ def incr_pred( in_path,
         return np.mean(result_group.get_acc())
     output_dict=helper(in_path,exp_path)
     print(output_dict)
-    
+
 def incr_partial( in_path,
+                  exp_path,
+                  hyper_path):
+    build_clf=get_factory(hyper_path)
+    @utils.DirFun("in_path","exp_path")
+    def helper(in_path,exp_path):
+        data=dataset.read_csv(in_path)
+        name=in_path.split("/")[-1]
+        print(name)
+        path_i=f"{exp_path}/TREE-ENS/results"
+        part_i=dataset.PartialGroup.read(path_i)
+        print(part_i.indv_acc())
+        return part_i
+    output_dict=helper(in_path,exp_path)
+    for name_i,partial_i in output_dict.items():
+        partial_series=partial_i.subset_series(step=2)
+        plot.error_plot(partial_series.steps,
+                        partial_series.means,
+                        partial_series.stds,
+                        name=name_i,
+#                        vertical=rf_dict[name_i],
+                        xlabel="n_clfs",
+                        ylabel="accuracy")
+
+def _incr_partial( in_path,
                   exp_path,
                   hyper_path):
     build_clf=get_factory(hyper_path)
@@ -139,7 +163,7 @@ def incr_partial( in_path,
              "wine-quality-red":0.7155}
     for name_i,partial_i in output_dict.items():
         print(name_i)
-        partial_series=partial_i.subset_series(step=5)
+        partial_series=partial_i.subset_series(step=2)
         print(partial_series.steps)
         print(partial_series.means)
         print(partial_series.stds)
@@ -170,9 +194,9 @@ if __name__ == '__main__':
 #               hyper_path,
 #               2,
 #               selected=selected)
-    incr_pred(in_path,
-              exp_path,
-              hyper_path,
-              selected=None)
+#    incr_pred(in_path,
+#              exp_path,
+#              hyper_path,
+#              selected=None)
 #    clf_count(exp_path)
-#    incr_partial(in_path,"bad_exp/exp",hyper_path)
+    incr_partial(in_path,"incr_exp/multi/exp",hyper_path)
