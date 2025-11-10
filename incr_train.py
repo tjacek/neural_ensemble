@@ -103,12 +103,15 @@ def incr_pred( in_path,
         clf_factory=build_clf(name,n=2)
         clf_factory.init(data)
         gen=model_iter(clf_factory,exp_path)
-        all_results=[]
+        all_partials,all_results=[],[]
         for clf_i,split_i in tqdm(gen):
-            result_i=split_i.pred_partial(data,clf_i)
+            partial_i=split_i.pred_partial(data,clf_i)
+            all_partials.append(partial_i)
+            result_i=partial_i.to_result()
             all_results.append(result_i)
-#        result_group=dataset.ResultGroup(all_results)
-        result_group=dataset.PartialGroup(all_results)
+        partial_group=dataset.PartialGroup(all_partials)
+        partial_group.save(f"{exp_path}/TREE-ENS/partials")
+        result_group=dataset.ResultGroup(all_results)
         result_group.save(f"{exp_path}/TREE-ENS/results")
         return np.mean(result_group.get_acc())
     output_dict=helper(in_path,exp_path)
@@ -123,7 +126,7 @@ def incr_partial( in_path,
         data=dataset.read_csv(in_path)
         name=in_path.split("/")[-1]
         print(name)
-        path_i=f"{exp_path}/TREE-ENS/results"
+        path_i=f"{exp_path}/TREE-ENS/partials"
         part_i=dataset.PartialGroup.read(path_i)
         print(part_i.indv_acc())
         return part_i
@@ -168,9 +171,9 @@ if __name__ == '__main__':
 #               hyper_path,
 #               2,
 #               selected=selected)
-#    incr_pred(in_path,
-#              exp_path,
-#              hyper_path,
-#              selected=None)
+    incr_pred(in_path,
+              exp_path,
+              hyper_path,
+              selected=None)
 #    clf_count(exp_path)
     incr_partial(in_path,"incr_exp/multi/exp",hyper_path)
