@@ -49,7 +49,7 @@ def extract_number(raw):
 class DirFun(object):
     def __init__(self,
                  input_arg='in_path',
-                 out_arg='out_path',
+                 out_arg=None,
                  dir_args=None):
         if(dir_args is None):
             dir_args={input_arg:0}

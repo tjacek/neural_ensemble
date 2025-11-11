@@ -9,7 +9,7 @@ class ResultDict(dict):
         for value_i in self.values():    
             all_clfs+= list(value_i.keys())
         all_clfs= list(set(all_clfs))
-        all_clfs=list(all_clfs)
+#        all_clfs=list(all_clfs)
         all_clfs.sort()
         return all_clfs
 
@@ -55,7 +55,6 @@ def unify_results(paths):
     raw_dict={}
     for indv_i in indv_dicts:
         raw_dict= raw_dict | indv_i
-#    print(raw_dict.keys())
     return ResultDict(raw_dict)
 
 def summary(exp_path,csv=False):
@@ -96,7 +95,7 @@ def box_plot(exp_path,split_size=None):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--exp_path", type=str, default="incr_exp/multi/exp")
+    parser.add_argument("--exp_path", type=str, default="incr_exp/uci/exp")
     parser.add_argument('--plot',action='store_true')
     parser.add_argument('--csv',action='store_true')
 
