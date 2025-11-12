@@ -85,20 +85,37 @@ def iter_feats(model_path):
         feat_i=np.load(feat_path_i)
         yield feat_i
 
-#class DirSource(object):
-#    def __init__(self,result_dict):
-#        self.result_dict=result_dict
-#        self.clfs= set(result_dict.clfs())
-    
-#    def __call__(self,clf_type,metric):
-#        clf_dict=self.result_dict.get_clf(clf_type,metric)
-#        return { clf_i:np.mean(value_i) 
-#                    for clf_i,value_i in clf_dict.items()}
+def make_source(result,metric):
+    data_sources=[]
+    for path_i in result:
+        if(os.path.isdir(path_i)):
+            result_dict=pred.unify_results([path_i])
+            source_i=DirSource(result_dict)
+        else:
+            source_i=parse_csv(path_i)
+        data_sources.append(source_i)
+    def helper(clf_type):
+        clf_dict={}
+        for source_i in data_sources:
+            if(clf_type in source_i):
+                clf_dict=clf_dict | source_i(clf_type,metric)
+        return clf_dict
+    return helper
 
-#    def __contains__(self, item):
-#        if(type(item)==list):
-#            return False
-#        return item in self.clfs 
+class DirSource(object):
+    def __init__(self,result_dict):
+        self.result_dict=result_dict
+        self.clfs= set(result_dict.clfs())
+    
+    def __call__(self,clf_type,metric):
+        clf_dict=self.result_dict.get_clf(clf_type,metric)
+        return { clf_i:np.mean(value_i) 
+                    for clf_i,value_i in clf_dict.items()}
+
+    def __contains__(self, item):
+        if(type(item)==list):
+            return False
+        return item in self.clfs 
 
 #class HyperSource(object):
 #    def __init__(self,df):
@@ -161,22 +178,6 @@ def iter_feats(model_path):
 #    return dict(zip(df['data'].tolist(),
 #                      df[metric].tolist()))
 
-#def make_source(result,metric):
-#    data_sources=[]
-#    for path_i in result:
-#        if(os.path.isdir(path_i)):
-#            result_dict=pred.unify_results([path_i])
-#            source_i=DirSource(result_dict)
-#        else:
-#            source_i=parse_csv(path_i)
-#        data_sources.append(source_i)
-#    def helper(clf_type):
-#        clf_dict={}
-#        for source_i in data_sources:
-#            if(clf_type in source_i):
-#                clf_dict=clf_dict | source_i(clf_type,metric)
-#        return clf_dict
-#    return helper
 
 #def hete_sources(conf_dict):
 #    result,metric=conf_dict["result"],conf_dict['metric']

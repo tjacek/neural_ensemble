@@ -70,10 +70,10 @@ def plot_box(result_dict,data,clf_types=None):
     fig, ax = plt.subplots()
     if(clf_types is None):
         clf_types=result_dict.clfs()
-#    clf_types=["RF","GRAD","MLP","TREE-MLP","TREE-ENS"]
     step=len(clf_types)
     for i,clf_i in enumerate(clf_types):
-        dict_i=result_dict.get_clf(clf_i,metric="acc")
+        dict_i=result_dict.get_clf(clf_i,metric="acc",split=10)
+#        raise Exception(dict_i)
         values_i=[dict_i[data_j] for data_j in data]
         positions_i=[j*step+i for j,_ in enumerate(data)]
 

@@ -25,9 +25,18 @@ class ResultDict(dict):
                 data_dict[data_i]=fun(dict_i[clf_type])
         return data_dict
 
-    def get_clf(self,clf_type,metric="acc"):
-        return self(clf_type,lambda r:r.get_metric(metric))
-    
+    def get_clf( self,
+                 clf_type,
+                 metric="acc",
+                 split=None):
+        
+        output=self(clf_type,lambda r:r.get_metric(metric))
+        if(split):
+            output={ name_i: [ np.mean(v_i)
+                for v_i in utils.split_list(value_i,split)] 
+                    for name_i,value_i in output.items()}
+        return output
+
     def get_mean_metric(self,clf_type,metric="acc"):
         return self(clf_type,lambda r:np.mean(r.get_metric(metric)))
     
