@@ -95,28 +95,32 @@ def history_to_dict(history):
     return hist_dict
 
 def parse_hyper(hyper_path):
-    df=pd.read_csv(hyper_path)
-    hyper_dict={}
-    for index, row_i in df.iterrows():
-        dict_i=row_i.to_dict()
-        data_i=dict_i['data']
-        extr_i=(dict_i["feats"].replace("'",""),dict_i["dims"])
-        hyper_i={'layers':2, 'units_0':dict_i["layer"],
+    ext=hyper_path.split(".")[-1]
+    if(ext=="csv"):
+        df=pd.read_csv(hyper_path)
+        hyper_dict={}
+        for index, row_i in df.iterrows():
+            dict_i=row_i.to_dict()
+            data_i=dict_i['data']
+            extr_i=(dict_i["feats"].replace("'",""),dict_i["dims"])
+            hyper_i={'layers':2, 'units_0':dict_i["layer"],
                  'units_1':1,'batch':False}
-        hyper_dict[data_i]=[ hyper_i,
+            hyper_dict[data_i]=[ hyper_i,
                              { "tree_factory":"random",
                                "extr_factory":extr_i,
                                "concat":True}]
+    else:
+         hyper_dict=utils.read_json(hyper_path)
     return hyper_dict
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type=str, default="incr_exp/uci/data")
-    parser.add_argument("--out_path", type=str, default="incr_exp/uci/exp")
+    parser.add_argument("--data", type=str, default="incr_exp/multi/data")
+    parser.add_argument("--out_path", type=str, default="incr_exp/multi/exp")
     parser.add_argument("--start", type=int, default=0)
     parser.add_argument("--step", type=int, default=30)
-    parser.add_argument("--clf_type", type=str, default="RF")
-    parser.add_argument("--hyper_path", type=str, default="neural/binary/hyper.csv")
+    parser.add_argument("--clf_type", type=str, default="MLP")
+    parser.add_argument("--hyper_path", type=str, default="incr_exp/multi/hyper.js")
 
     args = parser.parse_args()
     print(args)
