@@ -161,9 +161,9 @@ def clf_count(exp_path):
         print(count)
 
 if __name__ == '__main__':
-    in_path="incr_exp/multi/data"
+    in_path="incr_exp/uci/data"
     exp_path="incr_exp/multi/exp"
-    hyper_path="incr_exp/multi/hyper.js"
+    hyper_path="incr_exp/uci/hyper.js"
     selected=[ 'wine-quality-white',
                'first-order']
 #    incr_train(in_path,
@@ -171,9 +171,9 @@ if __name__ == '__main__':
 #               hyper_path,
 #               2,
 #               selected=selected)
-    incr_pred(in_path,
-              exp_path,
-              hyper_path,
-              selected=None)
+#    incr_pred(in_path,
+#              exp_path,
+#              hyper_path,
+#              selected=None)
 #    clf_count(exp_path)
-    incr_partial(in_path,"incr_exp/multi/exp",hyper_path)
+    incr_partial(in_path,"incr_exp/uci/exp",hyper_path)

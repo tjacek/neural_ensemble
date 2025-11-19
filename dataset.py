@@ -2,7 +2,8 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import accuracy_score,f1_score,balanced_accuracy_score
 from sklearn import preprocessing
-from dataclasses import dataclass
+#from dataclasses import dataclass
+from collections import namedtuple
 import utils
 
 class Dataset(object):
@@ -182,7 +183,11 @@ class PartialResults(object):
         self.y_partial=y_partial
     
     def __len__(self):
-        return len(self.y_partial)#.shape[0]
+        return len(self.y_partial)
+
+    def to_result(self):
+        y_pred=self.vote()
+        return Result(y_pred,y_true)
 
     def vote(self):
         ballot= np.sum(self.y_partial,axis=0)
@@ -215,6 +220,8 @@ class PartialResults(object):
                               y_partial=raw['y_part'])
 
 class PartialGroup(object):
+    SubsetSeries=namedtuple('PartialSeries',
+                            'steps means stds')
     def __init__(self,partials):
         self.partials=partials
     
@@ -248,7 +255,7 @@ class PartialGroup(object):
             mean_i,std_i=self.random(size_i,n_iters)
             means.append(mean_i)
             stds.append(std_i)
-        return PartialSeries(x,means,stds)
+        return self.SubsetSeries(x,means,stds)
 
     def indv_acc(self,metric_type="acc"):
         raw_votes= [ result_i.indiv(metric_type) 
@@ -266,12 +273,6 @@ class PartialGroup(object):
         results= [ PartialResults.read(path_i) 
                  for path_i in utils.top_files(in_path)]
         return PartialGroup(results)
-
-@dataclass
-class PartialSeries:
-    steps:list
-    means:list
-    stds:list
 
 def dispatch_metric(metric_type):
     metric_type=metric_type.lower()
