@@ -9,7 +9,6 @@ class ResultDict(dict):
         for value_i in self.values():    
             all_clfs+= list(value_i.keys())
         all_clfs= list(set(all_clfs))
-#        all_clfs=list(all_clfs)
         all_clfs.sort()
         return all_clfs
 
@@ -87,6 +86,11 @@ def summary(exp_path,csv=False):
         print(df.to_csv())
     else:
         for df_i in df.by_data(sort='acc'):
+            acc=df_i['acc']
+            diff=acc.max() - acc.min()
+            def norm_fun(row):
+                return (row.acc-min(acc))/diff
+            df_i['norm_acc']=df_i.apply(norm_fun,axis=1)
             print(df_i)
 
 def box_plot(exp_path,split_size=None):
@@ -104,7 +108,7 @@ def box_plot(exp_path,split_size=None):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--exp_path", type=str, default="incr_exp/uci/exp")
+    parser.add_argument("--exp_path", type=str, default="incr_exp/multi/exp")
     parser.add_argument('--plot',action='store_true')
     parser.add_argument('--csv',action='store_true')
 
