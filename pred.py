@@ -87,19 +87,22 @@ def summary(exp_path,csv=False):
     else:
         norm_acc=[]
         for df_i in df.by_data(sort='acc'):
-            acc=df_i['acc']
-            diff=acc.max() - acc.min()
-            def norm_fun(row):
-                return (row.acc-min(acc))/diff
-            df_i['norm_acc']=df_i.apply(norm_fun,axis=1)
-            df_i=df_i.sort_values(by="clf")
-            norm_acc.append(df_i['norm_acc'].tolist())
+            norm_acc.append(normed_acc(df_i))
             print(df_i)
         norm_acc=np.array(norm_acc)
         clfs=df.df['clf'].unique()
         clfs.sort()
         print(clfs)
         print(np.mean(norm_acc,axis=0))
+
+def normed_acc(df_i):
+    acc=df_i['acc']
+    diff=acc.max() - acc.min()
+    def norm_fun(row):
+                return (row.acc-min(acc))/diff
+    df_i['norm_acc']=df_i.apply(norm_fun,axis=1)
+    df_i=df_i.sort_values(by="clf")
+    return df_i['norm_acc'].tolist()
 
 def box_plot(exp_path,split_size=None):
     result_dict=get_result_dict(exp_path)
@@ -116,7 +119,7 @@ def box_plot(exp_path,split_size=None):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--exp_path", type=str, default="incr_exp/multi/exp")
+    parser.add_argument("--exp_path", type=str, default="incr_exp/uci/exp")
     parser.add_argument('--plot',action='store_true')
     parser.add_argument('--csv',action='store_true')
 
