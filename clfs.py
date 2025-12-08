@@ -121,7 +121,7 @@ class NeuralClfFactory(base.AbstractClfFactory):
                      'n_cats':data.n_cats(),
                      'n_epochs':1000,
                      "class_weights":class_dict}
-
+        return self
     
 class NeuralClfAdapter(base.AbstractClfAdapter):
     def __init__(self, params,
@@ -299,9 +299,6 @@ class CSTreeEnsFactory(NeuralClfFactory):
             model_i=tf.keras.models.load_model(f"{path_i}/nn.keras")
             tree_ens.all_clfs.append(MLP(None,None,model_i))
             extractor_i=extractor_type.read(f"{path_i}/tree")
-#            extractor_i=tree_feats.read_feats(f"{path_i}/tree")
-#            extractor_i=FeatureExtactor(extractor_i,
-#                                   concat=self.feature_params["concat"])
             tree_ens.all_extract.append(extractor_i)
         return tree_ens
     

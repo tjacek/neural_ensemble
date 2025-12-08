@@ -172,10 +172,7 @@ def get_dir_path(out_path,clf_type=None):
     keys,ext_keys=["results"],["npz"]
     if(clf_type in NEURAL_CLFS):
         keys+=["models","history"]
-#        if(clf_type=="MLP")
         ext_keys+=["keras","txt"]
-#        else:
-#            ext_keys+=["","txt"]
     clf_dict={key_i:f"{clf_path}/{key_i}" 
                 for key_i in keys}
     clf_dict["splits"]=split_path
@@ -224,17 +221,17 @@ def get_splits(data_path,
 
 class AbstractClfFactory(object):
     def init(self,data):
-        pass
+        return self
 
     def __call__(self):
         raise NotImplementedError()
     
     @abstractmethod
-    def read(self,model_path):
+    def read(self,model_path:str):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_info(self):
+    def get_info(self)->dict:
         raise NotImplementedError()
     
     def __repr__(self):
