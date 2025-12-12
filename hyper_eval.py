@@ -55,8 +55,15 @@ def plot_xy( in_path,
         plt.title(data_i)
         plt.show()
 
+def show_feat(in_path):
+    df=pd.read_csv(in_path)
+    df=dataset.DFView(df)
+    for df_i in df.by_data("accuracy"):
+        data_i=df_i["data"].unique()[0]
+        print(data_i)
 
 if __name__ == '__main__':
     in_path="neural/uci/raw_hyper.csv"
-    df=plot_xy(in_path)#,metric="accuracy")
-    print(df)
+    show_feat(in_path)
+#    df=plot_xy(in_path)#,metric="accuracy")
+#    print(df)
