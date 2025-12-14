@@ -63,9 +63,8 @@ def show_feat(in_path,desc_path):
     for df_i in df.by_data("accuracy"):
         data_i=df_i["data"].unique()[0]
         dim_i=dim_dict[data_i]
-#        df_i["units"]=df_i["layer"].apply(lambda x:x*dim_i)
         df_i["units"]=df_i.apply(lambda row:row.layer*(dim_i+row.dims),axis=1)
-
+        df_i=df_i.sort_values(by="units")
         print(df_i)
     print(dim_dict)
 
