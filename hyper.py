@@ -6,6 +6,24 @@ import argparse
 import base,clfs,utils,tree_clf,tree_feats,dataset
 utils.silence_warnings()
 
+class ParamSpace(object):
+    def __init__( self,
+                  extr=["info","ind","prod"],
+                  n_feats=[10,20,30,50],
+                  units=[1,2]):
+        self.extr=extr
+        self.n_feats=n_feats
+        self.units=units
+
+    def iter(self):
+        for feat_i,dim_i in product(extr,n_feats):
+            arg_i={ "tree_factory":"random",
+                    "extr_factory":(feat_i,dim_i),
+                    "concat":True}
+            for unit_j in units:
+                hyper_j={ 'layers':2, 'units_0':unit_j,
+                          'units_1':1,'batch':False}
+                yield arg_i,hyper_j
 
 def nn_tree(in_path,multi=False,selected=None):    
     if(selected):
@@ -59,38 +77,6 @@ def nn_tree(in_path,multi=False,selected=None):
         df=dataset.from_lines(lines,cols)
     df.by_data()
     return df
-  
-#def tree_comp(in_path,
-#              clf_type="TREE-ENS",
-#              extr=None,
-#              n_feats=None):
-#    data_split=base.get_splits(data_path=in_path,
-#                               n_splits=10,
-#                               n_repeats=1)
-#    prototype={"tree_factory":"random",
-#                "concat":True}
-#    if(extr is None):
-#        extr=["info","ind"]
-#    if(n_feats is None):
-#        n_feats=[20,30,50]
-#    hyper={'layers':2, 'units_0':1,'units_1':1,'batch':False}
-#    for feat_i,dim_i in product(extr,n_feats):
-#        tree_i=prototype.copy()
-#        tree_i["extr_factory"]= (feat_i,dim_i)#extr_i
-#        clf_factory=clfs.get_clfs(clf_type,
-#                                 hyper_params=hyper,
-#                                 feature_params=tree_i)
-#        acc_i,balance_i=eval_tree(data_split,clf_factory)
-#        print(f"{feat_i}.{dim_i},{acc_i:.4f},{balance_i:.4f}")
-
-#def eval_tree(data_split,clf_factory):
-#    clf_factory.init(data_split.data)
-#    acc,balance=[],[]
-#    for clf_j,result_j in tqdm(data_split.eval(clf_factory)):
-#        acc.append(result_j.get_acc())
-#        balance.append(result_j.get_metric("balance"))
-#    return np.mean(acc),np.mean(balance)
-
 
 def svm_tree(in_path,multi=False,selected=None):
     if(selected):
