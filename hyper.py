@@ -25,6 +25,16 @@ class ParamSpace(object):
                           'units_1':1,'batch':False}
                 yield arg_i,hyper_j
 
+def new_optim(in_path):
+    df_desc=dataset.csv_desc(in_path)
+    dict_desc=df_desc.get_dict("id","dims")
+    @utils.DirFun()
+    def helper(in_path):
+        data_id=in_path.split("/")[-1]
+        dims=dict_desc[data_id]
+        print(data_id,dims)
+    helper(in_path)
+
 def nn_tree(in_path,multi=False,selected=None):    
     if(selected):
         selected=set(selected)
@@ -127,12 +137,12 @@ if __name__ == '__main__':
     parser.add_argument("--hyper_path", type=str, default="uci_neural.csv")
     args = parser.parse_args()
     print(args)
-    df=nn_tree(f"{args.in_path}_exp/data",multi=True,
-                  selected=[ "mfeat-fourier","mfeat-karh",
-                             "newthyroid", "satimage"])
-    if(args.out_path):
-        df.df.to_csv(args.out_path, sep=',')
-    if(args.hyper_path):
-        best_df=df.best()[['data','feats','dims','acc']]
-#        print(best_df)
-        best_df.to_csv(args.hyper_path, sep=',')
+    new_optim("binary_exp/data")
+#    df=nn_tree(f"{args.in_path}_exp/data",multi=True,
+#                  selected=[ "mfeat-fourier","mfeat-karh",
+#                             "newthyroid", "satimage"])
+#    if(args.out_path):
+#        df.df.to_csv(args.out_path, sep=',')
+#    if(args.hyper_path):
+#        best_df=df.best()[['data','feats','dims','acc']]
+#        best_df.to_csv(args.hyper_path, sep=',')
