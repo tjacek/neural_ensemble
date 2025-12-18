@@ -63,11 +63,15 @@ def show_feat(in_path,desc_path):
     for df_i in df.by_data("accuracy"):
         data_i=df_i["data"].unique()[0]
         dim_i=dim_dict[data_i]
-        df_i["units"]=df_i.apply(lambda row:row.layer*(dim_i+row.dims),axis=1)
-        df_i["norm_units"]=df_i.apply(lambda row:row.units/dim_i,axis=1)
-#        df_i=df_i.sort_values(by="units")
+        fun_dict={"units":lambda row:row.layer*(dim_i+row.dims),
+#                  "norm_units":lambda row:row.units/dim_i,
+                  "log_dim": lambda row:row.dims/dim_i}
+        for col_j,fun_j in fun_dict.items():
+            df_i[col_j]=df_i.apply(fun_j,axis=1)
         print(df_i)
     print(dim_dict)
+
+
 
 if __name__ == '__main__':
     in_path="neural/uci/raw_hyper.csv"
