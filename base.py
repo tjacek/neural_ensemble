@@ -280,3 +280,13 @@ class ClasicalClfAdapter(AbstractClfAdapter):
 
     def __str__(self):
         return self.base
+
+def splits_gen(exp_path,
+               n_splits=10,
+               start=0):
+    split_path=f"{exp_path}/splits"
+    end=start+n_splits
+    paths=utils.top_files(split_path)[start:end]
+    for i,split_path_i in enumerate(paths):
+        split_i=base.read_split(split_path_i)
+        yield start+i,split_i
