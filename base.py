@@ -288,5 +288,5 @@ def splits_gen(exp_path,
     end=start+n_splits
     paths=utils.top_files(split_path)[start:end]
     for i,split_path_i in enumerate(paths):
-        split_i=base.read_split(split_path_i)
+        split_i=read_split(split_path_i)
         yield start+i,split_i
