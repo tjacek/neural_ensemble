@@ -239,7 +239,7 @@ class AbstractClfFactory(object):
         return str(self)
 
     @classmethod
-    def iter_results(cls,data_path,split_iter):
+    def get_results(cls,data_path,split_iter):
         data=dataset.read_csv(data_path)
         clf_factory=cls()
         clf_factory.init(data)
@@ -249,6 +249,18 @@ class AbstractClfFactory(object):
             result_i,history=split_i.eval(data,clf_i)
             all_results.append(result_i)
         return dataset.ResultGroup(all_results)
+
+    @classmethod
+    def iter_models(cls,data_path,split_iter):
+        data=dataset.read_csv(data_path)
+        clf_factory=cls()
+        clf_factory.init(data)
+        all_results=[]
+        for i,split_i in tqdm(split_iter):
+            clf_i = clf_factory()
+            clf_i,_=split_i.fit_clf(data,clf_i)
+            result_i=split_i.pred(data,clf_i)
+            yield i,clf_i,result_i
 
 class AbstractClfAdapter(object):
     @abstractmethod

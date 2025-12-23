@@ -43,17 +43,34 @@ def exp(data_path,exp_path,n_splits=30):
     tab_path=f"{exp_path}/TabPF"
     utils.make_dir(tab_path)
     all_results=[]
-    result=TabpfFactory.iter_results(data_path,gen)
+    result=TabpfFactory.get_results(data_path,gen)
     result.save(f"{tab_path}/results")
     acc=np.mean(result.get_acc())
     print(f"{acc:.4f}")
 
-def basic_exp():
-    names=["cmc"]
-    data="uci"
+def exp_save(data_path,exp_path,n_splits=30):
+    gen=base.splits_gen(exp_path,n_splits=n_splits)
+    tab_path=f"{exp_path}/TabPF"
+    utils.make_dir(tab_path)
+    model_path=f"{tab_path}/models"
+    utils.make_dir(model_path)
+    all_results=[]
+    model_iter=TabpfFactory.iter_models(data_path,gen)
+    for i,model_i,result_i in model_iter:
+        model_i.save(f"{model_path}/{i}")
+        all_results.append(result_i)
+    result=dataset.ResultGroup(all_results)    
+    result.save(f"{tab_path}/results")
+    acc=np.mean(result.get_acc())
+    print(f"{acc:.4f}")
+
+
+def multi_exp():
+    names=["dna"]
+    data="multi"
     for name_i in names:
         in_path=f"incr_exp/{data}/data/{name_i}"
         exp_path=f"incr_exp/{data}/exp/{name_i}"
-        exp(in_path,exp_path)
+        exp_save(in_path,exp_path)
 
-basic_exp()
+multi_exp()
