@@ -5,6 +5,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn import tree
 from sklearn import svm
+from tqdm import tqdm
 from abc import ABC, abstractmethod
 import os.path
 import dataset,utils
@@ -237,6 +238,18 @@ class AbstractClfFactory(object):
     def __repr__(self):
         return str(self)
 
+    @classmethod
+    def iter_results(cls,data_path,split_iter):
+        data=dataset.read_csv(data_path)
+        clf_factory=cls()
+        clf_factory.init(data)
+        all_results=[]
+        for i,split_i in tqdm(split_iter):
+            clf_i = clf_factory()
+            result_i,history=split_i.eval(data,clf_i)
+            all_results.append(result_i)
+        return dataset.ResultGroup(all_results)
+
 class AbstractClfAdapter(object):
     @abstractmethod
     def fit(self,X,y):
@@ -251,6 +264,7 @@ class AbstractClfAdapter(object):
 
     def __repr__(self):
         return str(self)
+
 
 class ClasicalClfFactory(AbstractClfFactory):
     def __init__(self,clf_type="RF"):

@@ -2,6 +2,7 @@ from huggingface_hub import login
 #login()
 from tabpfn import TabPFNClassifier
 from tqdm import tqdm
+import pickle
 import numpy as np
 import base,dataset,utils
 
@@ -10,7 +11,8 @@ class TabpfFactory(base.AbstractClfFactory):
         return self
 
     def __call__(self):
-        return TabPFNClassifier()
+        raw_clf=TabPFNClassifier()
+        return TabpfAdapter(raw_clf)
 
     def read(self,model_path:str):
         pass
@@ -18,21 +20,30 @@ class TabpfFactory(base.AbstractClfFactory):
     def get_info(self)->dict:
         return {"clf_type":"TabPFN","callback":"-",
                 "hyper":"-"}
+
+class TabpfAdapter(object):
+    def __init__(self,tab_model):
+        self.tab_model=tab_model
     
+    def predict(self,X):
+        return self.tab_model.predict(X)
+    
+    def fit(self,X,y):
+        self.tab_model.fit(X,y)    
+
+    def eval(self,data,split_i):
+        raise NotImplementedError()
+
+    def save(self,out_path):
+        with open(out_path, 'wb') as f:
+            pickle.dump(self.tab_model, f)    
 
 def exp(data_path,exp_path,n_splits=30):
-    data=dataset.read_csv(data_path)
     gen=base.splits_gen(exp_path,n_splits=n_splits)
-    clf_factory=TabpfFactory()
-    clf_factory.init(data)
     tab_path=f"{exp_path}/TabPF"
     utils.make_dir(tab_path)
     all_results=[]
-    for i,split_i in tqdm(gen):
-        clf_i = clf_factory()
-        result_i,history=split_i.eval(data,clf_i)
-        all_results.append(result_i)
-    result=dataset.ResultGroup(all_results)
+    result=TabpfFactory.iter_results(data_path,gen)
     result.save(f"{tab_path}/results")
     acc=np.mean(result.get_acc())
     print(f"{acc:.4f}")
