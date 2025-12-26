@@ -1,7 +1,7 @@
 import numpy as np
 from itertools import product
 import os.path
-import base,dataset,tree_clf
+import base,dataset,tree_clf,utils
 
 class HyperFile(object):
     def __init__(self,file_path):
@@ -53,5 +53,14 @@ def optim_hyper(in_path,out_path):
                                       enumerate(splits))
         hyper_file.add_param(data_id,hyper_i,result_i)
 
+
+def optim_exp(paths,hyper_path):
+    all_paths=[]
+    for path_i in paths:
+        all_paths+=utils.top_files(path_i)
+    for path_i in all_paths:
+        optim_hyper(path_i,hyper_path)
+
 in_path="../incr_exp/uci/data/vehicle"
-optim_hyper(in_path,"hyper.csv")
+#optim_hyper(in_path,"hyper.csv")
+optim_exp(["test/A","test/B"],"hyper_full.csv")
