@@ -1,4 +1,5 @@
 from itertools import product
+import base,dataset,tree_clf
 
 class HyperparamSpace(object):
     def __init__( self,
@@ -14,9 +15,14 @@ class HyperparamSpace(object):
 
 
 def optim_hyper(in_path):
+    data=dataset.read_csv(in_path)
+    splits=base.get_splits(data,10,1)
+    splits=enumerate(splits)
     hyper_space=HyperparamSpace()
     for hyper_i in hyper_space():
-        print(hyper_i)
+        factory_i=tree_clf.TreeFactory(hyper_i)
+        result=factory_i.get_results(data,splits)
+        print(result)
 
 in_path="../incr_exp/uci/data/vehicle"
 optim_hyper(in_path)

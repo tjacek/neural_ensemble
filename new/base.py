@@ -1,3 +1,8 @@
+from abc import ABC, abstractmethod
+from sklearn.model_selection import RepeatedStratifiedKFold
+from tqdm import tqdm
+import dataset
+
 class Split(object):
     def __init__(self,train_index,test_index):
         self.train_index=train_index
@@ -41,6 +46,16 @@ def random_split(n_samples,p=0.9):
     return Split(train_index=np.array(train_index),
                  test_index=np.array(test_index))
 
+def get_splits( data,
+                n_splits=10,
+                n_repeats=1):
+    rskf=RepeatedStratifiedKFold(n_repeats=n_repeats, 
+                                 n_splits=n_splits, 
+                                 random_state=0)
+    splits=[]
+    for train_index,test_index in rskf.split(data.X,data.y):
+        splits.append(Split(train_index,test_index))
+    return splits
 
 class AbstractClfFactory(object):
     def init(self,data):
@@ -57,12 +72,15 @@ class AbstractClfFactory(object):
     def get_info(self)->dict:
         raise NotImplementedError()
     
-    def __repr__(self):
-        return str(self)
+#    def __repr__(self):
+#        return str(self)
 
     @classmethod
     def get_results(cls,data_path,split_iter):
-        data=dataset.read_csv(data_path)
+        if(type(data_path)==str):
+            data=dataset.read_csv(data_path)
+        else:
+            data=data_path
         clf_factory=cls()
         clf_factory.init(data)
         all_results=[]
