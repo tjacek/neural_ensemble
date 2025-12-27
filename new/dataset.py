@@ -147,6 +147,61 @@ def dispatch_metric(metric_type):
         return f1_score
     raise Exception(f"Unknow metric type:{metric_type}")
 
+class DFView(object):
+    def __init__(self,df):
+        self.df=df.round(4)
+
+    def to_csv(self):
+        text=",".join(self.df.columns)
+        for index, row in self.df.iterrows():
+            line_i=",".join([str(c_i) for c_i in row.to_list()])
+            text+="\n"+line_i
+        return text
+
+    def print(self,dec=4):
+        with pd.option_context('display.max_rows', None, 'display.max_columns', None):  
+            print(self.df)
+ 
+    def by_data(self,sort="acc"):
+        names=self.df['data'].unique()
+        for name_i in names:
+            df_i=self.df[self.df['data']==name_i]
+            df_i=df_i.sort_values(by=sort,ascending=False)
+            yield df_i
+
+    def best(self,sort_by="acc"):
+        grouped=self.df.groupby(by='data')
+        def helper(df_i):
+            df_i=df_i.sort_values(by=sort_by,ascending=False)
+            return df_i.iloc[0]
+        return grouped.apply(helper)
+
+    def get_dict(self,x,y):
+        return dict(zip(self.df[x].tolist(),
+                        self.df[y].tolist()))
+
+def make_df(helper,
+            iterable,
+            cols,
+            offset=None,
+            multi=False):
+    lines=[]
+    if(multi):
+        for arg_i in iterable:
+            lines+=helper(arg_i)
+    else:
+        for arg_i in iterable:
+            lines.append(helper(arg_i))
+    if(offset):
+        line_len=max([len(line_i) for line_i in lines])
+        for line_i in lines:
+            while(len(line_i)<line_len):
+                line_i.append(offset)
+        cols+=[str(i)for i in range(line_len-len(cols))]
+    df=pd.DataFrame.from_records(lines,
+                                columns=cols)
+    return DFView(df)
+
 if __name__ == '__main__':
     data=read_csv("wine-quality-red")
     print(data.range())

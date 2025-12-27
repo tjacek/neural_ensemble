@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from itertools import product
 import os.path
 import base,dataset,tree_clf,utils
@@ -61,6 +62,14 @@ def optim_exp(paths,hyper_path):
     for path_i in all_paths:
         optim_hyper(path_i,hyper_path)
 
-in_path="../incr_exp/uci/data/vehicle"
+
+def read_hyper(in_path):
+    df=pd.read_csv(in_path)
+    df=dataset.DFView(df)
+    for df_i in df.by_data():
+        print(df_i)
+
+read_hyper("hyper_full.csv")
+#in_path="../incr_exp/uci/data/vehicle"
 #optim_hyper(in_path,"hyper.csv")
-optim_exp(["test/A","test/B"],"hyper_full.csv")
+#optim_exp(["test/A","test/B"],"hyper_full.csv")
