@@ -66,8 +66,16 @@ def optim_exp(paths,hyper_path):
 def read_hyper(in_path):
     df=pd.read_csv(in_path)
     df=dataset.DFView(df)
-    for df_i in df.by_data():
-        print(df_i)
+    best_df=dataset.DFView(df.best())
+    feat_dict=best_df.get_dict("data","feat_type")
+    dim_dict=best_df.get_dict("data","n_feats")
+    hyper_dict={}
+    for key_i in feat_dict.keys():
+        hyper_dict[key_i]={ "feat_type":feat_dict[key_i],
+                            "n_feats":dim_dict[key_i]
+                           }
+    print(hyper_dict)
+    return hyper_dict
 
 read_hyper("hyper_full.csv")
 #in_path="../incr_exp/uci/data/vehicle"
