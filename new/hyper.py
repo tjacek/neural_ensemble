@@ -29,6 +29,27 @@ class HyperFile(object):
         with open(self.file_path, 'a') as file:
              file.write(",".join(line)+"\n")
 
+class HyperFull(dict):
+    def __init__(self, arg=[]):
+        super(HyperFull, self).__init__(arg)
+    
+    def diff(self,sort="acc"):
+        for name_i,df_i in self.items():
+            df_i=df_i.sort_values(by=sort,ascending=False)
+            metric=df_i[sort].tolist()
+            diff=100*(metric[0]-metric[-1])
+            print(f"{name_i}:{diff:.2f}%")
+
+    @staticmethod
+    def read(in_path):
+        df=pd.read_csv(in_path)
+        df=dataset.DFView(df)
+        hyper_full=HyperFull()
+        for df_i in df.by_data(sort="acc"):
+            name_i=df_i['data'].tolist()[0]
+            hyper_full[name_i]=df_i
+        return hyper_full
+
 class HyperparamSpace(object):
     def __init__( self,
                   extr=["info","ind","prod"],
@@ -77,7 +98,10 @@ def read_hyper(in_path):
     print(hyper_dict)
     return hyper_dict
 
-read_hyper("hyper_full.csv")
+
+hyper_full=HyperFull.read("hyper_full.csv")
+hyper_full.diff()
+#read_hyper("hyper_full.csv")
 #in_path="../incr_exp/uci/data/vehicle"
 #optim_hyper(in_path,"hyper.csv")
 #optim_exp(["test/A","test/B"],"hyper_full.csv")
