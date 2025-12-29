@@ -1,7 +1,9 @@
+import numpy as np
+import os.path
 from abc import ABC, abstractmethod
 from sklearn.model_selection import RepeatedStratifiedKFold
 from tqdm import tqdm
-import dataset
+import dataset,utils
 
 class Split(object):
     def __init__(self,train_index,test_index):
@@ -34,6 +36,15 @@ class Split(object):
         test_size=self.test_index.shape[0]
         return f"train:{train_size},test:{test_size}"
 
+def read_split(in_path):
+    raw_split=np.load(in_path)
+    return Split(train_index=raw_split["arr_0"],
+                 test_index=raw_split["arr_1"])
+
+def read_split_dir(in_path):
+    return [read_split(path_i)  
+               for path_i in utils.top_files(in_path)]
+    
 def random_split(n_samples,p=0.9):
     if(type(n_samples)==dataset.Dataset):
         n_samples=len(n_samples)
@@ -49,6 +60,8 @@ def random_split(n_samples,p=0.9):
 def get_splits( data,
                 n_splits=10,
                 n_repeats=1):
+    if(type(data)==str):
+        data=dataset.read_csv(data)
     rskf=RepeatedStratifiedKFold(n_repeats=n_repeats, 
                                  n_splits=n_splits, 
                                  random_state=0)
@@ -56,6 +69,21 @@ def get_splits( data,
     for train_index,test_index in rskf.split(data.X,data.y):
         splits.append(Split(train_index,test_index))
     return splits
+
+
+def make_split_dir( in_path,
+                    out_path,
+                    n_splits=10,
+                    n_repeats=3):
+    split_path=f"{out_path}/splits"
+    if(os.path.exists(split_path)):
+        return
+    splits=get_splits(data=in_path,
+                      n_splits=n_splits,
+                      n_repeats=n_repeats)
+    utils.make_dir(split_path)
+    for i,split_i in enumerate(splits):
+        split_i.save(f"{split_path}/{i}")
 
 class AbstractClfFactory(object):
     def init(self,data):

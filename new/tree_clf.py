@@ -22,6 +22,9 @@ class TreeFactory(base.AbstractClfFactory):
         return {"clf_type":"TREE",
                 "feature_params":self.feature_params}
 
+    def __str__(self):
+        return "TreeTabPF(optim)"
+
 class TreeClf(base.AbstractClfAdapter):
     def __init__(self,extractor_factory):
         self.extractor_factory=extractor_factory

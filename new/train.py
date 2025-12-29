@@ -1,0 +1,28 @@
+import numpy as np
+import base,hyper,utils,tree_clf
+
+
+def train(in_path,out_path,hyper_path):
+    paths=utils.get_paths(in_path)
+    hyper_dict=hyper.read_hyper(hyper_path)
+    @utils.DirFun("in_path",["out_path"])
+    def helper(in_path,out_path):
+        utils.make_dir(out_path)
+        base.make_split_dir(in_path,out_path)
+        data_id=in_path.split("/")[-1]
+        hyper_i=hyper_dict[data_id]
+        splits=base.read_split_dir(f"{out_path}/splits")
+        clf_factory=tree_clf.TreeFactory(hyper_i)
+        split_iter=enumerate(splits)
+        result=clf_factory.get_results(in_path,split_iter)
+        print(hyper_i)
+        print(np.mean(result.get_acc()))
+        pred_path=f"{out_path}/{str(clf_factory)}"
+        utils.make_dir(pred_path)
+        result.save(f"{pred_path}/results")
+    helper(in_path,out_path)
+
+paths=["test/A","test/B"]
+train(in_path=paths,
+	  out_path="exp",
+	  hyper_path="hyper_full.csv")

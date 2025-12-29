@@ -95,12 +95,11 @@ def read_hyper(in_path):
         hyper_dict[key_i]={ "feat_type":feat_dict[key_i],
                             "n_feats":dim_dict[key_i]
                            }
-    print(hyper_dict)
     return hyper_dict
 
-
-hyper_full=HyperFull.read("hyper_full.csv")
-hyper_full.diff()
+if __name__ == '__main__':
+    hyper_full=HyperFull.read("hyper_full.csv")
+    hyper_full.diff()
 #read_hyper("hyper_full.csv")
 #in_path="../incr_exp/uci/data/vehicle"
 #optim_hyper(in_path,"hyper.csv")
