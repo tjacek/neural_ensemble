@@ -1,4 +1,6 @@
 import os,warnings
+from functools import wraps
+import inspect
 import re 
 
 def make_dir(path):
@@ -36,3 +38,31 @@ def get_paths(dir_paths,taboo=None):
             s_paths.append(path_i)
     return s_paths
     
+class DirFun(object):
+    def __init__(self,main_path,path_args):
+        self.main_path=main_path
+        self.path_args=set(path_args)
+    
+    def __call__(self,fun):
+        @wraps(fun)
+        def decor_fun(*args,**kwargs):
+            sig = inspect.signature(fun)
+            keys= list(sig.parameters.keys())
+            full_dict= dict(zip(keys,args))
+            full_dict= full_dict | kwargs
+            for arg_i in self.path_args:
+                make_dir(full_dict[arg_i])
+            paths=get_paths(full_dict[self.main_path])
+            for path_i in paths:
+                arg_i={self.main_path:path_i}
+                id_i=path_i.split("/")[-1]
+                for name_i,key_i in full_dict.items():
+                    if(name_i==self.main_path):
+                        continue
+                    old_i=full_dict[name_i]
+                    if(name_i in self.path_args):
+                        arg_i[name_i]=f"{old_i}/{id_i}"
+                    else:
+                        arg_i[name_i]=old_i
+                fun(**arg_i)
+        return decor_fun
