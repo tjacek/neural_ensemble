@@ -18,3 +18,21 @@ def natural_keys(text):
 
 def atoi(text):
     return int(text) if text.isdigit() else text
+
+def get_paths(dir_paths,taboo=None):
+    all_paths=[]
+    if(type(dir_paths)==list):
+        for dir_i in dir_paths:
+            all_paths+=top_files(dir_i)
+    else:
+        all_paths+=top_files(dir_paths)
+    if(taboo is None):
+        return all_paths
+    taboo=set(taboo)
+    s_paths=[]
+    for path_i in all_paths:
+        id_i=path_i.split("/")[-1]
+        if(not id_i in taboo):
+            s_paths.append(path_i)
+    return s_paths
+    
