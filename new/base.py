@@ -105,12 +105,15 @@ class AbstractClfFactory(object):
 #        return str(self)
 
     @classmethod
-    def get_results(cls,data_path,split_iter):
+    def get_results(cls,
+                    data_path,
+                    split_iter,
+                    hyper_path=None ):
         if(type(data_path)==str):
             data=dataset.read_csv(data_path)
         else:
             data=data_path
-        clf_factory=cls()
+        clf_factory=cls(hyper_path)
         clf_factory.init(data)
         all_results=[]
         for i,split_i in tqdm(split_iter):

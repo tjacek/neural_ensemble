@@ -98,9 +98,9 @@ def read_hyper(in_path):
     return hyper_dict
 
 if __name__ == '__main__':
-    hyper_full=HyperFull.read("hyper_full.csv")
-    hyper_full.diff()
+#    hyper_full=HyperFull.read("hyper_good.csv")
+#    hyper_full.diff()
 #read_hyper("hyper_full.csv")
 #in_path="../incr_exp/uci/data/vehicle"
 #optim_hyper(in_path,"hyper.csv")
-#optim_exp(["test/A","test/B"],"hyper_full.csv")
+    optim_exp(["test/A","test/B"],"hyper_good.csv")
