@@ -70,19 +70,26 @@ def optim_hyper(in_path,out_path):
     hyper_file=HyperFile(out_path)
     hyper_space=HyperparamSpace()
     for hyper_i in hyper_space():
-        factory_i=tree_clf.TreeFactory(hyper_i)
+        factory_i=tree_clf.TreeFactory
         result_i=factory_i.get_results(data,
-                                      enumerate(splits))
+                                      enumerate(splits),
+                                      hyper_i)
         hyper_file.add_param(data_id,hyper_i,result_i)
 
+    return data_id,splits
 
-def optim_exp(paths,hyper_path):
+def optim_exp(paths,hyper_path,split_path):
     all_paths=[]
     for path_i in paths:
         all_paths+=utils.top_files(path_i)
+    utils.make_dir(split_path)
     for path_i in all_paths:
-        optim_hyper(path_i,hyper_path)
-
+        data_id,splits=optim_hyper(path_i,hyper_path)
+        split_path_i=f"{split_path}/{data_id}"
+        utils.make_dir(split_path_i)
+        split_path_i=f"{split_path_i}/splits"
+        utils.make_dir(split_path_i)
+        base.save_splits(split_path_i,splits)
 
 def read_hyper(in_path):
     df=pd.read_csv(in_path)
@@ -103,4 +110,6 @@ if __name__ == '__main__':
 #read_hyper("hyper_full.csv")
 #in_path="../incr_exp/uci/data/vehicle"
 #optim_hyper(in_path,"hyper.csv")
-    optim_exp(["test/A","test/B"],"hyper_good.csv")
+    optim_exp(["test/A","test/B"],
+               "hyper_goodII.csv",
+               "test_exp")

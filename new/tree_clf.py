@@ -1,6 +1,7 @@
 import numpy as np
 import sklearn.tree
 from tabpfn import TabPFNClassifier
+import itertools
 import base,tree_dict
 
 def get_factory(factory_type):

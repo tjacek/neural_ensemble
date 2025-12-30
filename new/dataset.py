@@ -54,6 +54,18 @@ class Dataset(object):
                    for key_i,value_i in params.items()}
         return params
 
+def read_csv(in_path:str):
+    if(type(in_path)==tuple):
+        X,y=in_path
+        return Dataset(X,y)
+    if(type(in_path)!=str):
+        return in_path
+    df=pd.read_csv(in_path,header=None)
+    raw=df.to_numpy()
+    X,y=raw[:,:-1],raw[:,-1]
+    X= preprocessing.RobustScaler().fit_transform(X)
+    return Dataset(X,y)
+
 class Result(object):
     def __init__(self,y_pred,y_true):
         self.y_pred=y_pred
@@ -122,17 +134,7 @@ class ResultGroup(object):
                  for path_i in utils.top_files(in_path)]
         return ResultGroup(results)
 
-def read_csv(in_path:str):
-    if(type(in_path)==tuple):
-        X,y=in_path
-        return Dataset(X,y)
-    if(type(in_path)!=str):
-        return in_path
-    df=pd.read_csv(in_path,header=None)
-    raw=df.to_numpy()
-    X,y=raw[:,:-1],raw[:,-1]
-    X= preprocessing.RobustScaler().fit_transform(X)
-    return Dataset(X,y)
+#class ProbResulst
 
 def dispatch_metric(metric_type):
     metric_type=metric_type.lower()

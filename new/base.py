@@ -82,6 +82,9 @@ def make_split_dir( in_path,
                       n_splits=n_splits,
                       n_repeats=n_repeats)
     utils.make_dir(split_path)
+    save_splits(split_path,splits)
+
+def save_splits(split_path,splits):
     for i,split_i in enumerate(splits):
         split_i.save(f"{split_path}/{i}")
 
@@ -108,12 +111,13 @@ class AbstractClfFactory(object):
     def get_results(cls,
                     data_path,
                     split_iter,
-                    hyper_path=None ):
+                    hyper_params=None ):
         if(type(data_path)==str):
             data=dataset.read_csv(data_path)
         else:
             data=data_path
-        clf_factory=cls(hyper_path)
+        clf_factory=cls(hyper_params)
+        print(hyper_params)
         clf_factory.init(data)
         all_results=[]
         for i,split_i in tqdm(split_iter):
