@@ -3,8 +3,49 @@ import sklearn.tree
 from tabpfn import TabPFNClassifier
 import base,tree_dict
 
+def get_factory(factory_type):
+    if(factory_type=="TabPF"):
+        return TabPFFactory
+    if(factory_type=="TreeTabPF"):
+        return TreeFactory
+    raise Exception(f"Unknow type {factory_type}")
+
 def get_random_tree():
     return sklearn.tree.DecisionTreeClassifier(max_features='sqrt')
+
+class TabPFFactory(base.AbstractClfFactory):
+    def __init__(self,feature_params=None):
+        pass
+
+    def __call__(self):
+        raw_clf=TabPFNClassifier()
+        return TabPFAdapter(raw_clf)
+    
+    def get_info(self):
+        return {"clf_type":"TabPF"}
+
+    def __str__(self):
+        return "TabPF"
+
+class TabPFAdapter(base.AbstractClfAdapter):
+    def __init__(self,tab_model):
+        self.tab_model=tab_model
+    
+    def predict(self,X):
+        return self.tab_model.predict(X)
+    
+    def fit(self,X,y):
+        self.tab_model.fit(X,y)    
+
+    def eval(self,data,split_i):
+        raise NotImplementedError()
+
+    def save(self,out_path):
+        with open(out_path, 'wb') as f:
+            pickle.dump(self.tab_model, f)
+
+    def __str__(self):
+        return "TabPF"
 
 class TreeFactory(base.AbstractClfFactory):
     def __init__( self,

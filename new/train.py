@@ -1,8 +1,10 @@
 import numpy as np
 import base,hyper,utils,tree_clf
 
-
-def train(in_path,out_path,hyper_path):
+def train( in_path,
+           out_path,
+           hyper_path,
+           factory_type="TabPF"):
     paths=utils.get_paths(in_path)
     hyper_dict=hyper.read_hyper(hyper_path)
     @utils.DirFun("in_path",["out_path"])
@@ -12,7 +14,8 @@ def train(in_path,out_path,hyper_path):
         data_id=in_path.split("/")[-1]
         hyper_i=hyper_dict[data_id]
         splits=base.read_split_dir(f"{out_path}/splits")
-        clf_factory=tree_clf.TreeFactory(hyper_i)
+        clf_factory=tree_clf.get_factory(factory_type)(hyper_i)
+#        clf_factory=tree_clf.TreeFactory(hyper_i)
         split_iter=enumerate(splits)
         result=clf_factory.get_results(in_path,split_iter)
         print(hyper_i)

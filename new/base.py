@@ -86,6 +86,7 @@ def make_split_dir( in_path,
         split_i.save(f"{split_path}/{i}")
 
 class AbstractClfFactory(object):
+    
     def init(self,data):
         return self
 
