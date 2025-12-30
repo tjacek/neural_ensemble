@@ -115,12 +115,12 @@ def parse_hyper(hyper_path):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type=str, default="incr_exp/multi/data")
-    parser.add_argument("--out_path", type=str, default="incr_exp/multi/exp")
+    parser.add_argument("--data", type=str, default="incr_exp/uci/data")
+    parser.add_argument("--out_path", type=str, default="incr_exp/uci/exp")
     parser.add_argument("--start", type=int, default=0)
     parser.add_argument("--step", type=int, default=30)
-    parser.add_argument("--clf_type", type=str, default="MLP")
-    parser.add_argument("--hyper_path", type=str, default="incr_exp/multi/hyper.js")
+    parser.add_argument("--clf_type", type=str, default="LR")
+    parser.add_argument("--hyper_path", type=str, default="incr_exp/uci/hyper.js")
 
     args = parser.parse_args()
     print(args)

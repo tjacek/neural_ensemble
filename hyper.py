@@ -9,7 +9,7 @@ utils.silence_warnings()
 class ParamSpace(object):
     def __init__( self,
                   extr=["info","ind","prod"],
-                  n_feats=[10,20,30,50],
+                  n_feats=[0.5,1.0,1.5],
                   units=[1,2]):
         self.extr=extr
         self.n_feats=n_feats
