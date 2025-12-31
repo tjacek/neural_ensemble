@@ -144,7 +144,7 @@ class ProbResult(object):
         self.prob_pred=prob_pred
     
     def to_result(self):
-        y_pred=np.argmax(self.y_pred,axis=0)
+        y_pred=np.argmax(self.prob_pred,axis=1)
         return Result(self.y_true,y_pred)
     
     def save(self,out_path):
@@ -152,21 +152,12 @@ class ProbResult(object):
         y_true=np.array(self.y_true)
         np.save(f"{out_path}/prob_pred.npy",self.prob_pred)
         np.save(f"{out_path}/y_true.npy",y_true)
-#        print(y_true.shape)
-#        print(self.prob_pred.shape)
-#        y_pair=np.array([self.prob_pred,
-#                         y_true])
-#        np.savez(out_path,y_pair)
    
     @classmethod
     def read(cls,in_path:str):
         prob_pred=np.load(f"{in_path}/prob_pred.npy")
         y_true=np.load(f"{in_path}/y_true.npy")
         return cls(y_true,prob_pred)
-#        raw=list(np.load(in_path).values())[0]
-#        y_pred,y_true=raw[0],raw[1]
-#        return ProbResult(y_pred=y_pred,
-#                          y_true=y_true)
 
 class PartialResults(object):
     def __init__(self,prob_results):
@@ -200,6 +191,10 @@ class PartialResults(object):
         paths=utils.top_files(in_path)
         prob_results=[ProbResult.read(path_i) for path_i in paths]
         return cls(prob_results)
+
+    def indv_acc(self):
+        return [partial_i.to_result().get_acc() 
+                    for partial_i in self.prob_results]
 
 class PartialGroup(object):
     def __init__(self,partials):
@@ -239,6 +234,11 @@ class PartialGroup(object):
         results=[partial_i.to_result() 
                     for partial_i in self.partials]
         return ResultGroup(results)
+    
+    def indv_acc(self):
+        acc=[partial_i.indv_acc() 
+                for partial_i in self.partials]
+        return np.array(acc)
 
 def dispatch_metric(metric_type):
     metric_type=metric_type.lower()

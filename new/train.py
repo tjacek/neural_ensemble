@@ -28,6 +28,15 @@ def train( in_path,
 #        result.save(f"{pred_path}/results")
     helper(in_path,out_path)
 
+def indv_acc(in_path):
+    paths=utils.get_paths(in_path)
+    @utils.DirFun("in_path",[])
+    def helper(in_path):
+        path_i=f"{in_path}/TreeEnsTabPF/partials"
+        partials=dataset.PartialGroup.read(path_i)
+        acc=partials.indv_acc()
+        print(np.mean(acc,axis=0))
+    helper(in_path)
 
 def incr_train( in_path,
                 out_path,
@@ -45,22 +54,29 @@ def incr_train( in_path,
         data_id=in_path.split("/")[-1]
         hyper_i=hyper_dict[data_id]
         splits=base.read_split_dir(f"{out_path}/splits")
-        hyper_i["n_clfs"]=2
+        hyper_i["n_clfs"]=n_clfs
         clf_factory=tree_clf.TreeEnsFactory(hyper_i)
-        all_results=[]
+        all_partials=[]
         for i,split_i in tqdm(enumerate(splits)):
             clf_i = clf_factory()
             clf_i,_=split_i.fit_clf(data,clf_i)
-            result_i=split_i.predict_partial(data,clf_i)
-#            result_i.get_pred()
-            all_results.append(result_i.to_result())
-#            raise Exception(result_i)
-#            print(split_i)
-        result=dataset.ResultGroup(all_results)
-        print(np.mean(result.get_acc()))
+            partial_i=split_i.predict_partial(data,clf_i)
+            all_partials.append(partial_i)
+        result=dataset.PartialGroup(all_partials)
+        clf_path=f"{out_path}/{str(clf_factory)}"
+        utils.make_dir(clf_path)
+        partial_path=f"{clf_path}/partials"
+        result.save(partial_path)
+        full_partials=dataset.PartialGroup.read(partial_path)
+        full_result=full_partials.to_result()
+        full_result.save(f"{clf_path}/results")
+        print(full_partials.n_clfs())
+        print(np.mean(full_result.get_acc()))
     helper(in_path,out_path)
 
 paths=["test/A","test/B"]
 incr_train(in_path=paths,
 	       out_path="test_exp",
-	       hyper_path="hyper_goodII.csv")
+	       hyper_path="hyper_goodII.csv",
+           n_clfs=2)
+#indv_acc("test_exp")
