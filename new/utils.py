@@ -66,3 +66,25 @@ class DirFun(object):
                         arg_i[name_i]=old_i
                 fun(**arg_i)
         return decor_fun
+
+class DirProxy(object):
+    def __init__(self,
+                 main_path,
+                 dirs):
+        self.main_path=main_path
+        self.dirs=dirs
+        self.dict_paths={}
+
+    def init(self):
+        make_dir(self.main_path)
+        for dir_i in self.dirs:
+            path_i=f"{self.main_path}/{dir_i}"
+            make_dir(path_i)
+            self.dict_paths[dir_i]=path_i
+
+    def __getitem__(self,name):
+        return self.dict_paths[name]
+
+    def count(self,name):
+        path=self.dict_paths[name]
+        return len(top_files(path))
