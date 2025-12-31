@@ -47,12 +47,17 @@ def incr_train( in_path,
         splits=base.read_split_dir(f"{out_path}/splits")
         hyper_i["n_clfs"]=2
         clf_factory=tree_clf.TreeEnsFactory(hyper_i)
+        all_results=[]
         for i,split_i in tqdm(enumerate(splits)):
             clf_i = clf_factory()
             clf_i,_=split_i.fit_clf(data,clf_i)
             result_i=split_i.predict_partial(data,clf_i)
-            raise Exception(result_i)
-            print(split_i)
+#            result_i.get_pred()
+            all_results.append(result_i.to_result())
+#            raise Exception(result_i)
+#            print(split_i)
+        result=dataset.ResultGroup(all_results)
+        print(np.mean(result.get_acc()))
     helper(in_path,out_path)
 
 paths=["test/A","test/B"]

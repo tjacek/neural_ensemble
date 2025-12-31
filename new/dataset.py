@@ -151,6 +151,21 @@ class PartialResults(object):
     def __init__(self,prob_results):
         self.prob_results=prob_results
 
+    def get_pred(self):
+        probs=[result_i.prob_pred 
+                for result_i in self.prob_results]
+        probs=np.array(probs)
+        votes=np.sum(probs,axis=0)
+        y_pred=np.argmax(votes,1)
+        return y_pred
+
+    def to_result(self):
+        y_pred=self.get_pred()
+        y_true=self.prob_results[0].y_true
+        return Result(y_true,y_pred)
+#        print(y_pred)
+#        print(y_pred)
+
 
 
 def dispatch_metric(metric_type):
