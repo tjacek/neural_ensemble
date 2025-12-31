@@ -14,10 +14,12 @@ def train( in_path,
         data_id=in_path.split("/")[-1]
         hyper_i=hyper_dict[data_id]
         splits=base.read_split_dir(f"{out_path}/splits")
-        clf_factory=tree_clf.get_factory(factory_type)(hyper_i)
+        clf_factory=tree_clf.get_factory(factory_type)()#(hyper_i)
 #        clf_factory=tree_clf.TreeFactory(hyper_i)
         split_iter=enumerate(splits)
-        result=clf_factory.get_results(in_path,split_iter)
+        result=clf_factory.get_results(in_path,
+                                       split_iter,
+                                       hyper_i)
         print(hyper_i)
         print(np.mean(result.get_acc()))
         pred_path=f"{out_path}/{str(clf_factory)}"
@@ -27,5 +29,6 @@ def train( in_path,
 
 paths=["test/A","test/B"]
 train(in_path=paths,
-	  out_path="exp",
-	  hyper_path="hyper_full.csv")
+	  out_path="test_exp",
+	  hyper_path="hyper_goodII.csv",
+      factory_type="TreeTabPF")

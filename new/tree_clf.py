@@ -9,6 +9,8 @@ def get_factory(factory_type):
         return TabPFFactory
     if(factory_type=="TreeTabPF"):
         return TreeFactory
+    if(factory_type=="TreeEnsTabPF"):
+        return TreeEnsFactory
     raise Exception(f"Unknow type {factory_type}")
 
 def get_random_tree():
@@ -82,6 +84,71 @@ class TreeClf(base.AbstractClfAdapter):
     def predict(self,X):
         new_X=self.extractor(X)
         return self.tab_model.predict(new_X)
+
+    def eval(self,data,split_i):
+        raise NotImplementedError()
+
+    def save(self,out_path):
+        utils.make_dir(out_path)
+        self.extractor.extractor.save(out_path)
+
+    def __str__(self):
+        return "TreeTabPF"
+
+class TreeEnsFactory(base.AbstractClfFactory):
+    def __init__( self,
+                  feature_params=None):
+        if(feature_params is None):
+            feature_params={'feat_type': 'info', 
+                            'n_feats': 20,
+                            'n_clfs':2}
+        self.feature_params=feature_params
+
+    def __call__(self):
+        extractor_factory=get_feat_factory(self.feature_params)
+        return TreeEns(extractor_factory=extractor_factory,
+                       n_cls=feature_params['n_clfs'])
+    
+    def get_info(self):
+        return {"clf_type":"TREE-ENS",
+                "feature_params":self.feature_params}
+
+    def __str__(self):
+        return "TreeEnsTabPF"
+
+class TreeEns(base.AbstractClfAdapter):
+    def __init__( self,
+                  extractor_factory,
+                  n_cls=2):
+        self.extractor_factorys=extractor_factory
+        self.n_cls=n_cls
+        self.models=[]
+        self.extractors=[]
+    
+    def fit(self,X,y):
+        for i in range(self.n_cls):
+            tab_i=TabPFNClassifier()
+            extractor_i=self.extractor_factory(X,y)
+            new_X=extractor_i(X)
+            tab_i.fit(new_X,y)
+            self.extractors.append(extractor_i)
+            self.models.append(tab_i) 
+#        self.tab_model=TabPFNClassifier()
+#        self.extractor=self.extractor_factory(X,y)
+#        new_X=self.extractor(X)
+#        self.tab_model.fit(new_X,y)  
+    
+    def predict(self,X):
+        all_preds=[]
+        for i in range(self.n_cls):
+            new_X=self.extractors[i]()
+            pred_i=self.models[i].predict(new_X)
+        all_preds=np.array(all_preds)
+        votes=np.sum(all_preds,axis=1)
+        pred=np.argmax(votes,axis=0)
+        return pred
+ #       new_X=self.extractor(X)
+ #       return self.tab_model.predict(new_X)
 
     def eval(self,data,split_i):
         raise NotImplementedError()
