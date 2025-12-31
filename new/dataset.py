@@ -146,11 +146,35 @@ class ProbResult(object):
     def to_result(self):
         y_pred=np.argmax(self.y_pred,axis=0)
         return Result(self.y_true,y_pred)
+    
+    def save(self,out_path):
+        utils.make_dir(out_path)
+        y_true=np.array(self.y_true)
+        np.save(f"{out_path}/prob_pred.npy",self.prob_pred)
+        np.save(f"{out_path}/y_true.npy",y_true)
+#        print(y_true.shape)
+#        print(self.prob_pred.shape)
+#        y_pair=np.array([self.prob_pred,
+#                         y_true])
+#        np.savez(out_path,y_pair)
+   
+    @classmethod
+    def read(cls,in_path:str):
+        prob_pred=np.load(f"{in_path}/prob_pred.npy")
+        y_true=np.load(f"{in_path}/y_true.npy")
+        return cls(y_true,prob_pred)
+#        raw=list(np.load(in_path).values())[0]
+#        y_pred,y_true=raw[0],raw[1]
+#        return ProbResult(y_pred=y_pred,
+#                          y_true=y_true)
 
 class PartialResults(object):
     def __init__(self,prob_results):
         self.prob_results=prob_results
-
+    
+    def __len__(self):
+        return len(self.prob_results)
+    
     def get_pred(self):
         probs=[result_i.prob_pred 
                 for result_i in self.prob_results]
@@ -163,10 +187,58 @@ class PartialResults(object):
         y_pred=self.get_pred()
         y_true=self.prob_results[0].y_true
         return Result(y_true,y_pred)
-#        print(y_pred)
-#        print(y_pred)
 
+    def save(self,out_path):
+        utils.make_dir(out_path)
+        offset=len(utils.top_files(out_path))
+        for k in range(len(self)):
+            i= offset+k
+            self.prob_results[k].save(f"{out_path}/{i}")
+    
+    @classmethod
+    def read(cls,in_path:str):
+        paths=utils.top_files(in_path)
+        prob_results=[ProbResult.read(path_i) for path_i in paths]
+        return cls(prob_results)
 
+class PartialGroup(object):
+    def __init__(self,partials):
+        self.partials=partials
+    
+    def n_clfs(self):
+        return len(self.partials[0])
+
+    def get_acc(self):
+        return self.get_metric("acc")
+
+    def get_balanced(self):
+        return self.get_metric("balance")
+
+    def get_metric(self,metric_type):
+        all_values=[]
+        for partial_i in self.partials:
+            result_i=partial_i.to_result()
+            value_i=result_i.get_metric(metric_type)
+            all_values.append(value_i)
+        return all_values
+
+    def save(self,out_path):
+        utils.make_dir(out_path)
+        for i,partial_i in enumerate(self.partials):
+            partial_i.save(f"{out_path}/{i}")
+
+    @classmethod
+    def read(cls,in_path:str):
+        partials=[]
+        for path_i in utils.top_files(in_path):
+            partial_i=PartialResults.read(path_i)
+            partials.append(partial_i)
+        return cls(partials)
+    
+    def to_result(self):
+        results=[partial_i.to_result() 
+                    for partial_i in self.partials]
+        return ResultGroup(results)
 
 def dispatch_metric(metric_type):
     metric_type=metric_type.lower()
