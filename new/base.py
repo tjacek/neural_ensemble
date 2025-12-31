@@ -24,8 +24,8 @@ class Split(object):
         return data.pred(self.test_index,
                          clf=clf)
 
-    def pred_partial(self,data,clf):
-        return data.pred_partial(self.test_index,
+    def predict_partial(self,data,clf):
+        return data.predict_partial(self.test_index,
                                  clf=clf)
 
     def save(self,out_path):

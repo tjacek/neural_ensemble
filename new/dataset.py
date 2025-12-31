@@ -36,6 +36,10 @@ class Dataset(object):
             X_test,y_test=self.X[test_index],self.y[test_index]
         y_pred=clf.predict(X_test)
         return Result(y_pred,y_test)
+    
+    def predict_partial(self,test_index,clf):
+        X_test,y_test=self.X[test_index],self.y[test_index]
+        return clf.predict_partial(X_test,y_test)
 
     def params_dict(self):
         return {"n_cats":self.n_cats(),"dims":(self.dim(),)}
@@ -134,7 +138,20 @@ class ResultGroup(object):
                  for path_i in utils.top_files(in_path)]
         return ResultGroup(results)
 
-#class ProbResulst
+class ProbResult(object):
+    def __init__(self,y_true,prob_pred):
+        self.y_true=y_true
+        self.prob_pred=prob_pred
+    
+    def to_result(self):
+        y_pred=np.argmax(self.y_pred,axis=0)
+        return Result(self.y_true,y_pred)
+
+class PartialResults(object):
+    def __init__(self,prob_results):
+        self.prob_results=prob_results
+
+
 
 def dispatch_metric(metric_type):
     metric_type=metric_type.lower()
