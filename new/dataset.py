@@ -196,6 +196,11 @@ class PartialResults(object):
         return [partial_i.to_result().get_acc() 
                     for partial_i in self.prob_results]
 
+    def subsets(self,indexes):
+        s_prob=[self.prob_results[i] 
+                    for i in indexes]
+        return PartialResults(s_prob)
+
 class PartialGroup(object):
     def __init__(self,partials):
         self.partials=partials
@@ -239,6 +244,11 @@ class PartialGroup(object):
         acc=[partial_i.indv_acc() 
                 for partial_i in self.partials]
         return np.array(acc)
+    
+    def subsets(self,indexes):
+        s_partials=[partial_i.subsets(indexes) 
+                    for partial_i in self.partials]
+        return PartialGroup(s_partials)
 
 def dispatch_metric(metric_type):
     metric_type=metric_type.lower()

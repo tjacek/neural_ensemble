@@ -1,0 +1,92 @@
+import numpy as np
+import dataset, utils
+
+class ResultDict(dict):
+    def clfs(self):
+        all_clfs=[]
+        for value_i in self.values():    
+            all_clfs+= list(value_i.keys())
+        all_clfs= list(set(all_clfs))
+        all_clfs.sort()
+        return all_clfs
+
+    def data(self):
+        all_data=list(self.keys())
+        all_data.sort()
+        return all_data
+    
+    def __call__(self,clf_type,fun):
+        data_dict={}
+        for data_i,dict_i in self.items():
+            if(clf_type in dict_i):
+                data_dict[data_i]=fun(dict_i[clf_type])
+        return data_dict
+
+    def get_clf( self,
+                 clf_type,
+                 metric="acc",
+                 split=None):
+        
+        output=self(clf_type,lambda r:r.get_metric(metric))
+        if(split):
+            output={ name_i: [ np.mean(v_i)
+                for v_i in utils.split_list(value_i,split)] 
+                    for name_i,value_i in output.items()}
+        return output
+
+    def get_mean_metric(self,clf_type,metric="acc"):
+        return self(clf_type,lambda r:np.mean(r.get_metric(metric)))
+    
+    def compute_metric(self,metric):
+        return { data_i:{name_j:result_j.get_metric(metric) 
+                       for name_j,result_j in dict_i.items()}
+              for data_i,dict_i in self.items()}
+
+    @classmethod
+    def read(cls,in_path):
+        @utils.DirFun("in_path")
+        def helper(in_path):
+            output={}
+            for path_i in utils.top_files(in_path):
+                name_i=path_i.split("/")[-1]
+                if(name_i!="splits"):
+                    result_path_i=f"{path_i}/results"
+                    result_i=dataset.ResultGroup.read(result_path_i)
+                    output[name_i]=result_i
+            return output
+        return cls(helper(in_path))
+
+class PartialDict(dict):
+    def subsets(self):
+        for key_i,partial_i in self.items():
+            k,acc,_=self.best_subset(key_i)
+            print(f"{key_i},{k},{acc:.4f}")
+    
+    def best_subset(self,key):
+        partial=self[key]
+        n_clfs=partial.n_clfs()
+        subsets,acc,results=[],[],[]
+        for i in range(n_clfs):
+            subsets.append(i)
+            s_partial_i=partial.subsets(subsets)
+            result_i=s_partial_i.to_result()
+            acc.append(np.mean(result_i.get_acc()))
+            results.append(result_i)
+        k=np.argmax(acc)
+        return k,acc[k],results[k]
+
+    @classmethod
+    def read(cls,in_path):
+        @utils.DirFun("in_path")
+        def helper(in_path):
+            clf_path=f"{in_path}/TreeEnsTabPF/partials"
+            result_type=dataset.PartialGroup
+            result= result_type.read(clf_path)
+            print(in_path)
+            return result
+        return cls(helper(in_path))
+
+
+cls_type=PartialDict
+result_dict=cls_type.read("test_exp")
+result_dict.subsets()
