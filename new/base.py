@@ -85,6 +85,7 @@ def make_split_dir( in_path,
     save_splits(split_path,splits)
 
 def save_splits(split_path,splits):
+    utils.make_dir(split_path)
     for i,split_i in enumerate(splits):
         split_i.save(f"{split_path}/{i}")
 

@@ -1,0 +1,68 @@
+import numpy as np
+from tqdm import tqdm
+import base,dataset,hyper,tree_clf,utils
+
+def make_archive( in_path,
+	              out_path,
+	              n_iters=3,
+	              n_clfs=2):
+    utils.make_dir(out_path)
+    @utils.DirFun("in_path",["out_path"])
+    def helper(in_path,out_path):
+        utils.make_dir(out_path)
+        data=dataset.read_csv(in_path)
+        splits=base.get_splits(data,10,n_iters)
+        base.save_splits(f"{out_path}/splits",splits)
+        hyper_space=hyper.HyperparamSpace()
+        for hyper_i in hyper_space():
+            hyper_id=params_id(hyper_i)
+            hyper_i["n_clfs"]=n_clfs
+            eval_hyper(data,
+            	       splits,
+            	       hyper_i,
+            	       f"{out_path}/{hyper_id}")
+            print(hyper_id)
+    helper(in_path,out_path)
+
+def eval_hyper( data,
+	            splits,
+	            hyper,
+	            out_path):
+    utils.make_dir(out_path)
+    clf_factory=tree_clf.TreeEnsFactory(hyper)
+    all_partials=[]
+    for i,split_i in tqdm(enumerate(splits)):
+        clf_i = clf_factory()
+        clf_i,_=split_i.fit_clf(data,clf_i)
+        partial_i=split_i.predict_partial(data,clf_i)
+        all_partials.append(partial_i)
+    result=dataset.PartialGroup(all_partials)
+    result.save(out_path)
+
+def params_id(hyper_dict):
+	keys=list(hyper_dict.keys())
+	keys.sort()
+	values=[str(hyper_dict[key_i]) 
+	        for key_i in keys]
+	return "_".join(values)
+
+def show_archive(in_path):
+    @utils.DirFun("in_path")
+    def helper(in_path):
+    	data_id=in_path.split("/")[-1]
+    	for path_i in utils.top_files(in_path):
+    		dir_id=path_i.split("/")[-1]
+    		if(dir_id=="splits"):
+    			continue
+    		parital=dataset.PartialGroup.read(path_i)	
+    		result=parital.to_result()
+    		acc=result.get_acc()
+    		balance=result.get_balanced()
+    		metrics=f"{np.mean(acc):.4f},{np.mean(balance):.4f}"
+    		line=f"{data_id},{dir_id},{metrics}"
+    		print(line)
+    helper(in_path)
+
+paths=["test/A","test/B"]
+make_archive(paths,"archive")
+show_archive("archive")
