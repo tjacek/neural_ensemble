@@ -39,7 +39,7 @@ def get_paths(dir_paths,taboo=None):
     return s_paths
     
 class DirFun(object):
-    def __init__(self,main_path,path_args):
+    def __init__(self,main_path,path_args=[]):
         self.main_path=main_path
         self.path_args=set(path_args)
     
@@ -53,6 +53,7 @@ class DirFun(object):
             for arg_i in self.path_args:
                 make_dir(full_dict[arg_i])
             paths=get_paths(full_dict[self.main_path])
+            output_args={}
             for path_i in paths:
                 arg_i={self.main_path:path_i}
                 id_i=path_i.split("/")[-1]
@@ -64,7 +65,8 @@ class DirFun(object):
                         arg_i[name_i]=f"{old_i}/{id_i}"
                     else:
                         arg_i[name_i]=old_i
-                fun(**arg_i)
+                output_args[id_i]=fun(**arg_i)
+            return output_args
         return decor_fun
 
 class DirProxy(object):
