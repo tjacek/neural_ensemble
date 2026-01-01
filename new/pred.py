@@ -56,6 +56,11 @@ class ResultDict(dict):
             return output
         return cls(helper(in_path))
 
+    def add_partial(self,partial_dict):
+        for key_i in self:
+            _,_,result_i=partial_dict.best_subset(key_i)
+            self[key_i]["TreeEns"]=result_i
+
 class PartialDict(dict):
     def subsets(self):
         for key_i,partial_i in self.items():
@@ -86,7 +91,29 @@ class PartialDict(dict):
             return result
         return cls(helper(in_path))
 
+def summary(exp_path):
+    partial_dict=PartialDict.read(exp_path)
+    result_dict=ResultDict.read(exp_path)
+    result_dict.add_partial(partial_dict)
+    def df_helper(clf_type):
+        acc_dict=result_dict.get_clf(clf_type,metric="acc")
+        balance_dict=result_dict.get_clf(clf_type,metric="balance")
+        lines=[]
+        for data_i in acc_dict:
+            line_i=[data_i,clf_type]
+            line_i.append(np.mean(acc_dict[data_i]))
+            line_i.append(np.mean(balance_dict[data_i]))
+            line_i.append(len(acc_dict[data_i]))
+            lines.append(line_i)
+        return lines
+    df=dataset.make_df(helper=df_helper,
+                      iterable=result_dict.clfs(),
+                      cols=["data","clf","acc","balance","n_splits"],
+                      multi=True)
+    for df_i in df.by_data("acc"):
+        print(df_i) 
 
-cls_type=PartialDict
-result_dict=cls_type.read("test_exp")
-result_dict.subsets()
+summary("test_exp")
+#cls_type=PartialDict
+#result_dict=cls_type.read("test_exp")
+#result_dict.subsets()
