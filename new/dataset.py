@@ -138,6 +138,11 @@ class ResultGroup(object):
                  for path_i in utils.top_files(in_path)]
         return ResultGroup(results)
 
+    def split_results(self,n_splits):
+        n_repeats=int(len(self)/n_splits)
+        raw_results=[ self.results[i:(i+1)]
+            for i in range(n_repeats)]
+
 class ProbResult(object):
     def __init__(self,y_true,prob_pred):
         self.y_true=y_true
