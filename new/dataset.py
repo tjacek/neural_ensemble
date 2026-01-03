@@ -142,6 +142,7 @@ class ResultGroup(object):
         n_repeats=int(len(self)/n_splits)
         raw_results=[ self.results[i:(i+1)]
             for i in range(n_repeats)]
+        return [ResultGroup(raw_i) for raw_i in raw_results]
 
 class ProbResult(object):
     def __init__(self,y_true,prob_pred):

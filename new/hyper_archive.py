@@ -46,23 +46,39 @@ def params_id(hyper_dict):
 	        for key_i in keys]
 	return "_".join(values)
 
+def result_iter(in_path):
+    for path_i in utils.top_files(in_path):
+        dir_id=path_i.split("/")[-1]
+        if(dir_id=="splits"):
+            continue
+        yield path_i,dir_id
+
 def show_archive(in_path):
     @utils.DirFun("in_path")
     def helper(in_path):
-    	data_id=in_path.split("/")[-1]
-    	for path_i in utils.top_files(in_path):
-    		dir_id=path_i.split("/")[-1]
-    		if(dir_id=="splits"):
-    			continue
-    		parital=dataset.PartialGroup.read(path_i)	
-    		result=parital.to_result()
-    		acc=result.get_acc()
-    		balance=result.get_balanced()
-    		metrics=f"{np.mean(acc):.4f},{np.mean(balance):.4f}"
-    		line=f"{data_id},{dir_id},{metrics}"
-    		print(line)
+        data_id=in_path.split("/")[-1]
+        for  path_i,dir_id in result_iter(in_path):
+#    	data_id=in_path.split("/")[-1]
+#    	for path_i in utils.top_files(in_path):
+#    		dir_id=path_i.split("/")[-1]
+#    		if(dir_id=="splits"):
+#    			continue
+            parital=dataset.PartialGroup.read(path_i)	
+            result=parital.to_result()
+            acc=result.get_acc()
+            balance=result.get_balanced()
+            metrics=f"{np.mean(acc):.4f},{np.mean(balance):.4f}"
+            line=f"{data_id},{dir_id},{metrics}"
+            print(line)
+    helper(in_path)
+
+def hyper_var(in_path):
+    @utils.DirFun("in_path")
+    def helper(in_path):
+        print(in_path)
     helper(in_path)
 
 paths=["test/A","test/B"]
-make_archive(paths,"archive")
+#make_archive(paths,"archive",n_clfs=1)
 show_archive("archive")
+#hyper_var(in_path)
