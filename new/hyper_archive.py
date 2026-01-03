@@ -58,11 +58,6 @@ def show_archive(in_path):
     def helper(in_path):
         data_id=in_path.split("/")[-1]
         for  path_i,dir_id in result_iter(in_path):
-#    	data_id=in_path.split("/")[-1]
-#    	for path_i in utils.top_files(in_path):
-#    		dir_id=path_i.split("/")[-1]
-#    		if(dir_id=="splits"):
-#    			continue
             parital=dataset.PartialGroup.read(path_i)	
             result=parital.to_result()
             acc=result.get_acc()
@@ -75,10 +70,18 @@ def show_archive(in_path):
 def hyper_var(in_path):
     @utils.DirFun("in_path")
     def helper(in_path):
-        print(in_path)
+        for path_i,dir_id in result_iter(in_path):
+            print(dir_id)
+            parital=dataset.PartialGroup.read(path_i)
+            result=parital.to_result()
+            sub_results=result.split_results(10)
+            acc=[ np.mean(sub_j.get_acc()) 
+                    for sub_j in sub_results]
+            print(np.std(acc))
+            print(max(acc)-min(acc))
     helper(in_path)
 
 paths=["test/A","test/B"]
 #make_archive(paths,"archive",n_clfs=1)
-show_archive("archive")
-#hyper_var(in_path)
+#show_archive("archive")
+hyper_var("archive")
