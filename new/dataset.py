@@ -74,6 +74,9 @@ class Result(object):
     def __init__(self,y_pred,y_true):
         self.y_pred=y_pred
         self.y_true=y_true
+    
+    def mean_metric(self,metric_type="acc"):
+        return np.mean(self.get_metric(metric_type))
 
     def get_acc(self):
         return accuracy_score(self.y_pred,self.y_true)
@@ -255,6 +258,12 @@ class PartialGroup(object):
         s_partials=[partial_i.subsets(indexes) 
                     for partial_i in self.partials]
         return PartialGroup(s_partials)
+    
+#    def split_results(self,n_splits):
+#        n_repeats=int(len(self)/n_splits)
+#        raw_results=[ self.results[i:(i+1)]
+#            for i in range(n_repeats)]
+#        return [ResultGroup(raw_i) for raw_i in raw_results]
 
 def dispatch_metric(metric_type):
     metric_type=metric_type.lower()
