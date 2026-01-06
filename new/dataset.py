@@ -175,6 +175,9 @@ class PartialResults(object):
     def __len__(self):
         return len(self.prob_results)
     
+    def __getitem__(self,i):
+        return self.prob_results[i]
+    
     def get_pred(self):
         probs=[result_i.prob_pred 
                 for result_i in self.prob_results]
@@ -214,6 +217,9 @@ class PartialGroup(object):
     def __init__(self,partials):
         self.partials=partials
     
+    def __len__(self):
+        return len(self.partials)
+
     def n_clfs(self):
         return len(self.partials[0])
 
@@ -259,11 +265,17 @@ class PartialGroup(object):
                     for partial_i in self.partials]
         return PartialGroup(s_partials)
     
-#    def split_results(self,n_splits):
-#        n_repeats=int(len(self)/n_splits)
-#        raw_results=[ self.results[i:(i+1)]
-#            for i in range(n_repeats)]
-#        return [ResultGroup(raw_i) for raw_i in raw_results]
+    def split_results(self,n_splits):
+        n_repeats=int(len(self)/n_splits)
+        n_clfs=self.n_clfs()
+        res_groups=[]
+        for i in range(n_repeats):
+            partial_i=self.partials[i:(i+1)]
+            for j in range(n_clfs):
+                results=[ partial_j[j].to_result() 
+                               for partial_j  in partial_i]
+                res_groups.append(ResultGroup(results))
+        return res_groups 
 
 def dispatch_metric(metric_type):
     metric_type=metric_type.lower()

@@ -73,12 +73,14 @@ def hyper_var(in_path):
         for path_i,dir_id in result_iter(in_path):
             print(dir_id)
             parital=dataset.PartialGroup.read(path_i)
-            result=parital.to_result()
-            sub_results=result.split_results(10)
+            sub_results=parital.split_results(10)
+#            result=parital.to_result()
+#            sub_results=result.split_results(10)
             acc=[ np.mean(sub_j.get_acc()) 
                     for sub_j in sub_results]
-            print(np.std(acc))
-            print(max(acc)-min(acc))
+            print(acc)
+#            print(np.std(acc))
+#            print(max(acc)-min(acc))
     helper(in_path)
 
 paths=["test/A","test/B"]
