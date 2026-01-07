@@ -118,6 +118,9 @@ class ResultGroup(object):
 
     def __len__(self):
         return len(self.results)
+    
+    def get_mean(self,metric_type="acc"):
+        return np.mean(self.get_metric(metric_type))
 
     def get_metric(self,metric_type):
         return [result_j.get_metric(metric_type) 
@@ -271,10 +274,13 @@ class PartialGroup(object):
         res_groups=[]
         for i in range(n_repeats):
             partial_i=self.partials[i:(i+1)]
+            result_i=[]
             for j in range(n_clfs):
                 results=[ partial_j[j].to_result() 
                                for partial_j  in partial_i]
-                res_groups.append(ResultGroup(results))
+                result_i.append(ResultGroup(results))
+            res_groups.append(result_i)
+#                res_groups.append(ResultGroup(results))
         return res_groups 
 
 def dispatch_metric(metric_type):

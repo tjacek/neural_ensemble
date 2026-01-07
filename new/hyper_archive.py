@@ -67,20 +67,20 @@ def show_archive(in_path):
             print(line)
     helper(in_path)
 
-def hyper_var(in_path):
+def hyper_var(in_path,n_splits=10):
     @utils.DirFun("in_path")
     def helper(in_path):
         for path_i,dir_id in result_iter(in_path):
             print(dir_id)
             parital=dataset.PartialGroup.read(path_i)
-            sub_results=parital.split_results(10)
-#            result=parital.to_result()
-#            sub_results=result.split_results(10)
-            acc=[ np.mean(sub_j.get_acc()) 
-                    for sub_j in sub_results]
-            print(acc)
-#            print(np.std(acc))
-#            print(max(acc)-min(acc))
+            sub_results=parital.split_results(n_splits)
+            for res_i in sub_results:
+                acc_i=[res_j.get_metric("acc")
+                         for res_j in res_i]
+                print(acc_i)
+#            acc=[ np.mean(sub_j.get_acc()) 
+#                    for sub_j in sub_results]
+#            print(sub_results)
     helper(in_path)
 
 paths=["test/A","test/B"]
