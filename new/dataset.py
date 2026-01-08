@@ -273,14 +273,13 @@ class PartialGroup(object):
         n_clfs=self.n_clfs()
         res_groups=[]
         for i in range(n_repeats):
-            partial_i=self.partials[i:(i+1)]
+            partial_i=self.partials[i*n_splits:(i+1)*n_splits]
             result_i=[]
             for j in range(n_clfs):
                 results=[ partial_j[j].to_result() 
                                for partial_j  in partial_i]
                 result_i.append(ResultGroup(results))
             res_groups.append(result_i)
-#                res_groups.append(ResultGroup(results))
         return res_groups 
 
 def dispatch_metric(metric_type):

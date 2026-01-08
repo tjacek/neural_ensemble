@@ -75,12 +75,9 @@ def hyper_var(in_path,n_splits=10):
             parital=dataset.PartialGroup.read(path_i)
             sub_results=parital.split_results(n_splits)
             for res_i in sub_results:
-                acc_i=[res_j.get_metric("acc")
+                acc_i=[ res_j.get_mean("acc")
                          for res_j in res_i]
                 print(acc_i)
-#            acc=[ np.mean(sub_j.get_acc()) 
-#                    for sub_j in sub_results]
-#            print(sub_results)
     helper(in_path)
 
 paths=["test/A","test/B"]
