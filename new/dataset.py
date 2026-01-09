@@ -75,20 +75,23 @@ class ResultObj(object):
     @abstractmethod
     def get_metric(self,metric_type):
         pass
-
+    
+    def get_mean(self,metric_type="acc"):
+        return np.mean(self.get_metric(metric_type))
+    
     def get_acc(self):
         return self.get_metric("acc")
 
     def get_balanced(self):
         return self.get_metric("balance")
 
+    def to_result(self):
+        return self
+
 class Result(ResultObj):
     def __init__(self,y_pred,y_true):
         self.y_pred=y_pred
         self.y_true=y_true
-    
-    def mean_metric(self,metric_type="acc"):
-        return np.mean(self.get_metric(metric_type))
 
     def get_metric(self,metric_type):
         if(type(metric_type)==str):
@@ -124,10 +127,7 @@ class ResultGroup(ResultObj):
 
     def __len__(self):
         return len(self.results)
-    
-    def get_mean(self,metric_type="acc"):
-        return np.mean(self.get_metric(metric_type))
-
+ 
     def get_metric(self,metric_type):
         return [result_j.get_metric(metric_type) 
                     for result_j in self.results]
