@@ -3,6 +3,7 @@ import pandas as pd
 from sklearn.metrics import f1_score,balanced_accuracy_score
 from sklearn.metrics import accuracy_score
 from sklearn import preprocessing
+from abc import ABC, abstractmethod
 import utils
 
 class Dataset(object):
@@ -70,19 +71,24 @@ def read_csv(in_path:str):
     X= preprocessing.RobustScaler().fit_transform(X)
     return Dataset(X,y)
 
-class Result(object):
+class ResultObj(object):
+    @abstractmethod
+    def get_metric(self,metric_type):
+        pass
+
+    def get_acc(self):
+        return self.get_metric("acc")
+
+    def get_balanced(self):
+        return self.get_metric("balance")
+
+class Result(ResultObj):
     def __init__(self,y_pred,y_true):
         self.y_pred=y_pred
         self.y_true=y_true
     
     def mean_metric(self,metric_type="acc"):
         return np.mean(self.get_metric(metric_type))
-
-    def get_acc(self):
-        return accuracy_score(self.y_pred,self.y_true)
-
-    def get_balanced(self):
-        return balanced_accuracy_score(self.y_pred,self.y_true)
 
     def get_metric(self,metric_type):
         if(type(metric_type)==str):
@@ -112,7 +118,7 @@ class Result(object):
         return Result(y_pred=y_pred,
                       y_true=y_true)
 
-class ResultGroup(object):
+class ResultGroup(ResultObj):
     def __init__(self,results):
         self.results=results
 
@@ -124,13 +130,6 @@ class ResultGroup(object):
 
     def get_metric(self,metric_type):
         return [result_j.get_metric(metric_type) 
-                    for result_j in self.results]
-    def get_acc(self):
-        return [result_j.get_acc() 
-                    for result_j in self.results]
-
-    def get_balanced(self):
-        return [result_j.get_balanced() 
                     for result_j in self.results]
 
     def save(self,out_path):
@@ -216,7 +215,7 @@ class PartialResults(object):
                     for i in indexes]
         return PartialResults(s_prob)
 
-class PartialGroup(object):
+class PartialGroup(ResultObj):
     def __init__(self,partials):
         self.partials=partials
     
@@ -225,12 +224,6 @@ class PartialGroup(object):
 
     def n_clfs(self):
         return len(self.partials[0])
-
-    def get_acc(self):
-        return self.get_metric("acc")
-
-    def get_balanced(self):
-        return self.get_metric("balance")
 
     def get_metric(self,metric_type):
         all_values=[]
