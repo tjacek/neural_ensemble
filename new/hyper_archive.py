@@ -1,6 +1,20 @@
 import numpy as np
 from tqdm import tqdm
+import os.path
 import base,dataset,hyper,tree_clf,utils
+
+class HyperIter(object):
+    def __init__(self,hyper_space=None):
+        if(hyper_space is None):
+            hyper_space=hyper.HyperparamSpace()
+        self.hyper_space=hyper_space
+
+    def __call__(self,out_path):
+        for hyper_i in hyper_space():
+            hyper_id=params_id(hyper_i)
+            out_i=f"{out_path}/{hyper_id}"
+            if(not os.path.isfile(out_i)):
+                yield hyper_i,out_i
 
 def make_archive( in_path,
 	              out_path,
