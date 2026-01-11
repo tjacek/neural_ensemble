@@ -57,6 +57,7 @@ def show_archive(in_path):
     @utils.DirFun("in_path")
     def helper(in_path):
         data_id=in_path.split("/")[-1]
+        print(data_id)
         for  path_i,dir_id in result_iter(in_path):
             parital=dataset.PartialGroup.read(path_i)	
             result=parital.to_result()
