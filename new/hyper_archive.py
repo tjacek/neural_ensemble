@@ -85,6 +85,7 @@ def show_archive(in_path):
 def hyper_var(in_path,n_splits=10):
     @utils.DirFun("in_path")
     def helper(in_path):
+        d={}
         for path_i,dir_id in result_iter(in_path):
             print(dir_id)
             parital=dataset.PartialGroup.read(path_i)
@@ -93,7 +94,10 @@ def hyper_var(in_path,n_splits=10):
                 acc_i=[ res_j.get_mean("acc")
                          for res_j in res_i]
                 print(acc_i)
-    helper(in_path)
+                d[dir_id]=acc_i
+        return d
+    output=helper(in_path)
+    print(output)
 
 paths=["test/A","test/B"]
 #make_archive(paths,"archive",n_clfs=1)
