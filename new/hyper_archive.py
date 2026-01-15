@@ -82,12 +82,12 @@ def show_archive(in_path):
             print(line)
     helper(in_path)
 
-def hyper_var(in_path,n_splits=10):
+
+def get_metric_dict(in_path,n_splits):
     @utils.DirFun("in_path")
     def helper(in_path):
         acc_dict={}
         for path_i,dir_id in result_iter(in_path):
-#            print(dir_id)
             parital=dataset.PartialGroup.read(path_i)
             sub_results=parital.split_results(n_splits)
             for res_i in sub_results:
@@ -95,18 +95,24 @@ def hyper_var(in_path,n_splits=10):
                          for res_j in res_i]
                 acc_dict[dir_id]=acc_i
         return acc_dict
-    output=helper(in_path)
+    return helper(in_path)
+
+def hyper_var(in_path,n_splits=10):
+    output=get_metric_dict(in_path,n_splits)
     for name_i,dict_i in output.items():
         print(name_i)
         params,acc_i=[],[]
         for params_j,acc_j in dict_i.items():
             params.append(params_j)
             acc_i.append(acc_j)
-        acc_i=np.array(acc_i)
+        acc_i=np.array(acc_i)  
         for acc_t in acc_i.T:
-            k=np.argmax(acc_t)
-            print(params[k])
-            print(acc_i[k])
+            acc_t-=np.min(acc_t)
+            acc_t/=np.max(acc_t)
+            print(acc_t)
+#            k=np.argmax(acc_t)
+#            print(params[k])
+#            print(acc_i[k])
 
 paths=["test/A","test/B"]
 #make_archive(paths,"archive",n_clfs=1)
