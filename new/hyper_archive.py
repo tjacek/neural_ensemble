@@ -106,10 +106,17 @@ def hyper_var(in_path,n_splits=10):
             params.append(params_j)
             acc_i.append(acc_j)
         acc_i=np.array(acc_i)  
-        for acc_t in acc_i.T:
-            acc_t-=np.min(acc_t)
-            acc_t/=np.max(acc_t)
-            print(acc_t)
+        best=norm_best(acc_i)
+        print(params[best])
+
+def norm_best(acc_i):
+    norm_sum=np.zeros(acc_i.T[0].shape)
+    for acc_t in acc_i.T:
+        acc_t-=np.min(acc_t)
+        acc_t/=np.max(acc_t)
+        print(acc_t)
+        norm_sum+=acc_t
+    return np.argmax(norm_best)
 #            k=np.argmax(acc_t)
 #            print(params[k])
 #            print(acc_i[k])
