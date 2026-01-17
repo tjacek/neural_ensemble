@@ -97,17 +97,25 @@ def get_metric_dict(in_path,n_splits):
         return acc_dict
     return helper(in_path)
 
-def hyper_var(in_path,n_splits=10):
-    output=get_metric_dict(in_path,n_splits)
-    for name_i,dict_i in output.items():
-        print(name_i)
-        params,acc_i=[],[]
-        for params_j,acc_j in dict_i.items():
-            params.append(params_j)
-            acc_i.append(acc_j)
-        acc_i=np.array(acc_i)  
-        best=norm_best(acc_i)
-        print(params[best])
+class HyperSelection(object):
+    def __init__(self,best_params):
+        self.best_params=best_params
+
+    def __call__(self,in_path,n_splits=10):
+        output=get_metric_dict(in_path,n_splits)
+        for name_i,dict_i in output.items():
+            print(name_i)
+            params,acc_i=[],[]
+            for params_j,acc_j in dict_i.items():
+                params.append(params_j)
+                acc_i.append(acc_j)
+            acc_i=np.array(acc_i)          
+            self.best_params(acc_i)
+    
+    @classmethod
+    def make(cls,selection_type:str):
+        if(selection_type=="norm"):
+            return cls(norm_best)
 
 def norm_best(acc_i):
     norm_sum=np.zeros(acc_i.T[0].shape)
@@ -117,11 +125,10 @@ def norm_best(acc_i):
         print(acc_t)
         norm_sum+=acc_t
     return np.argmax(norm_best)
-#            k=np.argmax(acc_t)
-#            print(params[k])
-#            print(acc_i[k])
+
 
 paths=["test/A","test/B"]
 #make_archive(paths,"archive",n_clfs=1)
 #show_archive("archive")
+hyper_var=HyperSelection.make("norm")
 hyper_var("archive")
