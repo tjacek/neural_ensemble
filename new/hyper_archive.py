@@ -98,8 +98,14 @@ def get_metric_dict(in_path,n_splits):
     return helper(in_path)
 
 class HyperSelection(object):
-    def __init__(self,best_params):
+    def __init__( self,
+                  best_params,
+                  params_names=None):
+        if(params_names is None):
+            hyper_type=hyper.HyperparamSpace
+            params_names=hyper_type.param_names
         self.best_params=best_params
+        self.params_names=params_names
 
     def __call__(self,in_path,n_splits=10):
         output=get_metric_dict(in_path,n_splits)
@@ -110,7 +116,11 @@ class HyperSelection(object):
                 params.append(params_j)
                 acc_i.append(acc_j)
             acc_i=np.array(acc_i)          
-            self.best_params(acc_i)
+            k=self.best_params(acc_i)
+            raw_i=params[k].split("_")
+            hyper_i=dict(zip(self.params_names,raw_i))
+            print(hyper_i)
+
     
     @classmethod
     def make(cls,selection_type:str):
