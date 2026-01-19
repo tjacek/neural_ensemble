@@ -121,11 +121,17 @@ class HyperSelection(object):
             hyper_i=dict(zip(self.params_names,raw_i))
             print(hyper_i)
 
-    
     @classmethod
     def make(cls,selection_type:str):
+        if(selection_type=="naive"):
+            return cls(naive_best)
         if(selection_type=="norm"):
             return cls(norm_best)
+
+def naive_best(acc_i):
+    sum_acc=np.sum(acc_i,axis=1)
+    print(sum_acc.shape)
+    return np.argmax(sum_acc)
 
 def norm_best(acc_i):
     norm_sum=np.zeros(acc_i.T[0].shape)
@@ -140,5 +146,5 @@ def norm_best(acc_i):
 paths=["test/A","test/B"]
 #make_archive(paths,"archive",n_clfs=1)
 #show_archive("archive")
-hyper_var=HyperSelection.make("norm")
+hyper_var=HyperSelection.make("naive")
 hyper_var("archive")
