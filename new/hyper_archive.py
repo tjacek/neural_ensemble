@@ -109,6 +109,7 @@ class HyperSelection(object):
 
     def __call__(self,in_path,n_splits=10):
         output=get_metric_dict(in_path,n_splits)
+        hyper_dict=hyper.BestHyper()
         for name_i,dict_i in output.items():
             print(name_i)
             params,acc_i=[],[]
@@ -119,7 +120,9 @@ class HyperSelection(object):
             k=self.best_params(acc_i)
             raw_i=params[k].split("_")
             hyper_i=dict(zip(self.params_names,raw_i))
-            print(hyper_i)
+            hyper_dict[name_i]=hyper_i
+        print(hyper_dict)
+        return hyper_dict
 
     @classmethod
     def make(cls,selection_type:str):

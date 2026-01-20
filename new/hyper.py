@@ -4,6 +4,18 @@ from itertools import product
 import os.path
 import base,dataset,tree_clf,utils
 
+class BestHyper(dict):
+    def __init__(self, arg=[]):
+        super(BestHyper, self).__init__(arg)
+    
+    def save(self,out_path):
+        with open(out_path, 'a') as file:
+            for name_i,dict_i in self.items():
+                keys= list(dict_i.keys())
+                keys.sort()
+                raw_i=[str(dict_i[key_i]) for key_i in keys]
+                file.write(",".join(raw_i)+"\n")
+
 class HyperFile(object):
     def __init__(self,file_path):
         self.file_path=file_path
@@ -51,6 +63,7 @@ class HyperFull(dict):
         return hyper_full
 
 class HyperparamSpace(object):
+    param_names=["feat_type","n_feats"]
     def __init__( self,
                   extr=["info","ind","prod"],
                   n_feats=[10,20,30,50]):
@@ -61,6 +74,7 @@ class HyperparamSpace(object):
         for feat_i,dim_i in product(self.extr,self.n_feats):
             yield { "feat_type":feat_i,
                       "n_feats":dim_i}
+
 
 
 def optim_hyper(in_path,out_path):
