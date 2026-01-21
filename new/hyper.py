@@ -7,13 +7,14 @@ import base,dataset,tree_clf,utils
 class BestHyper(dict):
     def __init__(self, arg=[]):
         super(BestHyper, self).__init__(arg)
-    
+        self.keys=list(self.keys())[0].keys()
+        self.keys.sort()
+
     def save(self,out_path):
         with open(out_path, 'a') as file:
             for name_i,dict_i in self.items():
-                keys= list(dict_i.keys())
-                keys.sort()
-                raw_i=[str(dict_i[key_i]) for key_i in keys]
+                raw_i=[str(dict_i[key_i]) 
+                        for key_i in keys]
                 file.write(",".join(raw_i)+"\n")
 
 class HyperFile(object):
