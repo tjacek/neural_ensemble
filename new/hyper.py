@@ -12,10 +12,25 @@ class BestHyper(dict):
 
     def save(self,out_path):
         with open(out_path, 'a') as file:
+            file.write(",".join(self.keys))
             for name_i,dict_i in self.items():
                 raw_i=[str(dict_i[key_i]) 
                         for key_i in keys]
                 file.write(",".join(raw_i)+"\n")
+
+    @classmethod
+    def read(cls,in_path:str):
+        df=pd.read_csv(in_path)
+        df=dataset.DFView(df)
+        best_df=dataset.DFView(df.best())
+        feat_dict=best_df.get_dict("data","feat_type")
+        dim_dict=best_df.get_dict("data","n_feats")
+        hyper_dict={}
+        for key_i in feat_dict.keys():
+            hyper_dict[key_i]={ "feat_type":feat_dict[key_i],
+                                "n_feats":dim_dict[key_i]
+                              }
+        return cls(hyper_dict)
 
 class HyperFile(object):
     def __init__(self,file_path):
@@ -106,18 +121,18 @@ def optim_exp(paths,hyper_path,split_path):
         utils.make_dir(split_path_i)
         base.save_splits(split_path_i,splits)
 
-def read_hyper(in_path):
-    df=pd.read_csv(in_path)
-    df=dataset.DFView(df)
-    best_df=dataset.DFView(df.best())
-    feat_dict=best_df.get_dict("data","feat_type")
-    dim_dict=best_df.get_dict("data","n_feats")
-    hyper_dict={}
-    for key_i in feat_dict.keys():
-        hyper_dict[key_i]={ "feat_type":feat_dict[key_i],
-                            "n_feats":dim_dict[key_i]
-                           }
-    return hyper_dict
+#def read_hyper(in_path):
+#    df=pd.read_csv(in_path)
+#    df=dataset.DFView(df)
+#    best_df=dataset.DFView(df.best())
+#    feat_dict=best_df.get_dict("data","feat_type")
+#    dim_dict=best_df.get_dict("data","n_feats")
+#    hyper_dict={}
+#    for key_i in feat_dict.keys():
+#        hyper_dict[key_i]={ "feat_type":feat_dict[key_i],
+#                            "n_feats":dim_dict[key_i]
+#                           }
+#    return hyper_dict
 
 if __name__ == '__main__':
 #    hyper_full=HyperFull.read("hyper_good.csv")
