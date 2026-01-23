@@ -7,15 +7,17 @@ import base,dataset,tree_clf,utils
 class BestHyper(dict):
     def __init__(self, arg=[]):
         super(BestHyper, self).__init__(arg)
-        self.keys=list(self.keys())[0].keys()
-        self.keys.sort()
 
     def save(self,out_path):
+        params=list(self.values())[0].keys()
+        params=list(params)
+        params.sort()
         with open(out_path, 'a') as file:
-            file.write(",".join(self.keys))
+            file.write(",".join(["data"]+params)+"\n")
             for name_i,dict_i in self.items():
-                raw_i=[str(dict_i[key_i]) 
-                        for key_i in keys]
+                raw_i=[name_i]
+                for key_i in params:
+                    raw_i.append(str(dict_i[key_i]))
                 file.write(",".join(raw_i)+"\n")
 
     @classmethod

@@ -145,9 +145,16 @@ def norm_best(acc_i):
         norm_sum+=acc_t
     return np.argmax(norm_best)
 
+def hyper_csv( in_path,
+               out_path,
+               selection_type="naive"):
+    hyper_var=HyperSelection.make(selection_type)
+    best_hyper=hyper_var(in_path)
+    best_hyper.save(out_path)
 
 paths=["test/A","test/B"]
 #make_archive(paths,"archive",n_clfs=1)
 #show_archive("archive")
-hyper_var=HyperSelection.make("naive")
-hyper_var("archive")
+hyper_csv( "archive",
+           "hyper.csv",
+            selection_type="naive")
