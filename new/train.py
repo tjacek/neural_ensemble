@@ -43,7 +43,8 @@ def incr_train( in_path,
                 hyper_path,
                 n_clfs=2):
     paths=utils.get_paths(in_path)
-    hyper_dict=hyper.read_hyper(hyper_path)     
+    hyper_dict=hyper.BestHyper.read(hyper_path)
+#    hyper_dict=hyper.read_hyper(hyper_path)     
     @utils.DirFun("in_path",["out_path"])
     def helper(in_path,out_path):
         print(in_path)
@@ -77,6 +78,6 @@ def incr_train( in_path,
 paths=["test/A","test/B"]
 incr_train(in_path=paths,
 	       out_path="test_exp",
-	       hyper_path="hyper_goodII.csv",
+	       hyper_path="hyper.csv",#"hyper_goodII.csv",
            n_clfs=2)
 #indv_acc("test_exp")

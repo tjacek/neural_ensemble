@@ -24,15 +24,24 @@ class BestHyper(dict):
     def read(cls,in_path:str):
         df=pd.read_csv(in_path)
         df=dataset.DFView(df)
-        best_df=dataset.DFView(df.best())
-        feat_dict=best_df.get_dict("data","feat_type")
-        dim_dict=best_df.get_dict("data","n_feats")
-        hyper_dict={}
-        for key_i in feat_dict.keys():
-            hyper_dict[key_i]={ "feat_type":feat_dict[key_i],
-                                "n_feats":dim_dict[key_i]
-                              }
-        return cls(hyper_dict)
+        best_hyper=cls()
+        for data_i in df.by_data(None):
+            dict_i=data_i.to_dict()
+            dict_i={ key_i:list(value_i.values())[0]
+                      for key_i,value_i in dict_i.items()}
+            name_i=dict_i["data"]
+            del dict_i["data"]
+            best_hyper[name_i]=dict_i
+#        raise Exception(dir(df.df))
+#        best_df=dataset.DFView(df.best())
+#        feat_dict=best_df.get_dict("data","feat_type")
+#        dim_dict=best_df.get_dict("data","n_feats")
+#        hyper_dict={}
+#        for key_i in feat_dict.keys():
+#            hyper_dict[key_i]={ "feat_type":feat_dict[key_i],
+#                                "n_feats":dim_dict[key_i]
+#                              }
+        return best_hyper
 
 class HyperFile(object):
     def __init__(self,file_path):
