@@ -81,9 +81,16 @@ def train_exps(dirs,n_clf=2):
                     hyper_path=f"{dir_i}/hyper.csv",
                     n_clfs=n_clfs):
 
+def clf_exp(dirs):
+    clfs=["TabPF"]
+    for clf_i in clf:
+        for dir_j in dirs:
+            train( in_path=f"{dir_j}/data",
+                   out_path=f"{dir_j}/exp",
+                   hyper_path=f"{dir_j}/hyper.csv",
+                   factory_type=clf_i)
 paths=["test/A","test/B"]
-incr_train(in_path=paths,
-	       out_path="test_exp",
-	       hyper_path="hyper.csv",#"hyper_goodII.csv",
-           n_clfs=2)
-#indv_acc("test_exp")
+#incr_train(in_path=paths,
+#	       out_path="test_exp",
+#	       hyper_path="hyper.csv",
+#           n_clfs=2)
