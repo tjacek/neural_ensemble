@@ -308,7 +308,8 @@ class DFView(object):
         names=self.df['data'].unique()
         for name_i in names:
             df_i=self.df[self.df['data']==name_i]
-            df_i=df_i.sort_values(by=sort,ascending=False)
+            if(sort):
+                df_i=df_i.sort_values(by=sort,ascending=False)
             yield df_i
 
     def best(self,sort_by="acc"):
@@ -321,6 +322,7 @@ class DFView(object):
     def get_dict(self,x,y):
         return dict(zip(self.df[x].tolist(),
                         self.df[y].tolist()))
+
 
 def make_df(helper,
             iterable,

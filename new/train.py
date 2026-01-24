@@ -44,7 +44,6 @@ def incr_train( in_path,
                 n_clfs=2):
     paths=utils.get_paths(in_path)
     hyper_dict=hyper.BestHyper.read(hyper_path)
-#    hyper_dict=hyper.read_hyper(hyper_path)     
     @utils.DirFun("in_path",["out_path"])
     def helper(in_path,out_path):
         print(in_path)
@@ -74,6 +73,13 @@ def incr_train( in_path,
         print(full_partials.n_clfs())
         print(np.mean(full_result.get_acc()))
     helper(in_path,out_path)
+
+def train_exps(dirs,n_clf=2):
+    for dir_i in dirs:
+        incr_train( in_path=f"{dir_i}/data",
+                    out_path=f"{dir_i}/exp",
+                    hyper_path=f"{dir_i}/hyper.csv",
+                    n_clfs=n_clfs):
 
 paths=["test/A","test/B"]
 incr_train(in_path=paths,
