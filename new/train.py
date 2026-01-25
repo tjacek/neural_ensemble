@@ -8,7 +8,7 @@ def train( in_path,
            hyper_path,
            factory_type="TabPF"):
     paths=utils.get_paths(in_path)
-    hyper_dict=hyper.read_hyper(hyper_path)
+    hyper_dict=hyper.BestHyper.read(hyper_path)
     @utils.DirFun("in_path",["out_path"])
     def helper(in_path,out_path):
         utils.make_dir(out_path)
@@ -74,22 +74,25 @@ def incr_train( in_path,
         print(np.mean(full_result.get_acc()))
     helper(in_path,out_path)
 
-def train_exps(dirs,n_clf=2):
+def train_exps(dirs,n_clfs=2):
     for dir_i in dirs:
         incr_train( in_path=f"{dir_i}/data",
                     out_path=f"{dir_i}/exp",
                     hyper_path=f"{dir_i}/hyper.csv",
-                    n_clfs=n_clfs):
+                    n_clfs=n_clfs)
 
 def clf_exp(dirs):
     clfs=["TabPF"]
-    for clf_i in clf:
+    for clf_i in clfs:
         for dir_j in dirs:
             train( in_path=f"{dir_j}/data",
                    out_path=f"{dir_j}/exp",
                    hyper_path=f"{dir_j}/hyper.csv",
                    factory_type=clf_i)
-paths=["test/A","test/B"]
+
+train_exps(["../slow_exp"],n_clfs=4)
+
+#paths=["test/A","test/B"]
 #incr_train(in_path=paths,
 #	       out_path="test_exp",
 #	       hyper_path="hyper.csv",
