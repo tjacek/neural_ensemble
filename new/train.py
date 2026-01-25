@@ -6,7 +6,8 @@ import base,hyper,utils,tree_clf
 def train( in_path,
            out_path,
            hyper_path,
-           factory_type="TabPF"):
+           factory_type="TabPF",
+           save=True):
     paths=utils.get_paths(in_path)
     hyper_dict=hyper.BestHyper.read(hyper_path)
     @utils.DirFun("in_path",["out_path"])
@@ -24,8 +25,9 @@ def train( in_path,
         print(hyper_i)
         print(np.mean(result.get_acc()))
         pred_path=f"{out_path}/{str(clf_factory)}"
-#        utils.make_dir(pred_path)
-#        result.save(f"{pred_path}/results")
+        if(save):
+            utils.make_dir(pred_path)
+            result.save(f"{pred_path}/results")
     helper(in_path,out_path)
 
 def indv_acc(in_path):
@@ -90,8 +92,8 @@ def clf_exp(dirs):
                    hyper_path=f"{dir_j}/hyper.csv",
                    factory_type=clf_i)
 
-train_exps(["../slow_exp"],n_clfs=4)
-
+#train_exps(["../slow_exp"],n_clf=4)
+clf_exp(["../slow_exp"])
 #paths=["test/A","test/B"]
 #incr_train(in_path=paths,
 #	       out_path="test_exp",
