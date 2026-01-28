@@ -77,29 +77,30 @@ def incr_train( in_path,
     helper(in_path,out_path)
 
 
-def exp_train(dirs,
+def exp_train(dir_i,
               n_clfs=1,
               factory_type=None):
+    arg_dir={"in_path":f"{dir_i}/data",
+             "out_path":f"{dir_i}/exp",
+             "hyper_path":f"{dir_i}/hyper.csv",
+             "n_clfs":n_clfs}
     if(factory_type):
-        fun=train
+        arg_dir["factory_type"]=factory_type
+        train(**arg_dir)
     else:
-        fun=incr_train
-    for dir_i in dirs:
-        fun( in_path=f"{dir_i}/data",
-             out_path=f"{dir_i}/exp",
-             hyper_path=f"{dir_i}/hyper.csv",
-             n_clfs=n_clfs,
-             factory_type=factory_type)
+        incr_train(**arg_dir)
 
 def train_exps(dirs,n_clfs=1):
     for _ in range(n_clfs):
-        exp_train(dirs,n_clfs=1)
+        for dir_i in dirs:
+            exp_train(dirs,n_clfs=1)
 
 
 def clf_exp(dirs):
     clfs=["TabPF"]
     for clf_i in clfs:
-        exp_train(dirs,factory_type=clf_i)
+        for dir_i in dir_i:
+        exp_train(dir_i,factory_type=clf_i)
 
 train_exps(["../slow2_exp"],n_clfs=8)
 train_exps(["../slow_exp"],n_clfs=2)
