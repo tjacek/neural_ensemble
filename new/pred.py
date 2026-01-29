@@ -61,6 +61,12 @@ class ResultDict(dict):
             _,_,result_i=partial_dict.best_subset(key_i)
             self[key_i]["TreeEns"]=result_i
 
+    def add_single(self,partial_dict):
+        for key_i in self:
+            partial_i=partial_dict[key_i].subsets([0])
+            result_i=partial_i.to_result()
+            self[key_i]["Tree-TabPF"]=result_i
+
 class PartialDict(dict):
     def subsets(self):
         for key_i,partial_i in self.items():
@@ -95,6 +101,7 @@ def summary(exp_path):
     partial_dict=PartialDict.read(exp_path)
     result_dict=ResultDict.read(exp_path)
     result_dict.add_partial(partial_dict)
+    result_dict.add_single(partial_dict)
     def df_helper(clf_type):
         acc_dict=result_dict.get_clf(clf_type,metric="acc")
         balance_dict=result_dict.get_clf(clf_type,metric="balance")
@@ -113,7 +120,7 @@ def summary(exp_path):
     for df_i in df.by_data("acc"):
         print(df_i) 
 
-summary("test_exp")
+summary("uci/fast_exp/exp")
 #cls_type=PartialDict
 #result_dict=cls_type.read("test_exp")
 #result_dict.subsets()
