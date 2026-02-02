@@ -1,5 +1,5 @@
 import numpy as np
-import dataset, utils
+import dataset,plot,utils
 
 class ResultDict(dict):
     def clfs(self):
@@ -65,7 +65,11 @@ class ResultDict(dict):
         for key_i in self:
             partial_i=partial_dict[key_i].subsets([0])
             result_i=partial_i.to_result()
-            self[key_i]["Tree-TabPF"]=result_i
+            self[key_i]["Tree-TabPFN"]=result_i
+
+    def drop(self,clf):
+        for dict_i in self.values():
+            del dict_i[clf]
 
 class PartialDict(dict):
     def subsets(self):
@@ -90,7 +94,7 @@ class PartialDict(dict):
     def read(cls,in_path):
         @utils.DirFun("in_path")
         def helper(in_path):
-            clf_path=f"{in_path}/TreeEnsTabPF/partials"
+            clf_path=f"{in_path}/TreeEnsTabPFN/partials"
             result_type=dataset.PartialGroup
             result= result_type.read(clf_path)
             print(in_path)
@@ -139,7 +143,25 @@ def to_latex(df):
         line_i=f"\\hline {line_i} \\\\"
         print(line_i)
 
-summary("uci/fast_exp/exp")
-#cls_type=PartialDict
-#result_dict=cls_type.read("test_exp")
-#result_dict.subsets()
+def box_plot(exp_path,split_size=5):
+    result_dict=ResultDict.read(exp_path)
+    partial_dict=PartialDict.read(exp_path)
+    result_dict.add_partial(partial_dict)
+    result_dict.add_single(partial_dict)
+    result_dict.drop("TreeEnsTabPFN")
+    data=list(result_dict.keys())
+    if(split_size):
+        splits=utils.split_list(data,split_size)
+    else:
+        splits=[data]
+    for split_i in splits:
+        plot.plot_box(result_dict,
+                      data=split_i,
+                      clf_types=None)
+        print(result_dict.keys())
+
+
+if __name__ == '__main__':
+    in_path="uci/fast_exp/exp"
+#    summary(in_apth)
+    box_plot(in_path)

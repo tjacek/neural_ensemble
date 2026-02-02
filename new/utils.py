@@ -90,3 +90,9 @@ class DirProxy(object):
     def count(self,name):
         path=self.dict_paths[name]
         return len(top_files(path))
+
+def split_list(data,split_size):
+    import math
+    n_splits=math.ceil(len(data)/split_size)
+    return [ data[i*split_size:(i+1)*split_size] 
+                for i in range(n_splits)]
