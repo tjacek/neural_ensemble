@@ -97,7 +97,8 @@ class PartialDict(dict):
             return result
         return cls(helper(in_path))
 
-def summary(exp_path):
+def summary(exp_path,
+            latex=True):
     partial_dict=PartialDict.read(exp_path)
     result_dict=ResultDict.read(exp_path)
     result_dict.add_partial(partial_dict)
@@ -117,8 +118,26 @@ def summary(exp_path):
                       iterable=result_dict.clfs(),
                       cols=["data","clf","acc","balance","n_splits"],
                       multi=True)
-    for df_i in df.by_data("acc"):
-        print(df_i) 
+    for df_i in df.by_data("acc"):   
+        if(latex):
+            to_latex(df_i)
+        else:
+            print(df_i)
+
+def to_latex(df):
+    df=df[["data","clf","acc"]]
+    cols=df.columns.to_list()
+    def helper(raw):
+        if(type(raw)==float):
+            return f"{100*raw:.2f}"
+        return str(raw)
+    for i,row_i in df.iterrows():
+        row_i=row_i.to_dict() 
+        row_i=[helper(row_i[col_j])
+                   for col_j in cols]
+        line_i=" & ".join(row_i)
+        line_i=f"\\hline {line_i} \\\\"
+        print(line_i)
 
 summary("uci/fast_exp/exp")
 #cls_type=PartialDict
