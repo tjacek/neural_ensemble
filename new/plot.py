@@ -43,3 +43,39 @@ def plot_box(result_dict,data,clf_types=None):
     plt.grid(which='minor')
     plt.tight_layout()
     plt.show()
+
+def dict_plot(x_dict,
+              y_dict,
+              xlabel,
+              ylabel,
+              text=True,
+              title=None):
+    fig=plt.figure()
+    if(type(text)==dict):
+        for data_i in x_dict:
+            plt.text(x_dict[data_i], 
+                     y_dict[data_i], 
+                     text[data_i],
+                     fontdict={'weight': 'bold', 'size': 9})
+    elif(text):
+        for data_i in x_dict:
+            plt.text(x_dict[data_i], 
+                     y_dict[data_i], 
+                     data_i,
+                     fontdict={'weight': 'bold', 'size': 9})
+    else:
+        data=x_dict.keys()
+        x=[x_dict[data_i] for data_i in data]
+        y=[y_dict[data_i] for data_i in data] 
+        plt.scatter(x, y)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.xlim(0.9*min(x_dict.values()),
+             1.1*max(x_dict.values()))
+    plt.ylim(0.9*min(y_dict.values()),
+             1.1*max(y_dict.values()))
+    plt.axline((0, 0), (1, 1))
+    if(title):
+        plt.title(title)
+    plt.grid()
+    plt.show()

@@ -25,9 +25,13 @@ class ResultDict(dict):
     def get_clf( self,
                  clf_type,
                  metric="acc",
+                 mean=False,
                  split=None):
-        
-        output=self(clf_type,lambda r:r.get_metric(metric))
+        if(mean):
+            fun=lambda r:np.mean(r.get_metric(metric))
+        else:
+            fun=lambda r:r.get_metric(metric)
+        output=self(clf_type,fun)
         if(split):
             output={ name_i: [ np.mean(v_i)
                 for v_i in utils.split_list(value_i,split)] 
@@ -101,12 +105,16 @@ class PartialDict(dict):
             return result
         return cls(helper(in_path))
 
-def summary(exp_path,
-            latex=True):
+def get_results(exp_path):
     partial_dict=PartialDict.read(exp_path)
     result_dict=ResultDict.read(exp_path)
     result_dict.add_partial(partial_dict)
     result_dict.add_single(partial_dict)
+    return result_dict
+
+def summary(exp_path,
+            latex=True):
+    result_dict=get_results(exp_path)
     def df_helper(clf_type):
         acc_dict=result_dict.get_clf(clf_type,metric="acc")
         balance_dict=result_dict.get_clf(clf_type,metric="balance")
@@ -144,10 +152,7 @@ def to_latex(df):
         print(line_i)
 
 def box_plot(exp_path,split_size=5):
-    result_dict=ResultDict.read(exp_path)
-    partial_dict=PartialDict.read(exp_path)
-    result_dict.add_partial(partial_dict)
-    result_dict.add_single(partial_dict)
+    result_dict=get_results(exp_path)
     result_dict.drop("TreeEnsTabPFN")
     data=list(result_dict.keys())
     if(split_size):
@@ -160,8 +165,24 @@ def box_plot(exp_path,split_size=5):
                       clf_types=None)
         print(result_dict.keys())
 
+def xy_plot(exp_path,
+            x_clf="GRAD",
+            y_clf="TreeEns",
+            metric="accuracy",
+            title="UCI"):
+    result_dict=get_results(exp_path)
+    x_dict=result_dict.get_clf(x_clf,mean=True)
+    y_dict=result_dict.get_clf(y_clf,mean=True)
+    plot.dict_plot( x_dict,
+                    y_dict,
+                    xlabel=f"{x_clf}({metric})",
+                    ylabel=f"{y_clf}({metric})",
+                    text=False,
+                    title=title)    
+
 
 if __name__ == '__main__':
     in_path="uci/fast_exp/exp"
 #    summary(in_apth)
-    box_plot(in_path)
+#    box_plot(in_path)
+    xy_plot(in_path)
