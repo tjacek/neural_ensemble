@@ -2,6 +2,8 @@ import numpy as np
 import dataset,plot,utils
 
 class ResultDict(dict):
+    PARTIAL="TreeEns"
+    SINGLE="Tree-TabPFN"
     def clfs(self):
         all_clfs=[]
         for value_i in self.values():    
@@ -63,19 +65,20 @@ class ResultDict(dict):
     def add_partial(self,partial_dict):
         for key_i in self:
             _,_,result_i=partial_dict.best_subset(key_i)
-            self[key_i]["TreeEns"]=result_i
+            self[key_i][self.PARTIAL]=result_i
 
     def add_single(self,partial_dict):
         for key_i in self:
             partial_i=partial_dict[key_i].subsets([0])
             result_i=partial_i.to_result()
-            self[key_i]["Tree-TabPFN"]=result_i
+            self[key_i][self.SINGLE]=result_i
 
     def drop(self,clf):
         for dict_i in self.values():
             del dict_i[clf]
 
 class PartialDict(dict):
+    CLF_PATH="TreeEnsTabPFN/partials"
     def subsets(self):
         for key_i,partial_i in self.items():
             k,acc,_=self.best_subset(key_i)
@@ -98,7 +101,7 @@ class PartialDict(dict):
     def read(cls,in_path):
         @utils.DirFun("in_path")
         def helper(in_path):
-            clf_path=f"{in_path}/TreeEnsTabPFN/partials"
+            clf_path=f"{in_path}/{cls.CLF_PATH}"
             result_type=dataset.PartialGroup
             result= result_type.read(clf_path)
             print(in_path)
@@ -182,7 +185,7 @@ def xy_plot(exp_path,
 
 
 if __name__ == '__main__':
-    in_path="uci/fast_exp/exp"
-#    summary(in_apth)
+    in_path="../slow2_exp/exp"
+    summary(in_path)
 #    box_plot(in_path)
-    xy_plot(in_path)
+#    xy_plot(in_path)
