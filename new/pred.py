@@ -4,6 +4,8 @@ import dataset,plot,utils
 class ResultDict(dict):
     PARTIAL="TreeEns"
     SINGLE="Tree-TabPFN"
+    SPLITS_DIR="splits"
+    RESULT_DIR="results"
     def clfs(self):
         all_clfs=[]
         for value_i in self.values():    
@@ -55,8 +57,8 @@ class ResultDict(dict):
             output={}
             for path_i in utils.top_files(in_path):
                 name_i=path_i.split("/")[-1]
-                if(name_i!="splits"):
-                    result_path_i=f"{path_i}/results"
+                if(name_i!=self.SPLITS_DIR):
+                    result_path_i=f"{path_i}/{self.RESULT_DIR}"
                     result_i=dataset.ResultGroup.read(result_path_i)
                     output[name_i]=result_i
             return output
@@ -185,7 +187,7 @@ def xy_plot(exp_path,
 
 
 if __name__ == '__main__':
-    in_path="../slow2_exp/exp"
+    in_path="../fast2_exp/exp"
     summary(in_path)
 #    box_plot(in_path)
 #    xy_plot(in_path)
