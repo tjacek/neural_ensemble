@@ -140,6 +140,8 @@ class AbstractClfFactory(object):
             yield i,clf_i,result_i
 
 class AbstractClfAdapter(object):
+    CLFS=["RF","GRAD"]
+    
     @abstractmethod
     def fit(self,X,y):
         raise NotImplementedError()
