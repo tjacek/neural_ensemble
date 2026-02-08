@@ -1,4 +1,5 @@
 import numpy as np
+import argparse
 import dataset,plot,utils
 
 class ResultDict(dict):
@@ -187,7 +188,13 @@ def xy_plot(exp_path,
 
 
 if __name__ == '__main__':
-    in_path="../fast2_exp/exp"
-    summary(in_path)
-#    box_plot(in_path)
-#    xy_plot(in_path)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--path", type=str, default="uci/fast_exp/exp")
+    parser.add_argument('--box', action='store_true')
+    parser.add_argument('--xy', action='store_true')
+    args = parser.parse_args()
+    summary(args.path)
+    if(args.box):
+        box_plot(args.path)
+    if(args.xy):
+        xy_plot(args.path)
