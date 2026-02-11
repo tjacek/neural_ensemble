@@ -58,8 +58,8 @@ class ResultDict(dict):
             output={}
             for path_i in utils.top_files(in_path):
                 name_i=path_i.split("/")[-1]
-                if(name_i!=self.SPLITS_DIR):
-                    result_path_i=f"{path_i}/{self.RESULT_DIR}"
+                if(name_i!=cls.SPLITS_DIR):
+                    result_path_i=f"{path_i}/{cls.RESULT_DIR}"
                     result_i=dataset.ResultGroup.read(result_path_i)
                     output[name_i]=result_i
             return output
@@ -79,6 +79,17 @@ class ResultDict(dict):
     def drop(self,clf):
         for dict_i in self.values():
             del dict_i[clf]
+
+    def clfs_names(self):
+        return { name_i:dict_i.keys()
+                 for name_i,dict_i in self.items()}
+
+    def common_clfs(self):
+        indv_clfs=list(self.clfs_names().values())
+        common=set(indv_clfs[0])
+        for clf_i in indv_clfs[1:]:
+            common=common.intersection(set(clf_i))
+        return list(common)
 
 class PartialDict(dict):
     CLF_PATH="TreeEnsTabPFN/partials"
@@ -157,7 +168,7 @@ def to_latex(df):
         line_i=f"\\hline {line_i} \\\\"
         print(line_i)
 
-def box_plot(exp_path,split_size=5):
+def box_plot(exp_path,split_size=None):
     result_dict=get_results(exp_path)
     result_dict.drop("TreeEnsTabPFN")
     data=list(result_dict.keys())
@@ -168,8 +179,7 @@ def box_plot(exp_path,split_size=5):
     for split_i in splits:
         plot.plot_box(result_dict,
                       data=split_i,
-                      clf_types=None)
-        print(result_dict.keys())
+                      clf_types=result_dict.common_clfs())
 
 def xy_plot(exp_path,
             x_clf="GRAD",
@@ -189,7 +199,7 @@ def xy_plot(exp_path,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--path", type=str, default="uci/fast_exp/exp")
+    parser.add_argument("--path", type=str, default="multi/exp")
     parser.add_argument('--box', action='store_true')
     parser.add_argument('--xy', action='store_true')
     args = parser.parse_args()
