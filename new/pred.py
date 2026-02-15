@@ -4,7 +4,7 @@ import dataset,plot,utils
 
 class ResultDict(dict):
     PARTIAL="TreeEns"
-    SINGLE="Tree-TabPFN"
+    SINGLE="Tree-TabPF"
     SPLITS_DIR="splits"
     RESULT_DIR="results"
     def clfs(self):
@@ -92,7 +92,7 @@ class ResultDict(dict):
         return list(common)
 
 class PartialDict(dict):
-    CLF_PATH="TreeEnsTabPFN/partials"
+    CLF_PATH="TreeEnsTabPF/partials"
     def subsets(self):
         for key_i,partial_i in self.items():
             k,acc,_=self.best_subset(key_i)
@@ -170,7 +170,7 @@ def to_latex(df):
 
 def box_plot(exp_path,split_size=None):
     result_dict=get_results(exp_path)
-    result_dict.drop("TreeEnsTabPFN")
+    result_dict.drop("TreeEnsTabPF")
     data=list(result_dict.keys())
     if(split_size):
         splits=utils.split_list(data,split_size)
@@ -182,7 +182,7 @@ def box_plot(exp_path,split_size=None):
                       clf_types=result_dict.common_clfs())
 
 def xy_plot(exp_path,
-            x_clf="GRAD",
+            x_clf="TabPF",
             y_clf="TreeEns",
             metric="accuracy",
             title="UCI"):
@@ -199,7 +199,7 @@ def xy_plot(exp_path,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--path", type=str, default="multi/exp")
+    parser.add_argument("--path", type=str, default="../uci/fast/exp")
     parser.add_argument('--box', action='store_true')
     parser.add_argument('--xy', action='store_true')
     args = parser.parse_args()

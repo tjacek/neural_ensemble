@@ -107,17 +107,17 @@ class HyperSelection(object):
         self.best_params=best_params
         self.params_names=params_names
 
-    def __call__(self,in_path,n_splits=10):
+    def __call__(self,in_path,n_splits=30):
         output=get_metric_dict(in_path,n_splits)
         hyper_dict=hyper.BestHyper()
         for name_i,dict_i in output.items():
             print(name_i)
-            params,acc_i=[],[]
-            for params_j,acc_j in dict_i.items():
-                params.append(params_j)
-                acc_i.append(acc_j)
+            params= list(dict_i.keys())
+            acc_i=np.array([dict_i[key_j]
+                    for key_j in params ])
             acc_i=np.array(acc_i)          
             k=self.best_params(acc_i)
+            print(f"{params[k]}/{acc_i[k]}")
             raw_i=params[k].split("_")
             hyper_i=dict(zip(self.params_names,raw_i))
             hyper_dict[name_i]=hyper_i
@@ -150,11 +150,13 @@ def hyper_csv( in_path,
                selection_type="naive"):
     hyper_var=HyperSelection.make(selection_type)
     best_hyper=hyper_var(in_path)
+#    print(best_hyper)
     best_hyper.save(out_path)
 
+default_path="../binary/fast"
 paths=["test/A","test/B"]
 #make_archive(paths,"archive",n_clfs=1)
-#show_archive("archive")
-hyper_csv( "archive",
-           "hyper.csv",
+show_archive(f"{default_path}/archive")
+hyper_csv( f"{default_path}/archive",
+           f"{default_path}/new_hyper.csv",
             selection_type="naive")
