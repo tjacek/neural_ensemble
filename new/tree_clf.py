@@ -114,7 +114,7 @@ class TreeEnsFactory(base.AbstractClfFactory):
                 "feature_params":self.feature_params}
 
     def __str__(self):
-        return "TreeEnsTabPF"
+        return "TreeEnsTabPFN"
 
 class TreeEns(base.AbstractClfAdapter):
     def __init__( self,

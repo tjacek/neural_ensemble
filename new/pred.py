@@ -1,10 +1,8 @@
 import numpy as np
-import argparse
+import argparse,os.path
 import dataset,plot,utils
 
 class ResultDict(dict):
-    PARTIAL="TreeEns"
-    SINGLE="Tree-TabPF"
     SPLITS_DIR="splits"
     RESULT_DIR="results"
     def clfs(self):
@@ -65,16 +63,22 @@ class ResultDict(dict):
             return output
         return cls(helper(in_path))
 
-    def add_partial(self,partial_dict):
+    def add_partial(self,
+                    partial_dict,
+                    partial="TreeEns"):
         for key_i in self:
-            _,_,result_i=partial_dict.best_subset(key_i)
-            self[key_i][self.PARTIAL]=result_i
+            if(key_i in partial_dict):
+                _,_,result_i=partial_dict.best_subset(key_i)
+                self[key_i][partial]=result_i
 
-    def add_single(self,partial_dict):
+    def add_single(self,
+                   partial_dict,
+                   single="Tree-TabPF"):
         for key_i in self:
-            partial_i=partial_dict[key_i].subsets([0])
-            result_i=partial_i.to_result()
-            self[key_i][self.SINGLE]=result_i
+            if(key_i in partial_dict):
+                partial_i=partial_dict[key_i].subsets([0])
+                result_i=partial_i.to_result()
+                self[key_i][single]=result_i
 
     def drop(self,clf):
         for dict_i in self.values():
@@ -92,7 +96,7 @@ class ResultDict(dict):
         return list(common)
 
 class PartialDict(dict):
-    CLF_PATH="TreeEnsTabPF/partials"
+#    CLF_PATH="TreeEnsTabPF/partials"
     def subsets(self):
         for key_i,partial_i in self.items():
             k,acc,_=self.best_subset(key_i)
@@ -112,25 +116,41 @@ class PartialDict(dict):
         return k,acc[k],results[k]
 
     @classmethod
-    def read(cls,in_path):
+    def read( cls,
+              in_path,
+              clf_path="TreeEnsTabPF"):
         @utils.DirFun("in_path")
         def helper(in_path):
-            clf_path=f"{in_path}/{cls.CLF_PATH}"
+            full_path=f"{in_path}/{clf_path}/partials"
+            if not os.path.exists(full_path):
+                return None
             result_type=dataset.PartialGroup
-            result= result_type.read(clf_path)
+            result= result_type.read(full_path)
             print(in_path)
             return result
         return cls(helper(in_path))
 
 def get_results(exp_path):
-    partial_dict=PartialDict.read(exp_path)
+    part_names=["TreeEnsTabPF","TreeEnsTabPFN"]
     result_dict=ResultDict.read(exp_path)
-    result_dict.add_partial(partial_dict)
-    result_dict.add_single(partial_dict)
-    return result_dict
+    all_partial={ name_i:PartialDict.read(exp_path,
+                                          name_i) 
+                    for name_i in  part_names}
+    for name_i,dict_i in all_partial.items():
+        partial=name_i#f"TreeEns-{name_i}"
+        result_dict.add_partial(dict_i,
+                                partial)
+        single=f"Tree-{name_i}"
+        result_dict.add_single(dict_i,
+                               single)
+    return result_dict 
+#    partial_dict=PartialDict.read(exp_path)
+#    result_dict.add_partial(partial_dict)
+#    result_dict.add_single(partial_dict)
+#    return result_dict
 
 def summary(exp_path,
-            latex=True):
+            latex=False):
     result_dict=get_results(exp_path)
     def df_helper(clf_type):
         acc_dict=result_dict.get_clf(clf_type,metric="acc")
@@ -199,7 +219,7 @@ def xy_plot(exp_path,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--path", type=str, default="../uci/fast/exp")
+    parser.add_argument("--path", type=str, default="../binary/fast/exp")
     parser.add_argument('--box', action='store_true')
     parser.add_argument('--xy', action='store_true')
     args = parser.parse_args()

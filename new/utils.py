@@ -66,6 +66,9 @@ class DirFun(object):
                     else:
                         arg_i[name_i]=old_i
                 output_args[id_i]=fun(**arg_i)
+            output_args={key:value
+                          for key,value in output_args.items()
+                              if(not (value is None))}    
             return output_args
         return decor_fun
 
