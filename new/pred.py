@@ -25,7 +25,7 @@ class ResultDict(dict):
                 data_dict[data_i]=fun(dict_i[clf_type])
         return data_dict
     
-#    def norm_metric(self,clf_type,):
+#    def norm_metric(self,clf_type,fun):
 
     def get_clf( self,
                  clf_type,
@@ -160,17 +160,17 @@ def summary(exp_path,
     result_dict=get_results(exp_path)
     def df_helper(clf_type):
         metrics=[result_dict.get_clf(clf_type,
-                                     metric=metric_i)
+                                     metric=metric_i,
+                                     mean=True)
                         for metric_i in metric_types]
         lines=[]
         for data_i in result_dict:
             line_i=[data_i,clf_type]
             for metric_j in metrics:
-                line_i.append(np.mean(metric_j[data_i]))
-            line_i.append(len(metrics[0][data_i]))
+                line_i.append(metric_j[data_i])
             lines.append(line_i)
         return lines
-    cols=["data","clf"]+metric_types+["n_splits"]
+    cols=["data","clf"]+metric_types#+["n_splits"]
     df=dataset.make_df(helper=df_helper,
                       iterable=result_dict.clfs(),
                       cols=cols,
