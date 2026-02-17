@@ -25,18 +25,30 @@ class ResultDict(dict):
                 data_dict[data_i]=fun(dict_i[clf_type])
         return data_dict
     
-#    def norm_metric(self,clf_type,fun):
+    def norm_metric(self,clf_type,fun):
+        data_dict={}
+        for data_i,dict_i in self.items():
+            values= [ fun(value_i) 
+                        for value_i in dict_i.values()]
+            delta= max(values)-min(values)
+            if(clf_type in dict_i):
+                metric=fun(dict_i[clf_type])
+                metric= (metric-min(values))/delta
+                data_dict[data_i]=metric
+        return data_dict
 
     def get_clf( self,
                  clf_type,
                  metric="acc",
                  mean=False,
                  split=None):
-        fun=self.metric_fun(metric,mean)
-#        if("norm" in metric):
-#            output=self(clf_type,fun)
-#        else:
-        output=self.by_clf(clf_type,fun)
+        if("norm_" in metric):
+            metric=metric.split("_")[1]
+            fun=self.metric_fun(metric,mean)
+            output=self.norm_metric(clf_type,fun)
+        else:
+            fun=self.metric_fun(metric,mean)
+            output=self.by_clf(clf_type,fun)
         if(split):
             output={ name_i: [ np.mean(v_i)
                 for v_i in utils.split_list(value_i,split)] 
@@ -156,7 +168,7 @@ def summary(exp_path,
             metric_types=None,
             latex=False):
     if(metric_types is None):
-        metric_types=["acc","balance"]
+        metric_types=["acc","balance","norm_acc"]
     result_dict=get_results(exp_path)
     def df_helper(clf_type):
         metrics=[result_dict.get_clf(clf_type,
