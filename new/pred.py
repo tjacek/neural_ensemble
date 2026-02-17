@@ -18,32 +18,39 @@ class ResultDict(dict):
         all_data.sort()
         return all_data
     
-    def __call__(self,clf_type,fun):
+    def by_clf(self,clf_type,fun):
         data_dict={}
         for data_i,dict_i in self.items():
             if(clf_type in dict_i):
                 data_dict[data_i]=fun(dict_i[clf_type])
         return data_dict
+    
+#    def norm_metric(self,clf_type,):
 
     def get_clf( self,
                  clf_type,
                  metric="acc",
                  mean=False,
                  split=None):
-        if(mean):
-            fun=lambda r:np.mean(r.get_metric(metric))
-        else:
-            fun=lambda r:r.get_metric(metric)
-        output=self(clf_type,fun)
+        fun=self.metric_fun(metric,mean)
+#        if("norm" in metric):
+#            output=self(clf_type,fun)
+#        else:
+        output=self.by_clf(clf_type,fun)
         if(split):
             output={ name_i: [ np.mean(v_i)
                 for v_i in utils.split_list(value_i,split)] 
                     for name_i,value_i in output.items()}
         return output
-
-    def get_mean_metric(self,clf_type,metric="acc"):
-        return self(clf_type,lambda r:np.mean(r.get_metric(metric)))
     
+    @staticmethod
+    def metric_fun(metric,
+                   mean):
+        if(mean):
+            return lambda r:np.mean(r.get_metric(metric))
+        else:
+            return lambda r:r.get_metric(metric)
+
     def compute_metric(self,metric):
         return { data_i:{name_j:result_j.get_metric(metric) 
                        for name_j,result_j in dict_i.items()}
@@ -152,19 +159,14 @@ def summary(exp_path,
         metric_types=["acc","balance"]
     result_dict=get_results(exp_path)
     def df_helper(clf_type):
-#        acc_dict=result_dict.get_clf(clf_type,metric="acc")
-#        balance_dict=result_dict.get_clf(clf_type,metric="balance")
         metrics=[result_dict.get_clf(clf_type,
-                                         metric=metric_i)
+                                     metric=metric_i)
                         for metric_i in metric_types]
         lines=[]
         for data_i in result_dict:
             line_i=[data_i,clf_type]
             for metric_j in metrics:
                 line_i.append(np.mean(metric_j[data_i]))
-#            line_i.append(np.mean(acc_dict[data_i]))
-#            line_i.append(np.mean(balance_dict[data_i]))
-#            line_i.append(len(acc_dict[data_i]))
             line_i.append(len(metrics[0][data_i]))
             lines.append(line_i)
         return lines
