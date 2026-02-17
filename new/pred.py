@@ -96,7 +96,6 @@ class ResultDict(dict):
         return list(common)
 
 class PartialDict(dict):
-#    CLF_PATH="TreeEnsTabPF/partials"
     def subsets(self):
         for key_i,partial_i in self.items():
             k,acc,_=self.best_subset(key_i)
@@ -131,7 +130,8 @@ class PartialDict(dict):
         return cls(helper(in_path))
 
 def get_results(exp_path):
-    part_names=["TreeEnsTabPF","TreeEnsTabPFN"]
+#    part_names=["TreeEnsTabPF","TreeEnsTabPFN"]
+    part_names=["TreeEnsTabPFN"]
     result_dict=ResultDict.read(exp_path)
     all_partial={ name_i:PartialDict.read(exp_path,
                                           name_i) 
@@ -144,28 +144,34 @@ def get_results(exp_path):
         result_dict.add_single(dict_i,
                                single)
     return result_dict 
-#    partial_dict=PartialDict.read(exp_path)
-#    result_dict.add_partial(partial_dict)
-#    result_dict.add_single(partial_dict)
-#    return result_dict
 
 def summary(exp_path,
+            metric_types=None,
             latex=False):
+    if(metric_types is None):
+        metric_types=["acc","balance"]
     result_dict=get_results(exp_path)
     def df_helper(clf_type):
-        acc_dict=result_dict.get_clf(clf_type,metric="acc")
-        balance_dict=result_dict.get_clf(clf_type,metric="balance")
+#        acc_dict=result_dict.get_clf(clf_type,metric="acc")
+#        balance_dict=result_dict.get_clf(clf_type,metric="balance")
+        metrics=[result_dict.get_clf(clf_type,
+                                         metric=metric_i)
+                        for metric_i in metric_types]
         lines=[]
-        for data_i in acc_dict:
+        for data_i in result_dict:
             line_i=[data_i,clf_type]
-            line_i.append(np.mean(acc_dict[data_i]))
-            line_i.append(np.mean(balance_dict[data_i]))
-            line_i.append(len(acc_dict[data_i]))
+            for metric_j in metrics:
+                line_i.append(np.mean(metric_j[data_i]))
+#            line_i.append(np.mean(acc_dict[data_i]))
+#            line_i.append(np.mean(balance_dict[data_i]))
+#            line_i.append(len(acc_dict[data_i]))
+            line_i.append(len(metrics[0][data_i]))
             lines.append(line_i)
         return lines
+    cols=["data","clf"]+metric_types+["n_splits"]
     df=dataset.make_df(helper=df_helper,
                       iterable=result_dict.clfs(),
-                      cols=["data","clf","acc","balance","n_splits"],
+                      cols=cols,
                       multi=True)
     for df_i in df.by_data("acc"):   
         if(latex):
@@ -219,7 +225,7 @@ def xy_plot(exp_path,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--path", type=str, default="../binary/fast/exp")
+    parser.add_argument("--path", type=str, default="uci/exp/")
     parser.add_argument('--box', action='store_true')
     parser.add_argument('--xy', action='store_true')
     args = parser.parse_args()
