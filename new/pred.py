@@ -80,6 +80,11 @@ class ResultDict(dict):
                     result_i=dataset.ResultGroup.read(result_path_i)
                     output[name_i]=result_i
             return output
+        if(type(in_path)==list):
+            output={}
+            for path_i in in_path: 
+                output= output | helper(path_i)
+            return cls(output)
         return cls(helper(in_path))
 
     def add_partial(self,
@@ -101,7 +106,8 @@ class ResultDict(dict):
 
     def drop(self,clf):
         for dict_i in self.values():
-            del dict_i[clf]
+            if(clf in dict_i):
+                del dict_i[clf]
 
     def clfs_names(self):
         return { name_i:dict_i.keys()
@@ -146,11 +152,16 @@ class PartialDict(dict):
             result= result_type.read(full_path)
             print(in_path)
             return result
+        if(type(in_path)==list):
+            output={}
+            for path_i in in_path: 
+                output= output | helper(path_i)
+            return cls(output)
         return cls(helper(in_path))
 
 def get_results(exp_path):
 #    part_names=["TreeEnsTabPF","TreeEnsTabPFN"]
-    part_names=["TreeEnsTabPFN"]
+    part_names=["TreeEnsTabPF"]
     result_dict=ResultDict.read(exp_path)
     all_partial={ name_i:PartialDict.read(exp_path,
                                           name_i) 
@@ -162,13 +173,14 @@ def get_results(exp_path):
         single=f"Tree-{name_i}"
         result_dict.add_single(dict_i,
                                single)
+    result_dict.drop("TreeTabPF(optim)")
     return result_dict 
 
 def summary(exp_path,
             metric_types=None,
-            latex=False):
+            latex=True):
     if(metric_types is None):
-        metric_types=["acc","balance","norm_acc"]
+        metric_types=["acc","norm_acc"]
     result_dict=get_results(exp_path)
     def df_helper(clf_type):
         metrics=[result_dict.get_clf(clf_type,
@@ -194,7 +206,7 @@ def summary(exp_path,
             print(df_i)
 
 def to_latex(df):
-    df=df[["data","clf","acc"]]
+    df=df[["data","clf","acc","norm_acc"]]
     cols=df.columns.to_list()
     def helper(raw):
         if(type(raw)==float):
@@ -222,8 +234,8 @@ def box_plot(exp_path,split_size=None):
                       clf_types=result_dict.common_clfs())
 
 def xy_plot(exp_path,
-            x_clf="TabPFN",
-            y_clf="TreeEnsTabPFN",
+            x_clf="TabPF",
+            y_clf="TreeEnsTabPF",
             metric="norm_acc",
             title="UCI"):
     result_dict=get_results(exp_path)
@@ -233,8 +245,6 @@ def xy_plot(exp_path,
     y_dict=result_dict.get_clf(y_clf,
                                metric=metric,
                                mean=True)
-    print(x_dict)
-    print(y_dict)
     plot.dict_plot( x_dict,
                     y_dict,
                     xlabel=f"{x_clf}({metric})",
@@ -245,7 +255,8 @@ def xy_plot(exp_path,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--path", type=str, default="uci/exp/")
+    parser.add_argument("--path", type=str, default=["../uci/fast/exp/",
+                                                    "../uci/slow/exp"])
     parser.add_argument('--box', action='store_true')
     parser.add_argument('--xy', action='store_true')
     args = parser.parse_args()
@@ -253,4 +264,4 @@ if __name__ == '__main__':
     if(args.box):
         box_plot(args.path)
     if(args.xy):
-        xy_plot(args.path)
+        xy_plot(["../uci/fast/exp/","../uci/slow/exp/"])
