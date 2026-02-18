@@ -222,13 +222,19 @@ def box_plot(exp_path,split_size=None):
                       clf_types=result_dict.common_clfs())
 
 def xy_plot(exp_path,
-            x_clf="TabPF",
-            y_clf="TreeEns",
-            metric="accuracy",
+            x_clf="TabPFN",
+            y_clf="TreeEnsTabPFN",
+            metric="norm_acc",
             title="UCI"):
     result_dict=get_results(exp_path)
-    x_dict=result_dict.get_clf(x_clf,mean=True)
-    y_dict=result_dict.get_clf(y_clf,mean=True)
+    x_dict=result_dict.get_clf(x_clf,
+                               metric=metric,
+                               mean=True)
+    y_dict=result_dict.get_clf(y_clf,
+                               metric=metric,
+                               mean=True)
+    print(x_dict)
+    print(y_dict)
     plot.dict_plot( x_dict,
                     y_dict,
                     xlabel=f"{x_clf}({metric})",
