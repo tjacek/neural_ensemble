@@ -11,7 +11,9 @@ def top_files(path):
     if(type(path)==str):
         paths=[ f'{path}/{file_i}' for file_i in os.listdir(path)]
     else:
-        paths=path
+        paths=[]
+        for path_i in path:
+            paths=top_files(path_i)
     paths=sorted(paths,key=natural_keys)
     return paths
 
