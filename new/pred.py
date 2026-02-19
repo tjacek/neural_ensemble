@@ -191,7 +191,10 @@ def summary(exp_path,
         for data_i in result_dict:
             line_i=[data_i,clf_type]
             for metric_j in metrics:
-                line_i.append(metric_j[data_i])
+                if(data_i in metric_j):
+                    line_i.append(metric_j[data_i])
+                else:
+                    line_i.append(-1)
             lines.append(line_i)
         return lines
     cols=["data","clf"]+metric_types#+["n_splits"]
@@ -237,7 +240,7 @@ def xy_plot(exp_path,
             x_clf="TabPF",
             y_clf="TreeEnsTabPF",
             metric="norm_acc",
-            title="UCI"):
+            title="AutoML"):
     result_dict=get_results(exp_path)
     x_dict=result_dict.get_clf(x_clf,
                                metric=metric,
@@ -245,6 +248,8 @@ def xy_plot(exp_path,
     y_dict=result_dict.get_clf(y_clf,
                                metric=metric,
                                mean=True)
+    print(x_dict.keys())
+    print(y_dict.keys())
     plot.dict_plot( x_dict,
                     y_dict,
                     xlabel=f"{x_clf}({metric})",
@@ -255,8 +260,8 @@ def xy_plot(exp_path,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--path", type=str, default=["../uci/fast/exp/",
-                                                    "../uci/slow/exp"])
+    parser.add_argument("--path", type=str, default=["../binary/fast/exp/"])
+#                                                    "../multi/slow/exp"])
     parser.add_argument('--box', action='store_true')
     parser.add_argument('--xy', action='store_true')
     args = parser.parse_args()
@@ -264,4 +269,5 @@ if __name__ == '__main__':
     if(args.box):
         box_plot(args.path)
     if(args.xy):
-        xy_plot(["../uci/fast/exp/","../uci/slow/exp/"])
+        xy_plot(["../binary/fast/exp/"])
+#                 "../multi/slow/exp/"])
