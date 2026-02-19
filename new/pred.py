@@ -238,9 +238,10 @@ def box_plot(exp_path,split_size=None):
 
 def xy_plot(exp_path,
             x_clf="TabPF",
-            y_clf="TreeEnsTabPF",
+            y_clf="TreeEnsTabPFN",
             metric="norm_acc",
-            title="AutoML"):
+            title="AutoML",
+            text=True):
     result_dict=get_results(exp_path)
     x_dict=result_dict.get_clf(x_clf,
                                metric=metric,
@@ -254,7 +255,7 @@ def xy_plot(exp_path,
                     y_dict,
                     xlabel=f"{x_clf}({metric})",
                     ylabel=f"{y_clf}({metric})",
-                    text=False,
+                    text=text,
                     title=title)    
 
 

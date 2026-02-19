@@ -5,11 +5,11 @@ import itertools
 import base,dataset,tree_dict
 
 def get_factory(factory_type):
-    if(factory_type=="TabPF"):
+    if(factory_type=="TabPFN"):
         return TabPFFactory
-    if(factory_type=="TreeTabPF"):
+    if(factory_type=="TreeTabPFN"):
         return TreeFactory
-    if(factory_type=="TreeEnsTabPF"):
+    if(factory_type=="TreeEnsTabPFN"):
         return TreeEnsFactory
     raise Exception(f"Unknow type {factory_type}")
 
@@ -25,10 +25,10 @@ class TabPFFactory(base.AbstractClfFactory):
         return TabPFAdapter(raw_clf)
     
     def get_info(self):
-        return {"clf_type":"TabPF"}
+        return {"clf_type":"TabPFN"}
 
     def __str__(self):
-        return "TabPF"
+        return "TabPFN"
 
 class TabPFAdapter(base.AbstractClfAdapter):
     def __init__(self,tab_model):
@@ -48,7 +48,7 @@ class TabPFAdapter(base.AbstractClfAdapter):
             pickle.dump(self.tab_model, f)
 
     def __str__(self):
-        return "TabPF"
+        return "TabPFN"
 
 class TreeFactory(base.AbstractClfFactory):
     def __init__( self,
@@ -93,7 +93,7 @@ class TreeClf(base.AbstractClfAdapter):
         self.extractor.extractor.save(out_path)
 
     def __str__(self):
-        return "TreeTabPF"
+        return "TreeTabPFN"
 
 class TreeEnsFactory(base.AbstractClfFactory):
     def __init__( self,
