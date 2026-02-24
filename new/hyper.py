@@ -32,15 +32,6 @@ class BestHyper(dict):
             name_i=dict_i["data"]
             del dict_i["data"]
             best_hyper[name_i]=dict_i
-#        raise Exception(dir(df.df))
-#        best_df=dataset.DFView(df.best())
-#        feat_dict=best_df.get_dict("data","feat_type")
-#        dim_dict=best_df.get_dict("data","n_feats")
-#        hyper_dict={}
-#        for key_i in feat_dict.keys():
-#            hyper_dict[key_i]={ "feat_type":feat_dict[key_i],
-#                                "n_feats":dim_dict[key_i]
-#                              }
         return best_hyper
 
 class HyperFile(object):
@@ -102,7 +93,14 @@ class HyperparamSpace(object):
             yield { "feat_type":feat_i,
                       "n_feats":dim_i}
 
-
+    @classmethod
+    def get(cls,type="small"):
+        extr=["info","ind","prod"]
+        if(type=="default"):
+            n_feats=[10,20,30,50]
+        else:
+            n_feats=[5,20,30,50]
+        return cls(extr,n_feats)
 
 def optim_hyper(in_path,out_path):
     data_id=in_path.split("/")[-1]
