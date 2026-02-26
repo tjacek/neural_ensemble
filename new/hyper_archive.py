@@ -27,7 +27,7 @@ def make_archive( in_path,
         data=dataset.read_csv(in_path)
         splits=base.get_splits(data,10,n_iters)
         base.save_splits(f"{out_path}/splits",splits)
-        hyper_space=hyper.HyperparamSpace()
+        hyper_space=hyper.HyperparamSpace.get("small")
         for hyper_i in hyper_space():
             hyper_id=params_id(hyper_i)
             hyper_i["n_clfs"]=n_clfs
@@ -133,7 +133,6 @@ class HyperSelection(object):
 
 def naive_best(acc_i):
     sum_acc=np.sum(acc_i,axis=1)
-    print(sum_acc.shape)
     return np.argmax(sum_acc)
 
 def norm_best(acc_i):
@@ -153,9 +152,10 @@ def hyper_csv( in_path,
 #    print(best_hyper)
     best_hyper.save(out_path)
 
-default_path="../binary/fast"
-paths=["test/A","test/B"]
-#make_archive(paths,"archive",n_clfs=1)
+default_path="../binary/hard"
+make_archive(f"{default_path}/data",
+             f"{default_path}/archive",
+             n_clfs=1)
 show_archive(f"{default_path}/archive")
 hyper_csv( f"{default_path}/archive",
            f"{default_path}/new_hyper.csv",
