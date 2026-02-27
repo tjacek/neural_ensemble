@@ -6,12 +6,13 @@ import base,hyper,utils,tree_clf
 def train( in_path,
            out_path,
            hyper_path,
-           factory_type="TabPF",
+           factory_type="TabPFN",
            save=True):
     paths=utils.get_paths(in_path)
     hyper_dict=hyper.BestHyper.read(hyper_path)
     @utils.DirFun("in_path",["out_path"])
     def helper(in_path,out_path):
+        print(in_path)
         utils.make_dir(out_path)
         base.make_split_dir(in_path,out_path)
         data_id=in_path.split("/")[-1]
@@ -93,20 +94,14 @@ def exp_train(dir_i,
 def train_exps(dirs,n_clfs=1):
     for _ in range(n_clfs):
         for dir_i in dirs:
-            exp_train(dirs,n_clfs=1)
+            exp_train(dir_i,n_clfs=1)
 
 
 def clf_exp(dirs):
-    clfs=["TabPF"]
+    clfs=["TabPFN"]
     for clf_i in clfs:
         for dir_i in dirs:
             exp_train(dir_i,factory_type=clf_i)
 
-#train_exps(["../slow2_exp"],n_clfs=8)
-#train_exps(["../slow_exp"],n_clfs=2)
-clf_exp(["../slow2_exp"])
-#paths=["test/A","test/B"]
-#incr_train(in_path=paths,
-#	       out_path="test_exp",
-#	       hyper_path="hyper.csv",
-#           n_clfs=2)
+clf_exp(["../binary/hard"])
+train_exps(["../binary/hard"],n_clfs=10)
