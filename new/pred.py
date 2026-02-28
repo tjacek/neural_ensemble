@@ -161,7 +161,7 @@ class PartialDict(dict):
 
 def get_results(exp_path):
 #    part_names=["TreeEnsTabPF","TreeEnsTabPFN"]
-    part_names=["TreeEnsTabPF"]
+    part_names=["TreeEnsTabPFN"]
     result_dict=ResultDict.read(exp_path)
     all_partial={ name_i:PartialDict.read(exp_path,
                                           name_i) 
@@ -178,7 +178,7 @@ def get_results(exp_path):
 
 def summary(exp_path,
             metric_types=None,
-            latex=True):
+            latex=False):
     if(metric_types is None):
         metric_types=["acc","norm_acc"]
     result_dict=get_results(exp_path)
@@ -207,6 +207,10 @@ def summary(exp_path,
             to_latex(df_i)
         else:
             print(df_i)
+    for df_i in df.by_data(col="clf"):
+        clf_i=df_i["clf"].tolist()[0]
+        acc_i=df_i["norm_acc"].tolist()
+        print(f"{clf_i}:{np.mean(acc_i):.4f}")
 
 def to_latex(df):
     df=df[["data","clf","acc","norm_acc"]]
@@ -237,11 +241,11 @@ def box_plot(exp_path,split_size=None):
                       clf_types=result_dict.common_clfs())
 
 def xy_plot(exp_path,
-            x_clf="TabPF",
+            x_clf="TabPFN",
             y_clf="TreeEnsTabPFN",
             metric="norm_acc",
             title="AutoML",
-            text=True):
+            text=False):
     result_dict=get_results(exp_path)
     x_dict=result_dict.get_clf(x_clf,
                                metric=metric,
@@ -261,8 +265,8 @@ def xy_plot(exp_path,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--path", type=str, default=["../binary/fast/exp/"])
-#                                                    "../multi/slow/exp"])
+    parser.add_argument("--path", type=str, default=["../binary/hard/exp/"])#,
+#                                                     "../multi/slow/exp"])
     parser.add_argument('--box', action='store_true')
     parser.add_argument('--xy', action='store_true')
     args = parser.parse_args()
@@ -270,5 +274,5 @@ if __name__ == '__main__':
     if(args.box):
         box_plot(args.path)
     if(args.xy):
-        xy_plot(["../binary/fast/exp/"])
+        xy_plot(["../binary/hard/exp/"])
 #                 "../multi/slow/exp/"])

@@ -304,10 +304,12 @@ class DFView(object):
         with pd.option_context('display.max_rows', None, 'display.max_columns', None):  
             print(self.df)
  
-    def by_data(self,sort="acc"):
-        names=self.df['data'].unique()
+    def by_data( self,
+                 sort="acc",
+                 col='data'):
+        names=self.df[col].unique()
         for name_i in names:
-            df_i=self.df[self.df['data']==name_i]
+            df_i=self.df[self.df[col]==name_i]
             if(sort):
                 df_i=df_i.sort_values(by=sort,ascending=False)
             yield df_i
