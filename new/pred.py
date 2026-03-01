@@ -207,6 +207,9 @@ def summary(exp_path,
             to_latex(df_i)
         else:
             print(df_i)
+    mean_acc(df)
+    
+def mean_acc(df):
     for df_i in df.by_data(col="clf"):
         clf_i=df_i["clf"].tolist()[0]
         acc_i=df_i["norm_acc"].tolist()
