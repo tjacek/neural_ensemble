@@ -178,7 +178,7 @@ def get_results(exp_path):
 
 def summary(exp_path,
             metric_types=None,
-            latex=False):
+            latex=True):
     if(metric_types is None):
         metric_types=["acc","norm_acc"]
     result_dict=get_results(exp_path)
@@ -208,7 +208,7 @@ def summary(exp_path,
         else:
             print(df_i)
     mean_acc(df)
-    
+
 def mean_acc(df):
     for df_i in df.by_data(col="clf"):
         clf_i=df_i["clf"].tolist()[0]
@@ -268,8 +268,8 @@ def xy_plot(exp_path,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--path", type=str, default=["../binary/hard/exp/"])#,
-#                                                     "../multi/slow/exp"])
+    parser.add_argument("--path", type=str, default=["../binary/hard/exp/",
+                                                     "../binary/fast/exp"])
     parser.add_argument('--box', action='store_true')
     parser.add_argument('--xy', action='store_true')
     args = parser.parse_args()
@@ -277,5 +277,5 @@ if __name__ == '__main__':
     if(args.box):
         box_plot(args.path)
     if(args.xy):
-        xy_plot(["../binary/hard/exp/"])
-#                 "../multi/slow/exp/"])
+        xy_plot(["../binary/hard/exp/",
+                 "../binary/fast/exp/"])
