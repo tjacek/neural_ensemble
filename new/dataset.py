@@ -50,14 +50,18 @@ class Dataset(object):
                     for x_i in self.X.T]
 
     def weight_dict(self):
+        hist=self.cls_hist()
+        params={key_i:float(value_i) 
+                   for key_i,value_i in hist.items()}
+        return params
+
+    def cls_hist(self):
         cats=  list(set(self.y))
         n_cats= len(cats) 
-        params={cat_i:0 for cat_i in cats}
+        hist={cat_i:0 for cat_i in cats}
         for y_i in self.y:
-            params[y_i]+=1
-        params={key_i:float(value_i) 
-                   for key_i,value_i in params.items()}
-        return params
+            hist[y_i]+=1
+        return hist
 
 def read_csv(in_path:str):
     if(type(in_path)==tuple):
