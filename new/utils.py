@@ -13,7 +13,7 @@ def top_files(path):
     else:
         paths=[]
         for path_i in path:
-            paths=top_files(path_i)
+            paths+=top_files(path_i)
     paths=sorted(paths,key=natural_keys)
     return paths
 
@@ -101,3 +101,30 @@ def split_list(data,split_size):
     n_splits=math.ceil(len(data)/split_size)
     return [ data[i*split_size:(i+1)*split_size] 
                 for i in range(n_splits)]
+
+def as_latex(lines,cols):
+    n_cols=len(cols)
+    text="\\begin{table}[ht]\n"
+    text+="\centering\n"
+    header="|".join([ "c" for _ in range(n_cols)])
+    text+="\\begin{tabular}{|"
+    text+=header 
+    text+="|}\n"
+    text+= latex_line(cols)
+    def helper(e):
+        if(type(e)==str):
+            return e
+        else:
+            return f"{e:.2f}"
+    for line_i in lines:
+        raw_i= [ helper(e_j) 
+                    for e_j in line_i]
+        text+= latex_line(raw_i)
+    text+="\hline\n"
+    text+="\end{tabular}\n"
+    text+="\end{table}\n"
+    return text
+
+def latex_line(raw_i):
+    raw_i=" & ".join(raw_i)
+    return "\hline " + raw_i + "\\\\ \n" 

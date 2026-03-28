@@ -354,6 +354,7 @@ def make_df(helper,
 
 def desc_data(in_path):
     paths=utils.top_files(in_path)
+    desc=[]
     for path_i in paths:
         id_i=path_i.split("/")[-1]
         data_i=read_csv(path_i)
@@ -366,7 +367,13 @@ def desc_data(in_path):
                   sum_i/min_i,
                   data_i.dim()]
         print(feats_i)
+        desc.append(feats_i)
+    return desc
 
 if __name__ == '__main__':
-    data=desc_data("../uci/fast/data")
-    
+    desc=desc_data(["../binary/fast/data",
+                    "../binary/hard/data"])
+    cols=["Dataset","#Examples",
+          "#Min. examples","IR","#Attributes"]
+    latex=utils.as_latex(desc,cols)
+    print(latex)
