@@ -352,6 +352,21 @@ def make_df(helper,
                                 columns=cols)
     return DFView(df)
 
+def desc_data(in_path):
+    paths=utils.top_files(in_path)
+    for path_i in paths:
+        id_i=path_i.split("/")[-1]
+        data_i=read_csv(path_i)
+        hist_i=data_i.cls_hist()
+        cls_hist=list(hist_i.values())
+        sum_i,min_i=sum(cls_hist), min(cls_hist)
+        feats_i=[ id_i, 
+                  sum_i,
+                  min_i, 
+                  sum_i/min_i,
+                  data_i.dim()]
+        print(feats_i)
+
 if __name__ == '__main__':
-    data=read_csv("wine-quality-red")
-    print(data.range())
+    data=desc_data("../uci/fast/data")
+    
