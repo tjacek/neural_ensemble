@@ -159,21 +159,27 @@ class PartialDict(dict):
             return cls(output)
         return cls(helper(in_path))
 
-def get_results(exp_path):
-#    part_names=["TreeEnsTabPF","TreeEnsTabPFN"]
-    part_names=["TreeEnsTabPFN"]
+def get_results(exp_path,
+                part_names=None,
+                taboo=None):
+    if(part_names is None):
+        part_names=["TreeEnsTabPFN"]
     result_dict=ResultDict.read(exp_path)
     all_partial={ name_i:PartialDict.read(exp_path,
                                           name_i) 
                     for name_i in  part_names}
     for name_i,dict_i in all_partial.items():
-        partial=name_i#f"TreeEns-{name_i}"
+        partial=name_i
         result_dict.add_partial(dict_i,
                                 partial)
         single=f"Tree-{name_i}"
         result_dict.add_single(dict_i,
                                single)
-    result_dict.drop("TreeTabPF(optim)")
+    if(taboo is None):
+        taboo=["TreeTabPF(optim)",
+               "TreeEnsTabPF"]
+    for taboo_i in taboo:
+        result_dict.drop(taboo_i)
     return result_dict 
 
 def summary(exp_path,
@@ -197,7 +203,7 @@ def summary(exp_path,
                     line_i.append(-1)
             lines.append(line_i)
         return lines
-    cols=["data","clf"]+metric_types#+["n_splits"]
+    cols=["data","clf"]+metric_types
     df=dataset.make_df(helper=df_helper,
                       iterable=result_dict.clfs(),
                       cols=cols,
