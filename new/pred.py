@@ -278,8 +278,9 @@ if __name__ == '__main__':
                                                      "../binary/fast/exp"])
     parser.add_argument('--box', action='store_true')
     parser.add_argument('--xy', action='store_true')
+    parser.add_argument('--latex', action='store_true')
     args = parser.parse_args()
-    summary(args.path)
+    summary(args.path,latex=args.latex)
     if(args.box):
         box_plot(args.path)
     if(args.xy):
