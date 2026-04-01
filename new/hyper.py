@@ -98,6 +98,8 @@ class HyperparamSpace(object):
         extr=["info","ind","prod"]
         if(type=="default"):
             n_feats=[10,20,30,50]
+        elif(type=="large"):
+            n_feats=[30,50,75,100]
         else:
             n_feats=[5,20,30,50]
         return cls(extr,n_feats)
