@@ -274,7 +274,11 @@ def xy_plot(exp_path,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--path", type=str, default=["../binary/hard/exp/",
+    parser.add_argument("--path", type=str, default=["../uci/slow/exp/",
+                                                     "../uci/fast/exp/",
+                                                     "../multi/slow/exp/",
+                                                     "../multi/fast/exp/",
+                                                     "../binary/hard/exp/",
                                                      "../binary/fast/exp"])
     parser.add_argument('--box', action='store_true')
     parser.add_argument('--xy', action='store_true')
@@ -284,5 +288,6 @@ if __name__ == '__main__':
     if(args.box):
         box_plot(args.path)
     if(args.xy):
-        xy_plot(["../binary/hard/exp/",
-                 "../binary/fast/exp/"])
+        xy_plot(args.path)
+#["../binary/hard/exp/",
+#"../binary/fast/exp/"])
