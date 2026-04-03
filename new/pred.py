@@ -35,6 +35,8 @@ class ResultDict(dict):
                 metric=fun(dict_i[clf_type])
                 metric= (metric-min(values))/delta
                 data_dict[data_i]=metric
+            else:
+                print(f"{clf_type} not in {data_i}")
         return data_dict
 
     def get_clf( self,
@@ -286,8 +288,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
     summary(args.path,latex=args.latex)
     if(args.box):
-        box_plot(args.path)
+        box_plot(args.path,split_size=5)
     if(args.xy):
         xy_plot(args.path)
-#["../binary/hard/exp/",
-#"../binary/fast/exp/"])
