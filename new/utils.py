@@ -39,7 +39,26 @@ def get_paths(dir_paths,taboo=None):
         if(not id_i in taboo):
             s_paths.append(path_i)
     return s_paths
-    
+
+class PathSelect(object):
+    def __init__( self,
+                  perm_paths=None,
+                  taboo_paths=None):
+        if(type(perm_paths)==list):
+            perm_paths=Set(perm_paths)
+        if(type(perm_paths)==list):
+            perm_paths=Set(perm_paths)
+        self.perm_paths=perm_paths
+        self.taboo_paths=taboo_paths
+
+    def __call__(self,paths):
+        paths=[]
+        for path_i in paths:
+            id_i=path_i.split("/")[-1]
+            if(id_i in self.perm_paths):
+                paths.append(path_i)
+        return paths
+
 class DirFun(object):
     def __init__(self,main_path,path_args=[]):
         self.main_path=main_path
@@ -102,7 +121,8 @@ def split_list(data,split_size):
     return [ data[i*split_size:(i+1)*split_size] 
                 for i in range(n_splits)]
 
-def as_latex(lines,cols):
+def as_latex( lines,
+              cols):
     n_cols=len(cols)
     text="\\begin{table}[ht]\n"
     text+="\centering\n"
