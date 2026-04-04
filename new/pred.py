@@ -205,6 +205,7 @@ def summary(exp_path,
                     line_i.append(-1)
             lines.append(line_i)
         return lines
+    print(result_dict.keys())
     cols=["data","clf"]+metric_types
     df=dataset.make_df(helper=df_helper,
                       iterable=result_dict.clfs(),
