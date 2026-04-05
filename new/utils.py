@@ -45,19 +45,34 @@ class PathSelect(object):
                   perm_paths=None,
                   taboo_paths=None):
         if(type(perm_paths)==list):
-            perm_paths=Set(perm_paths)
+            perm_paths=set(perm_paths)
         if(type(perm_paths)==list):
-            perm_paths=Set(perm_paths)
+            perm_paths=set(perm_paths)
         self.perm_paths=perm_paths
         self.taboo_paths=taboo_paths
 
     def __call__(self,paths):
-        paths=[]
+        if(self.perm_paths):
+            return self.get_perm(paths)
+        if(self.taboo_paths):
+            return self.remove_taboo(paths)
+
+    def get_perm(self,paths):
+        new_paths=[]
         for path_i in paths:
             id_i=path_i.split("/")[-1]
             if(id_i in self.perm_paths):
-                paths.append(path_i)
-        return paths
+                new_paths.append(path_i)
+        return new_paths
+
+    def remove_taboo(self,paths):
+        new_paths=[]
+        for path_i in paths:
+            id_i=path_i.split("/")[-1]
+            if(not id_i in self.taboo_paths):
+                new_paths.append(path_i)
+        return new_paths
+
 
 class DirFun(object):
     def __init__(self,main_path,path_args=[]):

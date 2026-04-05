@@ -71,9 +71,12 @@ class ResultDict(dict):
               for data_i,dict_i in self.items()}
 
     @classmethod
-    def read(cls,in_path):
-        @utils.DirFun("in_path")
-        def helper(in_path):
+    def read(cls,
+             in_path,
+             selection=None,
+             select_index=0):
+#        @utils.DirFun("in_path")
+        def basic_helper(in_path):
             output={}
             for path_i in utils.top_files(in_path):
                 name_i=path_i.split("/")[-1]
@@ -83,10 +86,17 @@ class ResultDict(dict):
                     output[name_i]=result_i
             return output
         if(type(in_path)==list):
+            def helper(paths):
+                return { path_i.split("/")[-1]:basic_helper(path_i) 
+                         for path_i in paths}
             output={}
-            for path_i in in_path: 
-                output= output | helper(path_i)
+            for i,path_i in enumerate(in_path): 
+                paths=utils.top_files(path_i)
+                if(selection and (i in select_index)):
+                    paths=selection(paths)
+                output= output | helper(paths)
             return cls(output)
+        helper=utils.DirFun("in_path")(basic_helper)
         return cls(helper(in_path))
 
     def add_partial(self,
@@ -163,10 +173,14 @@ class PartialDict(dict):
 
 def get_results(exp_path,
                 part_names=None,
-                taboo=None):
+                taboo=None,
+                selection=None,
+                select_index=0):
     if(part_names is None):
         part_names=["TreeEnsTabPFN"]
-    result_dict=ResultDict.read(exp_path)
+    result_dict=ResultDict.read(exp_path,
+                                selection,
+                                select_index)
     all_partial={ name_i:PartialDict.read(exp_path,
                                           name_i) 
                     for name_i in  part_names}
@@ -186,10 +200,14 @@ def get_results(exp_path,
 
 def summary(exp_path,
             metric_types=None,
-            latex=True):
+            latex=True,
+            selection=None,
+            select_index=0):
     if(metric_types is None):
         metric_types=["acc","norm_acc"]
-    result_dict=get_results(exp_path)
+    result_dict=get_results( exp_path, 
+                             selection=selection,
+                             select_index=select_index)
     def df_helper(clf_type):
         metrics=[result_dict.get_clf(clf_type,
                                      metric=metric_i,
@@ -287,7 +305,11 @@ if __name__ == '__main__':
     parser.add_argument('--xy', action='store_true')
     parser.add_argument('--latex', action='store_true')
     args = parser.parse_args()
-    summary(args.path,latex=args.latex)
+    selection=utils.PathSelect(['cmc','vehicle','mfeat-fourier'])
+    summary(args.path,
+            latex=args.latex,
+            selection=selection,
+            select_index=set([0,1]))
     if(args.box):
         box_plot(args.path,split_size=5)
     if(args.xy):
