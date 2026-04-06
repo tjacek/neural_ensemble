@@ -237,10 +237,17 @@ def summary(exp_path,
     mean_acc(df)
 
 def mean_acc(df):
+    mean_dict={}
     for df_i in df.by_data(col="clf"):
         clf_i=df_i["clf"].tolist()[0]
         acc_i=df_i["norm_acc"].tolist()
         print(f"{clf_i}:{np.mean(acc_i):.4f}")
+        mean_dict[clf_i]=np.mean(acc_i)
+    keys=list(mean_dict.keys())
+    keys.sort()
+    raw=[f"{mean_dict[key_i]:.4f}"  for key_i in keys]
+    print(keys)
+    print("\\hline" +" & ".join(raw) + "\\\\")
 
 def to_latex(df):
     df=df[["data","clf","acc","norm_acc"]]
