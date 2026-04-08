@@ -360,11 +360,12 @@ def desc_data(in_path):
         data_i=read_csv(path_i)
         hist_i=data_i.cls_hist()
         cls_hist=list(hist_i.values())
-        sum_i,min_i=sum(cls_hist), min(cls_hist)
+        sum_i=sum(cls_hist) 
+        max_i,min_i=max(cls_hist),min(cls_hist)
         feats_i=[ id_i, 
                   sum_i,
                   min_i, 
-                  sum_i/min_i,
+                  max_i/min_i,
                   data_i.dim()]
         print(feats_i)
         desc.append(feats_i)
