@@ -361,11 +361,13 @@ def desc_data(in_path):
         hist_i=data_i.cls_hist()
         cls_hist=list(hist_i.values())
         sum_i=sum(cls_hist) 
-        max_i,min_i=max(cls_hist),min(cls_hist)
+        min_i=min(cls_hist)
+        major_i= sum_i - min_i
+#        max_i,min_i=max(cls_hist),min(cls_hist)
         feats_i=[ id_i, 
                   sum_i,
                   min_i, 
-                  max_i/min_i,
+                  major_i/min_i,
                   data_i.dim()]
         print(feats_i)
         desc.append(feats_i)
@@ -374,7 +376,7 @@ def desc_data(in_path):
 if __name__ == '__main__':
     desc=desc_data(["../binary/fast/data",
                     "../binary/hard/data"])
-    cols=["Dataset","#Examples",
-          "#Min. examples","IR","#Attributes"]
+    cols=["Dataset","\#Examples",
+          "\#Min. examples","IR","\#Attributes"]
     latex=utils.as_latex(desc,cols)
     print(latex)
