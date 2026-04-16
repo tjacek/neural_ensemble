@@ -100,6 +100,8 @@ class HyperparamSpace(object):
             n_feats=[10,20,30,50]
         elif(type=="large"):
             n_feats=[30,50,75,100]
+        elif(type=="full"):
+            n_feats=[5,30,50,75,100,200]
         else:
             n_feats=[5,20,30,50]
         return cls(extr,n_feats)
