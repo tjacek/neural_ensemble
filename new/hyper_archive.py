@@ -19,7 +19,8 @@ class HyperIter(object):
 def make_archive( in_path,
 	              out_path,
 	              n_iters=3,
-	              n_clfs=2):
+	              n_clfs=2,
+                  space_type="full"):
     utils.make_dir(out_path)
     @utils.DirFun("in_path",["out_path"])
     def helper(in_path,out_path):
@@ -27,7 +28,7 @@ def make_archive( in_path,
         data=dataset.read_csv(in_path)
         splits=base.get_splits(data,10,n_iters)
         base.save_splits(f"{out_path}/splits",splits)
-        hyper_space=hyper.HyperparamSpace.get("small")
+        hyper_space=hyper.HyperparamSpace.get(space_type)
         for hyper_i in hyper_space():
             hyper_id=params_id(hyper_i)
             hyper_i["n_clfs"]=n_clfs
@@ -152,7 +153,7 @@ def hyper_csv( in_path,
 #    print(best_hyper)
     best_hyper.save(out_path)
 
-default_path="../binary/hard"
+default_path="../binary/slow"
 make_archive(f"{default_path}/data",
              f"{default_path}/archive",
              n_clfs=1)
