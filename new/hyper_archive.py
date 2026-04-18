@@ -32,10 +32,14 @@ def make_archive( in_path,
         for hyper_i in hyper_space():
             hyper_id=params_id(hyper_i)
             hyper_i["n_clfs"]=n_clfs
+            hyper_path=f"{out_path}/{hyper_id}"
+            if os.path.exists(hyper_path):
+               continue
+            print(hyper_path)
             eval_hyper(data,
             	       splits,
             	       hyper_i,
-            	       f"{out_path}/{hyper_id}")
+            	       hyper_path)#f"{out_path}/{hyper_id}")
             print(hyper_id)
     helper(in_path,out_path)
 
@@ -157,7 +161,7 @@ default_path="../binary/slow"
 make_archive(f"{default_path}/data",
              f"{default_path}/archive",
              n_clfs=1)
-show_archive(f"{default_path}/archive")
-hyper_csv( f"{default_path}/archive",
-           f"{default_path}/new_hyper.csv",
-            selection_type="naive")
+#show_archive(f"{default_path}/archive")
+#hyper_csv( f"{default_path}/archive",
+#           f"{default_path}/new_hyper.csv",
+#            selection_type="naive")
