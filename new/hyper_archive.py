@@ -93,6 +93,8 @@ def get_metric_dict(in_path,n_splits):
     def helper(in_path):
         acc_dict={}
         for path_i,dir_id in result_iter(in_path):
+            if(not os.path.isfile(path_i)):
+                continue
             parital=dataset.PartialGroup.read(path_i)
             sub_results=parital.split_results(n_splits)
             for res_i in sub_results:
@@ -150,18 +152,19 @@ def norm_best(acc_i):
     return np.argmax(norm_best)
 
 def hyper_csv( in_path,
-               out_path,
+               out_path=None,
                selection_type="naive"):
     hyper_var=HyperSelection.make(selection_type)
     best_hyper=hyper_var(in_path)
-#    print(best_hyper)
-    best_hyper.save(out_path)
+    print(best_hyper)
+    if(out_path):
+        best_hyper.save(out_path)
 
 default_path="../binary/slow"
-make_archive(f"{default_path}/data",
-             f"{default_path}/archive",
-             n_clfs=1)
-#show_archive(f"{default_path}/archive")
-#hyper_csv( f"{default_path}/archive",
-#           f"{default_path}/new_hyper.csv",
-#            selection_type="naive")
+#make_archive(f"{default_path}/data",
+#             f"{default_path}/archive",
+#             n_clfs=1)
+show_archive(f"{default_path}/archive")
+hyper_csv( f"{default_path}/archive",
+            None,#f"{default_path}/new_hyper.csv",
+            selection_type="naive")
