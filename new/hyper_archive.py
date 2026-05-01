@@ -93,7 +93,7 @@ def get_metric_dict(in_path,n_splits):
     def helper(in_path):
         acc_dict={}
         for path_i,dir_id in result_iter(in_path):
-            if(not os.path.isfile(path_i)):
+            if(not os.path.exists(path_i)):
                 continue
             parital=dataset.PartialGroup.read(path_i)
             sub_results=parital.split_results(n_splits)
@@ -166,5 +166,5 @@ default_path="../binary/slow"
 #             n_clfs=1)
 show_archive(f"{default_path}/archive")
 hyper_csv( f"{default_path}/archive",
-            None,#f"{default_path}/new_hyper.csv",
+            f"{default_path}/new_hyper.csv",
             selection_type="naive")
