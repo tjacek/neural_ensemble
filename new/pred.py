@@ -12,6 +12,11 @@ class ResultDict(dict):
         all_clfs= list(set(all_clfs))
         all_clfs.sort()
         return all_clfs
+    
+    def data_names(self):
+        names=list(self.keys())
+        names.sort()
+        return names
 
     def data(self):
         all_data=list(self.keys())
@@ -223,7 +228,7 @@ def summary(exp_path,
                     line_i.append(-1)
             lines.append(line_i)
         return lines
-    print(result_dict.keys())
+    print(result_dict.data_names())
     cols=["data","clf"]+metric_types
     df=dataset.make_df(helper=df_helper,
                       iterable=result_dict.clfs(),
@@ -306,8 +311,8 @@ if __name__ == '__main__':
                                                      "../uci/fast/exp/",
                                                      "../multi/slow/exp/",
                                                      "../multi/fast/exp/",
-                                                     "../binary/hard/exp/",
-                                                     "../binary/fast/exp"])
+                                                     "../binary/fast/exp/",
+                                                     "../binary/slow/exp"])
     parser.add_argument('--box', action='store_true')
     parser.add_argument('--xy', action='store_true')
     parser.add_argument('--latex', action='store_true')
