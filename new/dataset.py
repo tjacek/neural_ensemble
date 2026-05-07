@@ -373,7 +373,8 @@ def paper(id_i,data_i):
              sum_i,
              min_i, 
              major_i/min_i,
-             data_i.dim()]
+             data_i.dim(),
+             data_i.n_cats()]
 
 if __name__ == '__main__':
     desc=desc_data([
