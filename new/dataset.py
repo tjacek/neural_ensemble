@@ -358,24 +358,27 @@ def desc_data(in_path):
     for path_i in paths:
         id_i=path_i.split("/")[-1]
         data_i=read_csv(path_i)
-        hist_i=data_i.cls_hist()
-        cls_hist=list(hist_i.values())
-        sum_i=sum(cls_hist) 
-        min_i=min(cls_hist)
-        major_i= sum_i - min_i
-#        max_i,min_i=max(cls_hist),min(cls_hist)
-        feats_i=[ id_i, 
-                  sum_i,
-                  min_i, 
-                  major_i/min_i,
-                  data_i.dim()]
+        feats_i=paper(id_i,data_i)
         print(feats_i)
         desc.append(feats_i)
     return desc
 
+def paper(id_i,data_i):
+    hist_i=data_i.cls_hist()
+    cls_hist=list(hist_i.values())
+    sum_i=sum(cls_hist) 
+    min_i=min(cls_hist)
+    major_i= sum_i - min_i
+    return [ id_i, 
+             sum_i,
+             min_i, 
+             major_i/min_i,
+             data_i.dim()]
+
 if __name__ == '__main__':
-    desc=desc_data(["../binary/fast/data",
-                    "../binary/hard/data"])
+    desc=desc_data([
+                     "../binary/fast/data",
+                    "../binary/slow/data"])
     cols=["Dataset","\#Examples",
           "\#Min. examples","IR","\#Attributes"]
     latex=utils.as_latex(desc,cols)
