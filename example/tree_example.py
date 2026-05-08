@@ -16,9 +16,15 @@ def exp(in_path,cols):
     print("feature,threshold,mutual_info")
     for info_i,node_i in zip(info,nodes):
         desc_i=tree_dict[node_i].get_desc(cols)
-#        col_i=cols[desc_i.feature]
-#        print(col_i)
+
         print(f"{desc_i},{info_i:.4f}")
+    for path_i in tree_dict.indv_paths(nodes):
+        print(f"Path:{path_i}")
+        path_i.reverse()
+        for node_j in path_i:
+        	print(tree_dict[node_j].get_desc(cols))
+    tree.plot_tree(clf,feature_names=cols)
+    plt.show()
 
 class TreeDict(dict):
     def __init__(self, arg=[]):
