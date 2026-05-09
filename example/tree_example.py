@@ -2,9 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn import tree
 from sklearn.tree import DecisionTreeClassifier
-#from collections import Counter
 from scipy.stats import entropy 
 import pandas as pd
+import argparse
 
 def exp(in_path,cols):
     X,y=read_data(in_path,cols)
@@ -152,7 +152,11 @@ def log_helper(p_target_node, p_node):
     return -total
 
 if __name__ == '__main__':
-    in_path="car"
-    cols=[ 'buying','maint','doors', 
-       'persons', 'lug_boot', 'safety' ]
-    exp(in_path,cols)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--data", type=str, default="car")
+    parser.add_argument("--names", type=str, default="car_names")
+    args = parser.parse_args()
+    with open(args.names, 'r') as file:
+         cols = file.readlines()
+         cols=[ col_i.strip() for col_i in cols]
+    exp(args.data,cols)
