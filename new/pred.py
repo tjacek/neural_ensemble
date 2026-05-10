@@ -78,9 +78,9 @@ class ResultDict(dict):
     @classmethod
     def read(cls,
              in_path,
-             selection=None,
-             select_index=0):
-#        @utils.DirFun("in_path")
+             select=None):
+#             selection=None,
+#             select_index=0):
         def basic_helper(in_path):
             output={}
             for path_i in utils.top_files(in_path):
@@ -97,8 +97,8 @@ class ResultDict(dict):
             output={}
             for i,path_i in enumerate(in_path): 
                 paths=utils.top_files(path_i)
-                if(selection and (i in select_index)):
-                    paths=selection(paths)
+                if(select and (i in select)):
+                    paths=select(paths)
                 output= output | helper(paths)
             return cls(output)
         helper=utils.DirFun("in_path")(basic_helper)
@@ -136,6 +136,17 @@ class ResultDict(dict):
         for clf_i in indv_clfs[1:]:
             common=common.intersection(set(clf_i))
         return list(common)
+
+class SelectionHelper:
+    def __init__(self,selection,select_index):
+        self.selection=selection
+        self.select_index=set(select_index)
+    
+    def __call__(self, item):
+        return self.selection(item)
+    
+    def __contains__(self, i):
+        return i in self.select_index
 
 class PartialDict(dict):
     def subsets(self):
@@ -179,13 +190,15 @@ class PartialDict(dict):
 def get_results(exp_path,
                 part_names=None,
                 taboo=None,
-                selection=None,
-                select_index=0):
+                select=None):
+#                selection=None,
+#                select_index=0):
     if(part_names is None):
         part_names=["TreeEnsTabPFN"]
     result_dict=ResultDict.read(exp_path,
-                                selection,
-                                select_index)
+                                select=select)
+#                                selection,
+#                                select_index)
     all_partial={ name_i:PartialDict.read(exp_path,
                                           name_i) 
                     for name_i in  part_names}
@@ -206,13 +219,15 @@ def get_results(exp_path,
 def summary(exp_path,
             metric_types=None,
             latex=True,
-            selection=None,
-            select_index=0):
+            select=None):
+#            selection=None,
+#            select_index=0):
     if(metric_types is None):
         metric_types=["acc","norm_acc"]
-    result_dict=get_results( exp_path, 
-                             selection=selection,
-                             select_index=select_index)
+    result_dict=get_results( exp_path,
+                             select=select) 
+#                             selection=selection,
+#                             select_index=select_index)
     def df_helper(clf_type):
         metrics=[result_dict.get_clf(clf_type,
                                      metric=metric_i,
@@ -318,10 +333,13 @@ if __name__ == '__main__':
     parser.add_argument('--latex', action='store_true')
     args = parser.parse_args()
     selection=utils.PathSelect(['cmc','vehicle','mfeat-fourier'])
+    select=SelectionHelper(selection,[0,1])    
+
     summary(args.path,
             latex=args.latex,
-            selection=selection,
-            select_index=set([0,1]))
+            select=select)
+#            selection=selection,
+#            select_index=set([0,1]))
     if(args.box):
         box_plot(args.path,split_size=5)
     if(args.xy):
