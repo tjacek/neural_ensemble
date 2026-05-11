@@ -79,8 +79,6 @@ class ResultDict(dict):
     def read(cls,
              in_path,
              select=None):
-#             selection=None,
-#             select_index=0):
         def basic_helper(in_path):
             output={}
             for path_i in utils.top_files(in_path):
@@ -191,14 +189,10 @@ def get_results(exp_path,
                 part_names=None,
                 taboo=None,
                 select=None):
-#                selection=None,
-#                select_index=0):
     if(part_names is None):
         part_names=["TreeEnsTabPFN"]
     result_dict=ResultDict.read(exp_path,
                                 select=select)
-#                                selection,
-#                                select_index)
     all_partial={ name_i:PartialDict.read(exp_path,
                                           name_i) 
                     for name_i in  part_names}
@@ -218,16 +212,12 @@ def get_results(exp_path,
 
 def summary(exp_path,
             metric_types=None,
-            latex=True,
+            format="latex",
             select=None):
-#            selection=None,
-#            select_index=0):
     if(metric_types is None):
         metric_types=["acc","norm_acc"]
     result_dict=get_results( exp_path,
                              select=select) 
-#                             selection=selection,
-#                             select_index=select_index)
     def df_helper(clf_type):
         metrics=[result_dict.get_clf(clf_type,
                                      metric=metric_i,
@@ -250,8 +240,10 @@ def summary(exp_path,
                       cols=cols,
                       multi=True)
     for df_i in df.by_data("acc"):   
-        if(latex):
+        if(format=="latex"):
             to_latex(df_i)
+        elif(format=="csv"):
+            print(df_i.to_csv())
         else:
             print(df_i)
     mean_acc(df)
@@ -322,12 +314,12 @@ def xy_plot(exp_path,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--path", type=str, default=["../uci/slow/exp/",
-                                                     "../uci/fast/exp/",
-                                                     "../multi/slow/exp/",
-                                                     "../multi/fast/exp/",
-                                                     "../binary/fast/exp/",
-                                                     "../binary/slow/exp"])
+    parser.add_argument("--path", type=str, default=[#"../uci/slow/exp/",
+#                                                     "../uci/fast/exp/",
+#                                                     "../multi/slow/exp/",
+#                                                     "../multi/fast/exp/",
+#                                                     "../binary/fast/exp/",
+                                                     "uci//exp"])
     parser.add_argument('--box', action='store_true')
     parser.add_argument('--xy', action='store_true')
     parser.add_argument('--latex', action='store_true')
@@ -336,10 +328,8 @@ if __name__ == '__main__':
     select=SelectionHelper(selection,[0,1])    
 
     summary(args.path,
-            latex=args.latex,
+            format="csv",#args.latex,
             select=select)
-#            selection=selection,
-#            select_index=set([0,1]))
     if(args.box):
         box_plot(args.path,split_size=5)
     if(args.xy):
