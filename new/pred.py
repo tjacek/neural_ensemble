@@ -322,13 +322,13 @@ if __name__ == '__main__':
                                                      "uci//exp"])
     parser.add_argument('--box', action='store_true')
     parser.add_argument('--xy', action='store_true')
-    parser.add_argument('--latex', action='store_true')
+    parser.add_argument('--format', type=str, default="latex")
     args = parser.parse_args()
     selection=utils.PathSelect(['cmc','vehicle','mfeat-fourier'])
     select=SelectionHelper(selection,[0,1])    
 
     summary(args.path,
-            format="csv",#args.latex,
+            format=args.format,
             select=select)
     if(args.box):
         box_plot(args.path,split_size=5)
