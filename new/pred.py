@@ -243,7 +243,7 @@ def summary(exp_path,
         if(format=="latex"):
             to_latex(df_i)
         elif(format=="csv"):
-            print(df_i.to_csv())
+            print(df_i.to_csv(index=False))
         else:
             print(df_i)
     mean_acc(df)
@@ -315,17 +315,17 @@ def xy_plot(exp_path,
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--path", type=str, default=[#"../uci/slow/exp/",
-#                                                     "../uci/fast/exp/",
+                                                     #"../uci/fast/exp/"
 #                                                     "../multi/slow/exp/",
 #                                                     "../multi/fast/exp/",
-#                                                     "../binary/fast/exp/",
-                                                     "uci//exp"])
+                                                     "../binary/slow/exp/",
+                                                     ])
     parser.add_argument('--box', action='store_true')
     parser.add_argument('--xy', action='store_true')
     parser.add_argument('--format', type=str, default="latex")
     args = parser.parse_args()
-    selection=utils.PathSelect(['cmc','vehicle','mfeat-fourier'])
-    select=SelectionHelper(selection,[0,1])    
+#    selection=utils.PathSelect(['cmc','vehicle','mfeat-fourier'])
+    select=None#SelectionHelper(selection,[0,1])    
 
     summary(args.path,
             format=args.format,
